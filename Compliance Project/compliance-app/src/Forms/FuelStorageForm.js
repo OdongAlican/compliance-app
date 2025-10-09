@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import FuelInterface from "../Forms-interface/Fuel-interface";
+import FuelInterface from "./canten";
 
 
 // Accordion context
 const AccordianContext = React.createContext();
 
-function CanteenForm({ children, value, onChange, ...props }) {
+function FuelStorageForm({ children, value, onChange, ...props }) {
   const [selected, setSelected] = useState(value);
   React.useEffect(() => {
     onChange?.(selected);
@@ -88,7 +88,7 @@ const sections = [
   "Sign-Off"
 ];
 
-export default function CanteenFormModal() {
+export default function FuelStorageFormModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
   const [issues, setIssues] = useState([
@@ -141,12 +141,12 @@ export default function CanteenFormModal() {
         onClick={() => setIsOpen(true)}
         className="px-4 py-2 bg-primary text-tertiary rounded"
       >
-        + Fuel Storage Form
+        + fuel Form
       </button>
       </div>
-       <div>
-            <FuelInterface />
-          </div>
+                    <div>
+                <FuelInterface/>
+              </div>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
@@ -190,7 +190,7 @@ export default function CanteenFormModal() {
 </div>
 
             <h1 className="text-2xl font-bold text-center text-green-700 mb-2">
-              FUEL-STORAGE INSPECTION FORM
+              SCIENCE LAB INSPECTION FORM
             </h1>
             <p className="text-sm text-gray-500 text-center mb-6">
               CONFIDENTIAL COMPLIANCE DOCUMENT
@@ -205,70 +205,80 @@ export default function CanteenFormModal() {
             {/* Section Content */}
             {currentSection === 0 && (
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <input placeholder="Tank Location" className="border p-2 rounded" />
-                <input placeholder="Tank id/number" className="border p-2 rounded" />
-                <input placeholder="Enter fuel type" className="border p-2 rounded" />
-                <input placeholder="Inspection date" className="border p-2 rounded" />
-                <input placeholder="Inspected by" className="border p-2 rounded" />
+                <input placeholder="Name of Laboratory" className="border p-2 rounded" />
+                <input type="date" className="border p-2 rounded" />
+                <input type="time" className="border p-2 rounded" />
+                <input placeholder="Inspector(s) Name(s)" className="border p-2 rounded" />
+                
+                <input placeholder="Position" className="border p-2 rounded" />
                 <input placeholder="Signature" className="border p-2 rounded" />
               </div>
             )}
 
             {currentSection === 1 && (
-              <CanteenForm value="tank">
-                <AccordianItem value="tank" trigger="Tank Interior & Exterior">
+              <CanteenForm value="housekeeping">
+                <AccordianItem value="housekeeping" trigger="General Housekeeping">
                   <ChecklistSection
                     items={[
-                              'Tank clearly labeled with fuel type and hazard signs',
-        'No visible leaks, drips, or corrosion',
-        'Tank surface (paint/coating) in good condition',
-        'Tank foundation secure and stable',
-        'Access ladders, railings, and platforms in safe condition',
-        'Tank vents unobstructed and functional',
-        'Security measures in place (locks, fencing, CCTV)',
+                      "Lab clean and organized",
+                    "Floors dry and free from obstructions",
+                    "Work surfaces clean",
+                    "Adequate lighting",
+                    "Proper ventilation working"
+                              
                       
                     ]}
                   />
                 </AccordianItem>
 
-                                <CanteenForm value="issues">
-              <AccordianItem value="piping" trigger="Piping & Connections">
+                                <FuelStorageForm value="chemical safety">
+              <AccordianItem value="chemical safety" trigger="Chemical Safety">
                  <ChecklistSection
                     items={[
-                      'Pipes and hoses intact (no cracks, kinks, or leaks)',
-        'Valves are functional',
-        'Fuel transfer pumps in working order',
-        'Spill containment tray/bund area clean and dry',
-        'All fittings tight and properly sealed',
+                      "Chemicals properly labeled",
+                      "Safety Data Sheets (SDS) available",
+                      "Chemicals stored correctly (secured, separated)",
+                      "Expired chemicals disposed appropriately"
+                     
              
                     ]}
                   />
                 
               </AccordianItem>
-              </CanteenForm>
+              </FuelStorageForm>
 
-                <AccordianItem value="safety" trigger="Safety & Environmental Controls">
+                <AccordianItem value="emergency" trigger="Emergency Equipment">
                   <ChecklistSection
                     items={[
-                      'Emergency shutoff switch accessible and labeled',
-        'Fire extinguisher nearby and inspected',
-        'Spill kit available and stocked',
-        'Adequate ventilation around storage area',
-        'No signs of soil contamination near tank',
-                      
+                      "Fire extinguisher accessible and inspected",
+                      "Eye wash station operational and accessible",
+                      "Safety shower working (if available)",
+                      "Fume hood functioning properly (if applicable)",
+                      "Emergency exits clear and marked"
                     ]}
                   />
                 </AccordianItem>
 
-                <AccordianItem value="personnel" trigger="Fuel Quality & Level Check">
+                <AccordianItem value="personnel" trigger="Personal Protective Equipment (PPE)">
                   <ChecklistSection
                     items={[
-
-                      'Fuel level within safe operating range',
-        'No signs of water or sediment contamination',
-        'Manual/automated gauge working properly',
-        'Inspection records and fuel delivery logs up to date',
-                     
+                      "Goggles available and in good condition",
+                    "Lab coats/aprons provided",
+                    "Gloves available in multiple sizes",
+                    "PPE storage area clean and organized"
+                      
+                    ]}
+                  />
+                </AccordianItem>
+                 <AccordianItem value="equipment" trigger="Electrical & Equipment Safety">
+                  <ChecklistSection
+                    items={[
+                      "Equipment in good working order",
+                      "Power cords intact (no fraying)",
+                      "Circuit breakers accessible and labeled",
+                      "Gas valves shut off when not in use",
+                      "Fume hoods functional and tested"
+                      
                     ]}
                   />
                 </AccordianItem>
@@ -290,6 +300,7 @@ export default function CanteenFormModal() {
               >
                 + Add Issue
               </button>
+
 
               {/*Issue Rows*/}
               {issues.map((issues, idx) =>(
@@ -424,7 +435,7 @@ export default function CanteenFormModal() {
   {currentSection === sections.length - 1 ? "Submit" : "Next"}
 </button>
 
-             
+
               
 
 

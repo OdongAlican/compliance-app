@@ -18,7 +18,6 @@ import { Solutions } from './components/Pages/Solutions';
 import SignIn from './components/Pages/SignIn'
 import { PublicLayout } from './components/PublicLayout';
 import InspectionForm from './components/Dashboard/InspectionDashboard'
-import CanteenForm from './Forms/CanteenForm';
 import FuelStorageForm from './Forms/FuelStorageForm';
 import HandAndPowerForm from './Forms/ToolInspectionForm';
 import LogIn from './components/Pages/LogIn';
@@ -33,7 +32,7 @@ import SwimmingPoolInterface from './Forms-interface/Swimming-interface.js';
 import HazardDashboard from './components/Dashboard/HazardDashboard';
 import RiskAssessmentFormForm from './Forms-interface/Risk-interface.js';
 import HazardReportPage from './components/Dashboard/HazardForm.js';
-import CanteenInspection from './components/Inspection-admin/CanteenInspection.js';
+
 
 
 
@@ -194,7 +193,7 @@ export default function App() {
 
 
 
-        <Route
+       {/* <Route
   path="/form/canteen"
   element={
     <Layout
@@ -204,10 +203,22 @@ export default function App() {
       <CanteenForm />
     </Layout>
   }
+/>*/}
+
+<Route
+  path="/form/canteen"
+  element={
+    <Layout
+      sidebarToggle={sidebarToggle}
+      setSidebarToggle={setSidebarToggle}
+    >
+      <CanteenInterface />
+    </Layout>
+  }
 />
 
 
-        <Route
+       {/* <Route
   path="/form/canteen"
   element={
     <Layout
@@ -217,7 +228,7 @@ export default function App() {
       <CanteenInspection />
     </Layout>
   }
-/>
+/>*/}
 
         <Route
   path="/form/fuel"

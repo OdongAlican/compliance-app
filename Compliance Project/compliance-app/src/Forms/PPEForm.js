@@ -362,30 +362,7 @@ export default function VehicleFormModal() {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-6">
-             {/* <button
-                onClick={prevSection}
-                disabled={currentSection === 0}
-                className={`px-4 py-2 rounded ${
-                  currentSection === 0
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-                Previous
-              </button>
-             <button
-                onClick={nextSection}
-                 
 
-                disabled={currentSection === sections.length - 1}
-                className={`px-4 py-2 rounded ${
-                  currentSection === sections.length - 1
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700"
-                }`}
-              >
-                Next
-              </button> */}
 
               <button
   onClick={prevSection}

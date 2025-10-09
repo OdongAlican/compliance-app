@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-
 const inspections = [
   { title: 'Canteen Inspection', formPath: '/form/canteen', image: '/canteen.png' },
   { title: 'Fuel Storage Tank Inspection Checklist', formPath: '/form/fuel', image: '/fuel.png' },
@@ -10,6 +9,8 @@ const inspections = [
   { title: 'Vehicle Inspection Form', formPath: '/form/vehicle', image: '/vehicle.png' },
 
 ];
+
+
 
 export default function InspectionDashboard() {
   const navigate = useNavigate();
@@ -38,3 +39,4 @@ export default function InspectionDashboard() {
     </div>
   );
 }
+
