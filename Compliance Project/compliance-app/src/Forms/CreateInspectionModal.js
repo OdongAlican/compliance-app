@@ -1,210 +1,164 @@
-import React, { useState } from "react";
-
-// Dummy user list
-const users = [
-  { id: 1, name: 'Paul Ameyah', email: 'paul@gmail.com' },
-  { id: 2, name: 'Debby Boateng', email: 'debby@gmail.com' },
-  { id: 3, name: 'Kwame Mensah', email: 'kwame@gmail.com' },
-];
-
-// UserSelector component
-function UserSelector({ selectedUsers, setSelectedUsers }) {
-  const handleSelect = (user) => {
-    if (!selectedUsers.find((u) => u.id === user.id)) {
-      setSelectedUsers([...selectedUsers, user]);
-    }
-  };
-
-  const handleRemove = (id) => {
-    setSelectedUsers(selectedUsers.filter((u) => u.id !== id));
-  };
-
-  return (
-    <div>
-      <input
-        type="text"
-        placeholder="Search by name or email"
-        className="border p-2 rounded w-full mb-2"
-      />
-      <div className="space-y-2">
-        {users.map((user) => (
-          <div
-            key={user.id}
-            className="flex justify-between items-center bg-gray-100 p-2 rounded cursor-pointer"
-            onClick={() => handleSelect(user)}
-          >
-            <span>{user.name}</span>
-            <span className="text-sm text-gray-500">{user.email}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-4">
-        <h4 className="font-semibold mb-2">Selected:</h4>
-        {selectedUsers.map((user) => (
-          <div
-            key={user.id}
-            className="flex justify-between items-center bg-green-100 p-2 rounded mb-1"
-          >
-            <span>{user.name}</span>
-            <button
-              onClick={() => handleRemove(user.id)}
-              className="text-red-500 hover:underline"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import React, { useState, useEffect } from "react";
 
 const sections = [
-  "General Information",
-  "Safety Officers",
-  "Supervisors",
-  "Review & Submit"
+  "Create Inspection",
+  "Assign Safety Officer",
+  "Assign Supervisor",
 ];
 
-export default function CreateInspectionModal({ isOpen, onClose, startSection = 0 }) {
+export default function CreateInspectionModal({
+  isOpen,
+  onClose,
+  startSection = 0,
+}) {
   const [currentSection, setCurrentSection] = useState(startSection);
-  const [selectedSafetyOfficers, setSelectedSafetyOfficers] = useState([]);
-  const [selectedSupervisors, setSelectedSupervisors] = useState([]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // handle form submission here
-    onClose();
+  // When modal opens, jump to requested section
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentSection(startSection ?? 0);
+    }
+  }, [isOpen, startSection]);
+
+  const handleClose = () => {
     setCurrentSection(0);
-    setSelectedSafetyOfficers([]);
-    setSelectedSupervisors([]);
+    onClose?.();
   };
 
-  const nextSection = () => {
-    if (currentSection < sections.length - 1) {
-      setCurrentSection(currentSection + 1);
-    }
-  };
-
-  const prevSection = () => {
-    if (currentSection > 0) {
-      setCurrentSection(currentSection - 1);
-    }
-  };
-
-    if (!isOpen) return null;
-
-
-
-
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative">
         <button
-          onClick={() => {
-            onClose();
-            setCurrentSection(0);
-            setSelectedSafetyOfficers([]);
-            setSelectedSupervisors([]);
-          }}
-          className="absolute top-3 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
+          aria-label="Close create inspection"
+          onClick={handleClose}
+          className="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-2xl font-bold"
         >
           &times;
         </button>
+
+        <header className="mb-4">
+          <h1 className="text-xl font-semibold items-center">Create Inspection</h1>
+        </header>
+
         {/* Stepper */}
-        <div className="flex justify-between items-center mb-8 px-4">
-          {sections.map((label, index) => {
-            const isCompleted = index < currentSection;
-            const isCurrent = index === currentSection;
-            return (
-              <div key={index} className="flex flex-col items-center text-center flex-1">
-                <div
-                  className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm mb-1
-                    ${isCompleted ? "bg-green-600 text-white" : isCurrent ? "bg-primary text-tertiary" : "bg-gray-300 text-gray-700"}
-                  `}
-                >
-                  {isCompleted ? "✓" : index + 1}
-                </div>
-                <span
-                  className={`text-sm rounded-full font-bold mb-1 ${
-                    isCurrent ? "text-blue-600" : isCompleted ? "text-green-600" : "text-gray-500"
-                  }`}
-                >
-                  {label}
-                </span>
-              </div>
-            );
-          })}
+        <div className="mb-6 px-2">
+          <div className="flex items-center">
+            {sections.map((label, idx) => {
+              const completed = idx < currentSection;
+              const isCurrent = idx === currentSection;
+              return (
+                <React.Fragment key={label}>
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() => setCurrentSection(idx)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter") setCurrentSection(idx); }}
+                  >
+                    <div
+                      className={`w-8 h-8 flex items-center justify-center rounded-full border shrink-0
+                        ${completed ? "bg-green-600 text-white border-green-600" : isCurrent ? "bg-primary text-tertiary border-primary" : "bg-white text-gray-700 border-gray-300"}
+                      `}
+                      aria-current={isCurrent}
+                    >
+                      {completed ? "✓" : idx + 1}
+                    </div>
+                    <div className={`ml-3 text-sm ${isCurrent ? "font-semibold text-gray-900" : "text-gray-500"}`}>
+                      {label}
+                    </div>
+                  </div>
+
+                  {/* connector */}
+                  {idx !== sections.length - 1 && (
+                    <div
+                      className={`flex-1 h-0.5 mx-3 ${idx < currentSection ? "bg-green-600" : "bg-gray-200"}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-center text-green-700 mb-2">
-          CREATE CANTEEN INSPECTION
-        </h1>
-        <form onSubmit={handleSubmit}>
-          {/* Section Content */}
+
+        <main className="min-h-[180px]">
           {currentSection === 0 && (
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <input className="border p-2 rounded" placeholder="Inspector Name" />
-              <input type="date" className="border p-2 rounded" />
-              <input className="border p-2 rounded" placeholder="Canteen Location" />
-              <input className="border p-2 rounded" placeholder="Supervisor Name" />
-            </div>
+            <section>
+              <h3 className="font-medium mb-2">Inspection Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input className="border rounded px-3 py-2" placeholder="Title / Name" />
+                <input className="border rounded px-3 py-2" placeholder="Location" />
+                <input type="date" className="border rounded px-3 py-2" />
+                <input type="time" className="border rounded px-3 py-2" />
+                <textarea className="border rounded px-3 py-2 md:col-span-2" placeholder="Notes (optional)" />
+              </div>
+            </section>
           )}
+
           {currentSection === 1 && (
-            <div className="mb-6">
-              <label className="font-semibold">Safety Officers</label>
-              <UserSelector
-                selectedUsers={selectedSafetyOfficers}
-                setSelectedUsers={setSelectedSafetyOfficers}
-              />
-            </div>
+            <section>
+              <h3 className="font-medium mb-2">Assign Safety Officer</h3>
+              <div className="space-y-3">
+                <input className="border rounded px-3 py-2" placeholder="Search / Select safety officer" />
+                <select className="border rounded px-3 py-2 w-full">
+                  <option value="">-- Select Safety Officer --</option>
+                </select>
+                <p className="text-xs text-gray-500">Select a safety officer for this inspection.</p>
+              </div>
+            </section>
           )}
+
           {currentSection === 2 && (
-            <div className="mb-6">
-              <label className="font-semibold">Safetyofficer</label>
-              <UserSelector
-                selectedUsers={selectedSupervisors}
-                setSelectedUsers={setSelectedSupervisors}
-              />
-            </div>
+            <section>
+              <h3 className="font-medium mb-2">Assign Supervisor</h3>
+              <div className="space-y-3">
+                <input className="border rounded px-3 py-2" placeholder="Search / Select supervisor" />
+                <select className="border rounded px-3 py-2 w-full">
+                  <option value="">-- Select Supervisor --</option>
+                </select>
+                <p className="text-xs text-gray-500">Select a supervisor for this inspection.</p>
+              </div>
+            </section>
           )}
-                    {currentSection === 3 && (
-            <div className="mb-6">
-              <label className="font-semibold">Supervisors</label>
-              <UserSelector
-                selectedUsers={selectedSupervisors}
-                setSelectedUsers={setSelectedSupervisors}
-              />
-            </div>
-          )}
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-6">
+        </main>
+
+        {/* Navigation / actions */}
+       <footer className="mt-6 flex justify-between items-center">
+          <div>
             <button
               type="button"
-              onClick={prevSection}
+              onClick={() => setCurrentSection((s) => Math.max(0, s - 1))}
               disabled={currentSection === 0}
-              className={`px-4 py-2 rounded ${
-                currentSection === 0
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+              className={`px-4 py-2 rounded mr-2 ${
+                currentSection === 0 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               Previous
             </button>
             <button
-              type={currentSection === sections.length - 1 ? "submit" : "button"}
-              onClick={currentSection === sections.length - 1 ? undefined : nextSection}
-              className={`px-4 py-2 rounded ${
-                currentSection === sections.length - 1
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-primary text-tertiary"
-              }`}
+              type="button"
+              onClick={() => {
+                if (currentSection < sections.length - 1) {
+                  setCurrentSection((s) => s + 1);
+                } else {
+                  // final submit action for create inspection flow
+                  alert("Inspection created");
+                  handleClose();
+                }
+              }}
+              className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
             >
-              {currentSection === sections.length - 1 ? "Submit" : "Next"}
+              {currentSection === sections.length - 1 ? "Finish" : "Next"}
             </button>
           </div>
-        </form>
+
+          <div className="text-sm text-gray-500">Step {currentSection + 1} of {sections.length}</div>
+        </footer>
       </div>
     </div>
   );
 }
+
+ 

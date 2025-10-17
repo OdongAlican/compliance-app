@@ -131,7 +131,13 @@ export default function CanteenInterface() {
         >
           + Create Inspection
         </button>
-        <CreateInspectionModal
+       {/* <CreateInspectionModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          startSection={createModalSection}
+        />*/}
+                <CreateInspectionModal
+          key={`create-${createModalSection}`} // ✅ Optional key if section changes
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           startSection={createModalSection}

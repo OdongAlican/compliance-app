@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 const inspections = [
   { title: 'Canteen Inspection', formPath: '/form/canteen', image: '/canteen.png' },
   { title: 'Fuel Storage Tank Inspection Checklist', formPath: '/form/fuel', image: '/fuel.png' },
-  { title: 'Hand and Power Tool Inspection Form', formPath: '/form/hand-and-power', image: '/tools.png' },
+  { title: 'Hand and Power Tool Inspection Form', formPath: '/form/tool', image: '/tools.png' },
   { title: 'PPE Inspection Form', formPath: '/form/ppe', image: '/ppe.png' },
   { title: 'Science Laboratory Inspection Form', formPath: '/form/science-laboratory', image: '/lab.png' },
   { title: 'Swimming Pool Inspection Checklist', formPath: '/form/swimming-pool', image: '/pool.png' },

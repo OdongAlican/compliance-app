@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
-import ToolInspectionFormModal from "../Forms/ToolInspectionForm";
+import FuelStorageFormModal from "../Forms/FuelStorageForm";
 
 function ActionMenu({
   id,
@@ -95,7 +95,7 @@ function ActionMenu({
   );
 }
 
-export default function ToolInterface() {
+export default function FuelInterface() {
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
   const [activeInspectionId, setActiveInspectionId] = useState(null);
@@ -167,7 +167,7 @@ export default function ToolInterface() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Tool Inspection</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Fuel Inspection</h1>
       {/* Create Inspection Button and Modal */}
       <div className="flex justify-end mb-4">
         <button
@@ -267,7 +267,7 @@ export default function ToolInterface() {
         </table>
       </div>
       {showFormModal && activeInspectionId !== null && (
-        <ToolInspectionFormModal
+        <FuelStorageFormModal
           isOpen={showFormModal}
           onClose={closeFormModal}
           inspectionId={activeInspectionId}

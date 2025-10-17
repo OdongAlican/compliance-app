@@ -316,49 +316,89 @@ export default function CanteenFormModal({ isOpen, onClose }) {
           </CanteenForm>
         )}
 
+
+
         {currentSection === 3 && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-8 bg-gray-50 p-6 rounded-lg shadow-sm">
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-600">Inspectors</label>
-                <div className="flex gap-4">
-                  {["Paul Amegah", "Debby", "Eric"].map((name, idx) => (
-                    <div key={idx} className="border rounded px-4 py-2 text-gray-700 bg-white shadow-sm">
-                      {name}
-                    </div>
-                  ))}
-                </div>
-
-                <label className="block text-sm font-medium text-gray-600">Signature</label>
-                <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
-                  Paul Amegah
-                </div>
-
-                <label className="block text-sm font-medium text-gray-600">Date</label>
-                <input type="date" className="border rounded px-4 py-2 text-gray-700 shadow-sm w-full" />
-              </div>
-
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-600">Canteen Committee Chair</label>
-                <div className="border rounded px-4 py-2 text-gray-700 bg-white shadow-sm">Paul</div>
-                <label className="block text-sm font-medium text-gray-600">Signature</label>
-                <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
-                  <svg className="w-8 h-8 text-blue-400 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 12l8-8 8 8M12 4v12" />
-                  </svg>
-                  <span>Drag and drop your file or</span>
-                  <button className="mt-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Browse File</button>
-                </div>
-
-                <label className="block text-sm font-medium text-gray-600">Date</label>
-                <input
-                  type="date"
-                  className="border rounded px-4 py-2 text-gray-700 shadow-sm w-full"
-                />
-              </div>
-            </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    {/* Left: Inspection Summary */}
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">Inspection Summary</h2>
+      <div className="space-y-3">
+        {[
+          { label: "Kitchen Area", status: "checked" },
+          { label: "Serving Area", status: "checked" },
+          { label: "Eating Area", status: "checked" },
+          { label: "Personnel Procedures", status: "checked" },
+         { label: "Issues Identified", status: "missing" },
+        ].map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded border">
+            {item.status === "checked" ? (
+              <span className="text-green-600 text-xl">✓</span>
+            ) : (
+              <span className="text-orange-500 text-xl">⚠️</span>
+            )}
+            <span className="text-sm text-gray-700">{item.label}</span>
           </div>
-        )}
+        ))}
+      </div>
+    </div>
+
+    {/* Right: Sign-Off Form */}
+    <div className="bg-gray-50 p-6 rounded-lg shadow-sm border space-y-6">
+      {/* Inspectors */}
+      <div>
+        <div className="flex gap-2 flex-wrap">
+         
+        </div>
+      </div>
+
+      {/* Signature */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Name</label>
+        <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
+          Paul Amegah
+        </div>
+      </div>
+
+      {/* Date */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
+        <input
+          type="date"
+          className="border rounded px-4 py-2 text-gray-700 shadow-sm w-full"
+        />
+      </div>
+
+      {/* Committee Chair */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Canteen Committee Chair</label>
+        <div className="border rounded px-4 py-2 text-gray-700 bg-white shadow-sm">Paul</div>
+      </div>
+
+      {/* Chair Signature Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Signature</label>
+        <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
+          <svg className="w-8 h-8 text-blue-400 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 12l8-8 8 8M12 4v12" />
+          </svg>
+          <span>Drag and drop your file or</span>
+          <button className="mt-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Browse File</button>
+        </div>
+      </div>
+
+      {/* Chair Date */}
+      <div>
+          <span className="text-gray-700">Note</span>
+
+        <textarea name="actionTaken" 
+         className="mt-1 block w-full border border-gray-300 rounded-md p-2"  />
+       
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">

@@ -24,7 +24,7 @@ import LogIn from './components/Pages/LogIn';
 import VehicleForm from './Forms/VehicleForm';
 import VehicleInspectionDashboard from './Forms-interface/vehicle-interface';
 import CanteenInterface from './Forms-interface/CanteenInterface.js';
-import FuelInterface from './Forms-interface/Fuel-interface';
+import FuelInterface from './Forms-interface/FuelInterface';
 import ToolInterface from './Forms-interface/Tool-interface';
 import PPEInterface from './Forms-interface/PPE-interface.js';
 import ScienceLabInterface from './Forms-interface/Sciencelab-interface.js';
@@ -180,30 +180,21 @@ export default function App() {
 />
 
                 <Route
-  path="/form/hand-and-power"
+  path="/form/tool"
   element={
     <Layout
       sidebarToggle={sidebarToggle}
       setSidebarToggle={setSidebarToggle}
     >
-      <HandAndPowerForm />
+    {/*  <HandAndPowerForm />*/}
+      <ToolInterface />
     </Layout>
   }
 />
 
 
 
-       {/* <Route
-  path="/form/canteen"
-  element={
-    <Layout
-      sidebarToggle={sidebarToggle}
-      setSidebarToggle={setSidebarToggle}
-    >
-      <CanteenForm />
-    </Layout>
-  }
-/>*/}
+
 
 <Route
   path="/form/canteen"
@@ -218,17 +209,7 @@ export default function App() {
 />
 
 
-       {/* <Route
-  path="/form/canteen"
-  element={
-    <Layout
-      sidebarToggle={sidebarToggle}
-      setSidebarToggle={setSidebarToggle}
-    >
-      <CanteenInspection />
-    </Layout>
-  }
-/>*/}
+
 
         <Route
   path="/form/fuel"
@@ -237,7 +218,7 @@ export default function App() {
       sidebarToggle={sidebarToggle}
       setSidebarToggle={setSidebarToggle}
     >
-      <FuelStorageForm />
+      <FuelInterface />
     </Layout>
   }
 />
@@ -249,7 +230,7 @@ export default function App() {
       sidebarToggle={sidebarToggle}
       setSidebarToggle={setSidebarToggle}
     >
-      <PPEForm />
+      <PPEInterface />
     </Layout>
   }
 />
@@ -260,7 +241,8 @@ export default function App() {
       sidebarToggle={sidebarToggle}
       setSidebarToggle={setSidebarToggle}
     >
-      <VehicleForm />
+     {/* <VehicleForm />*/}
+            <VehicleInspectionDashboard />
     </Layout>
   }
 />
@@ -273,7 +255,9 @@ export default function App() {
       sidebarToggle={sidebarToggle}
       setSidebarToggle={setSidebarToggle}
     >
-      <ScienceLabForm />
+      {/*<ScienceLabForm />*/}
+      <ScienceLabInterface />
+
     </Layout>
   }
 />
@@ -284,7 +268,8 @@ export default function App() {
       sidebarToggle={sidebarToggle}
       setSidebarToggle={setSidebarToggle}
     >
-      <SwimmingPoolForm />
+     {/* <SwimmingPoolForm />*/}
+      <SwimmingPoolInterface />
     </Layout>
   }
 />
