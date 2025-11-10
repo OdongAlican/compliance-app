@@ -2,9 +2,21 @@ import React from 'react';
 import { FaChevronDown } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 
-export const Sidebar = ({ sidebarToggle }) => {
+export const Sidebar = ({ sidebarToggle, setSidebarToggle }) => {
   return (
-    <div className={`${sidebarToggle ? "hidden" : "block"} w-72 bg-primary2 fixed h-full px-6 py-6 overflow-y-auto shadow-lg`}>
+    <div
+      className={`${
+        sidebarToggle ? 'hidden' : 'block'
+      } fixed inset-y-0 left-0 w-72 bg-primary2 px-6 py-6 overflow-y-auto shadow-lg z-40 hidden md:block`}
+    >
+      {/* Close button for mobile */}
+      <button
+        onClick={() => setSidebarToggle(true)}
+        className="md:hidden absolute top-4 right-4 text-white text-xl"
+      >
+        &times;
+      </button>
+
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl text-blue-500 font-bold tracking-wide">Admin Dashboard</h2>
@@ -13,9 +25,9 @@ export const Sidebar = ({ sidebarToggle }) => {
       {/* Navigation Sections */}
       <nav className="space-y-8 text-sm font-medium text-blue-800">
         {/* Main */}
-        <div>
+        <div >
           <h2 className="text-xs uppercase text-gray-400 mb-2">Menu</h2>
-          <ul className="space-y-2">
+          <ul className="space-y-2 ">
             <SidebarItem to="/" icon="/home.png" label="Home" />
             <SidebarItem to="/inspection" icon="/setting2.png" label="Inspection" />
             <SidebarItem to="/hazard/report" icon="/alert2.png" label="Hazard & Risk Management" />
@@ -25,7 +37,8 @@ export const Sidebar = ({ sidebarToggle }) => {
         </div>
 
         {/* Management */}
-        <div>
+        <div className="flex flex-col space-y-10 "></div>
+        <div >
           <h2 className="text-xs uppercase text-gray-400 mb-2">Management</h2>
           <ul className="space-y-2">
             <SidebarItem to="/user-management" icon="/users.png" label="Users" />
@@ -33,9 +46,11 @@ export const Sidebar = ({ sidebarToggle }) => {
         </div>
 
         {/* Others */}
-        <div>
+         <div className="flex flex-col space-y-10 pt-40"></div>
+
+        <div className='pt-10'>
           <h2 className="text-xs uppercase text-gray-400 mb-2">Others</h2>
-          <ul className="space-y-2">
+          <ul className="space-y-2 ">
             <SidebarItem to="/capa" icon="/users.png" label="CAPA" />
             <SidebarItem to="/analytics" icon="/users.png" label="Analytics" />
           </ul>
@@ -43,8 +58,8 @@ export const Sidebar = ({ sidebarToggle }) => {
       </nav>
 
       {/* Footer */}
-      <div className="mt-10 border-t pt-6 text-gray-700 space-y-4">
-        <h2 className="text-xs uppercase text-gray-400">Account</h2>
+      <div className="mt-10 border-t pt-6 text-gray-700 space-y-4 ">
+        <h2 className="text-xs uppercase text-gray-400 pt-10">Account</h2>
 
         <div className="flex items-center gap-3 hover:bg-gray-100 px-3 py-2 rounded-md cursor-pointer">
           <img src="/setting2.png" alt="Help" className="w-6 h-6" />

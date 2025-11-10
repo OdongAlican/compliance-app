@@ -2,6 +2,8 @@ import React, { useState, useEffect, } from "react";
 import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
+import NotificationFormModal from "../Forms/NotificationForm";
+import DeleteModal from "../components/Execute/IncidentNotificationDelete";
 
 
 
@@ -33,7 +35,7 @@ function ActionMenu({
           aria-label={`Actions for row ${id}`}
           className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50"
         >
-         {/* <button
+          <button
             type="button"
             role="menuitem"
             onClick={() => {
@@ -44,7 +46,7 @@ function ActionMenu({
             aria-label={`Start inspection for ID ${id}`}
           >
             Start Investigation
-          </button>*/}
+          </button>
           <button
             type="button"
             role="menuitem"
@@ -99,20 +101,17 @@ function ActionMenu({
 
 
 
-
-
-
-
-
-
 export default function IncidentNotifyInterface() {
   const [data, setData] = useState([]);
-  const [showFormModal, setShowFormModal] = useState(false);
+  const [showFormModal, setShowFormModal, ] = useState(false);
+const [showModal, setShowModal] = useState(false); // for DeleteModal
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [itemToDelete, setItemToDelete] = useState(null);
+
 
   useEffect(() => {
     setData([
@@ -143,11 +142,17 @@ export default function IncidentNotifyInterface() {
   };
 
   const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
-  const handleDelete = (id) => {
+ {/* const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this inspection?")) {
       setData((prev) => prev.filter((entry) => entry.id !== id));
     }
-  };
+  };*/}
+
+  const handleDelete = (id) => {
+  setItemToDelete(id);
+  setShowModal(true);
+};
+
 
   const closeFormModal = () => {
     setShowFormModal(false);
@@ -267,12 +272,28 @@ export default function IncidentNotifyInterface() {
         </table>
       </div>
       {showFormModal && activeInspectionId !== null && (
-      {/*  <IncidentNotifyFormModal
+        <NotificationFormModal
           isOpen={showFormModal}
           onClose={closeFormModal}
           inspectionId={activeInspectionId}
-        />*/}
+        />
       )}
+
+      <DeleteModal
+  isOpen={showModal}
+  onCancel={() => {
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+  onConfirm={() => {
+    setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+/>
+
+
+
     </div>
   );
 }

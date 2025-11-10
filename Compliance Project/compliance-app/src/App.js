@@ -38,6 +38,7 @@ import RiskInterface from './components/HazardRiskManagement/RiskAssessment/Risk
 import IncidentNotifyInterface from './Forms-interface/IncidentNotifyInterface';
 import WitnessStateInterface from './Forms-interface/WitnessStateInterface';
 import IncidentInvestigationInterface from './Forms-interface/IncidentInvestigationInterface';
+import IncidentNotificationDelete from './components/Execute/IncidentNotificationDelete';
 
 
 
@@ -195,6 +196,16 @@ export default function App() {
     </Layout>
   }
 />
+        <Route
+  path="/dashboard/incidentform/:id"
+  element={
+    <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+      <IncidentNotificationDelete/>
+    </Layout>
+  }
+/>
+
+
 
 
 

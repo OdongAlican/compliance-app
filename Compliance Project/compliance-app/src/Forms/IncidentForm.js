@@ -177,12 +177,12 @@ export default function IncidentFormModal({ isOpen, onClose, inspectionId }) {
         {/* Section Content */}
         {currentSection === 0 && (
           <div className="grid grid-cols-2 gap-4 mb-6">
-                <input placeholder="Tank Location" className="border p-2 rounded" />
-                <input placeholder="Tank id/number" className="border p-2 rounded" />
-                <input placeholder="Enter fuel type" className="border p-2 rounded" />
-                <input placeholder="Inspection date" className="border p-2 rounded" />
-                <input placeholder="Inspected by" className="border p-2 rounded" />
-                <input placeholder="Signature" className="border p-2 rounded" />
+                <input placeholder="Tank Location" className="border p-2 rounded bg-gray-100" />
+                <input placeholder="Tank id/number" className="border p-2 rounded bg-gray-100" />
+                <input placeholder="Enter fuel type" className="border p-2 rounded bg-gray-100" />
+                <input placeholder="Inspection date" className="border p-2 rounded bg-gray-100" />
+                <input placeholder="Inspected by" className="border p-2 rounded bg-gray-100" />
+                <input placeholder="Signature" className="border p-2 rounded bg-gray-100" />
           </div>
         )}
         {currentSection === 1 && (
@@ -235,7 +235,7 @@ export default function IncidentFormModal({ isOpen, onClose, inspectionId }) {
           </IncidentForm>
         )}
         {currentSection === 2 && (
-          <FuelStorageForm value="issues">
+          <IncidentForm value="issues">
             <AccordianItem value="issues" trigger="Issues & Action Plan">
               <div className="space-y-2">
                 <button
@@ -293,7 +293,7 @@ export default function IncidentFormModal({ isOpen, onClose, inspectionId }) {
                 ))}
               </div>
             </AccordianItem>
-          </FuelStorageForm>
+          </IncidentForm>
         )}
 
          {currentSection === 3 && (
