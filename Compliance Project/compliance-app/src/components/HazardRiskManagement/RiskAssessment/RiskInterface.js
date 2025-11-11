@@ -4,6 +4,7 @@ import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../CreateInspectionModal";
 import RiskFormModal from "../../HazardRiskManagement/RiskAssessment/RiskForm";
 import HazardReportExecute from "../../Execute/HazardReportExecute";
+import DeleteModal from "../../Execute/IncidentNotificationDelete";
 
 
 function ActionMenu({
@@ -13,6 +14,7 @@ function ActionMenu({
   onDelete,
   setShowCreateModal,
   setCreateModalSection,
+
 }) {
   const [open, setOpen] = useState(false);
 
@@ -101,6 +103,7 @@ export default function RiskInterface() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
@@ -108,6 +111,8 @@ export default function RiskInterface() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showReportExecute, setShowReportExecute] = useState(false);
     const [reportToView, setReportToView] = useState(null);
+      const [showModal, setShowModal] = useState(false); // for DeleteModal
+    
 
   useEffect(() => {
     setData([
@@ -142,12 +147,10 @@ export default function RiskInterface() {
   };
 
    const handleEdit = (id) => navigate(`/hazard/report/${id}`);
+     const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this inspection?")) {
-      setData((prev) => prev.filter((entry) => entry.id !== id));
-    }
-  };
+
+
 
   const closeFormModal = () => {
     setShowFormModal(false);
@@ -298,6 +301,19 @@ export default function RiskInterface() {
   isOpen={showCreateModal}
   onClose={() => setShowCreateModal(false)}
   startSection={createModalSection}
+/>
+
+<DeleteModal
+isOpen={showModal}
+onCancel={() => {
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+  onConfirm={() => {
+    setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
 />
 </div>
 );

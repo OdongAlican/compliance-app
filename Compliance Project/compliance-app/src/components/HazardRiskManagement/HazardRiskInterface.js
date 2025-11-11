@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import HazardRiskFormModal from "../Dashboard/HazardForm";
 import CreateInspectionModal from "../../Forms/CreateInspectionModal";
+import DeleteModal from "../Execute/IncidentNotificationDelete";
 
 
 
@@ -91,11 +92,13 @@ export default function HazardInterface() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false); // for DeleteModal
 
   useEffect(() => {
     setData([
@@ -130,11 +133,10 @@ export default function HazardInterface() {
   };
 
   const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this inspection?")) {
-      setData((prev) => prev.filter((entry) => entry.id !== id));
-    }
-  };
+  const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
+
+
+
 
   const closeFormModal = () => {
     setShowFormModal(false);
@@ -306,6 +308,20 @@ export default function HazardInterface() {
   onClose={() => setShowCreateModal(false)}
   startSection={createModalSection}
 />
+
+            <DeleteModal
+  isOpen={showModal}
+  onCancel={() => {
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+  onConfirm={() => {
+    setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+/>
+
 </div>
 );
 }

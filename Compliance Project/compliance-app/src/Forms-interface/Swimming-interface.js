@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
 import SwimmingPoolFormModal from "../Forms/SwimmingPoolForm";
+import DeleteModal from "../components/Execute/IncidentNotificationDelete";
 
 
 function ActionMenu({
@@ -104,6 +105,8 @@ export default function SwimmingInterface() {
   const [createModalSection, setCreateModalSection] = useState(0);
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false); // for DeleteModal
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   useEffect(() => {
     setData([
@@ -136,11 +139,7 @@ export default function SwimmingInterface() {
   };
 
   const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this inspection?")) {
-      setData((prev) => prev.filter((entry) => entry.id !== id));
-    }
-  };
+  const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
 
   const closeFormModal = () => {
     setShowFormModal(false);
@@ -274,6 +273,19 @@ export default function SwimmingInterface() {
           inspectionId={activeInspectionId}
         />
       )}
+
+            <DeleteModal
+      isOpen={showModal}
+onCancel={() => {
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+  onConfirm={() => {
+    setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+    setShowModal(false);
+    setItemToDelete(null);
+  }}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/20/solid';
 import CanteenFormModal from '../Forms/CanteenForm';
 import CreateInspectionModal from '../Forms/CreateInspectionModal';
+import DeleteModal from '../../src/components/Execute/IncidentNotificationDelete';
 
 // Action menu for each row
 function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModal, setCreateModalSection }) {
@@ -76,6 +77,8 @@ export default function CanteenInterface() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0); // 0 = first section
   const [activeTab, setActiveTab] = useState('All');
+  const [showModal, setShowModal] = useState(false); // for DeleteModal
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   useEffect(() => {
     const mockData = [
@@ -102,11 +105,7 @@ export default function CanteenInterface() {
     alert(`Edit/View inspection with ID: ${id}`);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this inspection?')) {
-      setData((prev) => prev.filter((entry) => entry.id !== id));
-    }
-  };
+const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
 
   const statusColors = {
     Pending: 'text-red-600 bg-red-100',
@@ -231,6 +230,20 @@ export default function CanteenInterface() {
 
       {/* Modal Form from CanteenForm.js */}
       <CanteenFormModal isOpen={showFormModal} onClose={() => setShowFormModal(false)} />
+        <DeleteModal
+        isOpen={showModal}
+        onCancel={() => {
+            setShowModal(false);
+            setItemToDelete(null);
+          }}
+          onConfirm={() => {
+            setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+            setShowModal(false);
+            setItemToDelete(null);
+          }}
+        />
+
+
     </div>
   );
 }

@@ -3,8 +3,6 @@ import './index.css';
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route,useParams } from 'react-router-dom';
 import HazardReportExecute from './components/Execute/HazardReportExecute';
-
-
 import { Sidebar } from './components/Sidebar';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home/Home';
@@ -18,7 +16,6 @@ import InspectionForm from './components/Dashboard/InspectionDashboard';
 import HealthAndSafetyForm from './components/Dashboard/HealthAndSafety';
 import LogIn from './components/Pages/LogIn';
 import Capa from './components/Dashboard/Capa';
-
 // Forms & Interfaces
 import VehicleInspectionDashboard from './Forms-interface/vehicle-interface';
 import CanteenInterface from './Forms-interface/CanteenInterface';
@@ -27,11 +24,6 @@ import ToolInterface from './Forms-interface/Tool-interface';
 import PPEInterface from './Forms-interface/PPE-interface';
 import ScienceLabInterface from './Forms-interface/Sciencelab-interface';
 import SwimmingPoolInterface from './Forms-interface/Swimming-interface';
-
-// Hazard / Risk
-{/*import HazardDashboard from './components/Dashboard/HazardDashboard';*/}
-{/*import HazardRiskFormModal from './components/HazardRiskManagement/HazardRiskFormModal';*/}
-
 import HazardRiskInterface from './components/HazardRiskManagement/HazardRiskInterface';
 import HazardInterface from './components/HazardRiskManagement/Hazard/HazardInterface';
 import RiskInterface from './components/HazardRiskManagement/RiskAssessment/RiskInterface';
@@ -39,6 +31,8 @@ import IncidentNotifyInterface from './Forms-interface/IncidentNotifyInterface';
 import WitnessStateInterface from './Forms-interface/WitnessStateInterface';
 import IncidentInvestigationInterface from './Forms-interface/IncidentInvestigationInterface';
 import IncidentNotificationDelete from './components/Execute/IncidentNotificationDelete';
+
+
 
 
 
