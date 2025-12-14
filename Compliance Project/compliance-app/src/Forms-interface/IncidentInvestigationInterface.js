@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
 import IncidentInvestigationFormModal from "../Forms/IncidentInvestigationForm";
-import DeleteModal from "../components/Execute/IncidentNotificationDelete";
+import DeleteModal from "../components/Execute/Delete";
+import IncidentInvestExecute from "../components/Execute/IncidentInvestExecute";
 
 
 
@@ -117,6 +118,8 @@ export default function IncidentNotifyInterface() {
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showReportExecute, setShowReportExecute] = useState(false);
+  const [reportToView, setReportToView] = useState(null);
 
   useEffect(() => {
     setData([
@@ -146,8 +149,9 @@ export default function IncidentNotifyInterface() {
     setShowFormModal(true);
   };
 
-  const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
  const handleDelete = (id) => { setItemToDelete(id);setShowModal(true);};
+  const handleEdit = (id) => {setReportToView(id);setShowReportExecute(true);};
+
 
 
 
@@ -275,6 +279,16 @@ export default function IncidentNotifyInterface() {
           inspectionId={activeInspectionId}
         />
       )}
+
+            {showReportExecute && reportToView && (
+  <IncidentInvestExecute
+    reportId={reportToView}
+    onClose={() => {
+      setShowReportExecute(false);
+      setReportToView(null);
+    }}
+  />
+)}
 
             <DeleteModal
   isOpen={showModal}

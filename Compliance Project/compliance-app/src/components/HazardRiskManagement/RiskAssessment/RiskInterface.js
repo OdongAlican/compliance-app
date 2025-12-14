@@ -4,7 +4,8 @@ import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../CreateInspectionModal";
 import RiskFormModal from "../../HazardRiskManagement/RiskAssessment/RiskForm";
 import HazardReportExecute from "../../Execute/HazardReportExecute";
-import DeleteModal from "../../Execute/IncidentNotificationDelete";
+import DeleteModal from "../../Execute/Delete";
+import RiskAssessExecute from "../../Execute/RiskAssesExecute";
 
 
 function ActionMenu({
@@ -14,6 +15,8 @@ function ActionMenu({
   onDelete,
   setShowCreateModal,
   setCreateModalSection,
+  setReportToView,
+  setShowReportExecute,
 
 }) {
   const [open, setOpen] = useState(false);
@@ -72,16 +75,18 @@ function ActionMenu({
             Assign Supervisor
           </button>
           <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onEdit?.(id);
-              setOpen(false);
-            }}
+          onClick={() => {
+    setReportToView(id);
+    setShowReportExecute(true);
+    setOpen(false);
+  }}
+
             className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
           >
-            View
+            View Assessment
           </button>
+
+
           <button
             type="button"
             role="menuitem"
@@ -146,8 +151,10 @@ export default function RiskInterface() {
     setShowFormModal(true);
   };
 
-   const handleEdit = (id) => navigate(`/hazard/report/${id}`);
+   {/*const handleEdit = (id) => navigate(`/hazard/report/${id}`);*/}
      const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
+     const handleEdit = (id) => { setReportToView(id); setShowReportExecute(true);};
+
 
 
 
@@ -273,6 +280,8 @@ export default function RiskInterface() {
     onDelete={handleDelete}
     setShowCreateModal={setShowCreateModal}
     setCreateModalSection={setCreateModalSection}
+    setReportToView={setReportToView}
+    setShowReportExecute={setShowReportExecute}
   />
 </td>
 </tr>
@@ -291,7 +300,7 @@ export default function RiskInterface() {
 
       {/* inline report view modal/pane */}
       {showReportExecute && reportToView && (
-       <HazardReportExecute
+       <RiskAssessExecute
           reportId={reportToView}
           onClose={() => { setShowReportExecute(false); setReportToView(null); }}
         />

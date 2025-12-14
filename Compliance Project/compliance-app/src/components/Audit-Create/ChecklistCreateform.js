@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 
 const AccordianContext = React.createContext();
 
-function RiskForm({ children, value, onChange, ...props }) {
+function ChecklistForm({ children, value, onChange, ...props }) {
   const [selected, setSelected] = useState(value);
   useEffect(() => {
     onChange?.(selected);
@@ -42,47 +42,10 @@ function AccordianItem({ children, value, trigger, ...props }) {
   );
 }
 
-function ChecklistSection({ items }) {
-  return (
-    <table className="w-full border border-gray-300 table-auto border-collapse">
-      <thead className="bg-gray-100">
-        <tr>
-          <th className="px-4 py-2 text-left border border-gray-300">Item</th>
-          <th className="px-4 py-2 text-center border border-gray-300">√ / ⤫ / N/A</th>
-          <th className="px-4 py-2 text-left border border-gray-300">Comments</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-        {items.map((item, i) => (
-          <tr key={i}>
-            <td className="px-4 py-2 border border-gray-300">{item}</td>
-            <td className="px-4 py-2 text-center">
-              <select className="border rounded px-2 py-1">
-                <option value="√">√</option>
-                <option value="⤫">⤫</option>
-                <option value="N/A">N/A</option>
-              </select>
-            </td>
-            <td className="px-4 py-2">
-              <input
-                type="text"
-                placeholder="Enter comment"
-                className="w-full border rounded px-2 py-1"
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 const sections = [
   "General Information",
-  "Upload Documents",
-  "SignOff",
-  
-
+  "Auditors",
 ];
 
 export default function RiskFormModal({
@@ -92,15 +55,7 @@ export default function RiskFormModal({
 }) {
   const [currentSection, setCurrentSection] = useState(startSection);
   const [issues, setIssues] = useState([{ issue: "", action: "", person: "", date: "" }]);
-  const [formData, setFormData] = useState({
-    date: "",
-    name: "",
-    location: "",
-    hazard: "",
-    hurt: "",
-    hurtDetails: "",
-    actionTaken: ""
-  });
+ 
 
   useEffect(() => {
     if (isOpen) setCurrentSection(startSection ?? 0);
@@ -158,67 +113,31 @@ export default function RiskFormModal({
 
         <h2 className="text-xl font-semibold mb-4">SECTION {currentSection + 1}: {sections[currentSection]}</h2>
 
-
-
         {currentSection === 0 && (
-          <RiskForm value="hazard">
+          <ChecklistForm value="hazard">
             <div className="space-y-6">
               
           <div className="grid grid-cols-1 gap-4 mb-6">
-            <input placeholder="Hazard Description" className="border p-2 rounded" />
-            <input placeholder="People At Risk" className="border p-2 rounded" />
+            <input placeholder="Auditors Number" className="border p-2 rounded" />
+            <input placeholder="Area Audited" className="border p-2 rounded" />
             <input type="date" className="border p-2 rounded" />
-
           </div>
-        
             </div>
-          </RiskForm>
+          </ChecklistForm>
         )}
-
-
 
         {currentSection === 1 && (
-               <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">Upload Before Image/Document</label>
-        <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
-          <svg className="w-8 h-8 text-blue-400 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 12l8-8 8 8M12 4v12" />
-          </svg>
-          <span>Drag and drop your file or</span>
-          <button className="mt-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Browse File</button>
-        </div>
-
-         <label className="block text-sm font-medium text-gray-600 mb-1">Proof of Completion</label>
-        <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
-          <svg className="w-8 h-8 text-blue-400 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 12l8-8 8 8M12 4v12" />
-          </svg>
-          <span>Drag and drop your file or</span>
-          <button className="mt-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Browse File</button>
-        </div>
-      </div>
-
-        )}
-
-
-         {currentSection === 2 && (
-          <RiskForm value="hazard">
-            <div className="space-y-6">
-
-              <input placeholder="Name" className="border p-2 rounded" />
-            <input type="date" className="border p-2 rounded" />
-               <label className="block">
-              <span className="text-gray-700">Note</span>
-              <textarea name="actionTaken" value={formData.actionTaken} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2" rows={4} />
-            </label>
-              
-
-        
-            </div>
-          </RiskForm>
-        )}
-
-
+            <section>
+              <h3 className="font-medium mb-2">Assign Auditors</h3>
+              <div className="space-y-3">
+                <input className="border rounded px-3 py-2" placeholder="Search / Select supervisor" />
+                <select className="border rounded px-3 py-2 w-full">
+                  <option value="">-- Select Supervisor --</option>
+                </select>
+                <p className="text-xs text-gray-500">Select a auditor for this inspection.</p>
+              </div>
+            </section>
+          )}
 
         <div className="flex justify-between mt-6">
           <button onClick={prevSection} disabled={currentSection === 0} className={`px-4 py-2 rounded ${currentSection === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 text-white"}`}>
@@ -233,8 +152,6 @@ export default function RiskFormModal({
     </div>
   );
 }
-
-
 
 
 

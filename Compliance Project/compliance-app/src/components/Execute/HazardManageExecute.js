@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function HazardReportExecute({ reportId, report: initialReport, onClose }) {
+export default function HazardManageExecute({ reportId, report: initialReport, onClose }) {
   const navigate = useNavigate();
   const [report, setReport] = useState(initialReport ?? null);
   const [loading, setLoading] = useState(!initialReport);
@@ -97,7 +97,7 @@ export default function HazardReportExecute({ reportId, report: initialReport, o
             <div className="text-center py-8 text-red-600">Report not found.</div>
           ) : (
             <>
-              <h2 className="text-xl font-semibold mb-2">Hazard Report: {report.reportId}</h2>
+              <h2 className="text-xl font-semibold mb-2">Hazard Management: {report.reportId}</h2>
               <p className="text-sm text-gray-500 mb-4">Assessment: {report.assessmentId}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

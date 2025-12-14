@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
-import HazardRiskFormModal from "../Dashboard/HazardForm";
-import CreateInspectionModal from "../../Forms/CreateInspectionModal";
-import DeleteModal from "../Execute/Delete";
-import HazardManageExecute from "../Execute/HazardManageExecute";
+import DeleteModal from "../components/Execute/Delete";
+import WorkPlaceExecuteModal from "../components/Auditors-View/WorkPlaceExecute";
+import CorrectiveActionFormModal from "../components/Action/CorrectiveActionForm";
+import WorkPlaceFormModal from "../Forms/WorkPlaceForm";
+import WorkPlaceCreateInspectionModal from "../components/Audit-Create/WorkPlaceCreateform";
+import SetPriorityModal from "../components/Auditors-View/SetPriorityform";
 
 
 
@@ -15,6 +17,9 @@ function ActionMenu({
   onDelete,
   setShowCreateModal,
   setCreateModalSection,
+  setPriorityModalId,
+  setShowPriorityModal,
+  onAddCorrective,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -36,7 +41,17 @@ function ActionMenu({
           aria-label={`Actions for row ${id}`}
           className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50"
         >
-
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onStartInspection(id);
+              setOpen(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+          >
+            Start Inspection
+          </button>
           <button
             type="button"
             role="menuitem"
@@ -47,19 +62,7 @@ function ActionMenu({
             }}
             className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
           >
-            Assign Safety Officer
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setCreateModalSection(2);
-              setShowCreateModal(true);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
-          >
-            Assign Supervisor
+            Assign Auditors
           </button>
           <button
             type="button"
@@ -71,6 +74,29 @@ function ActionMenu({
             className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
           >
             View
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onAddCorrective?.(id);
+              setOpen(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-gray-100"
+          >
+            Add Corrective Actions
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+           onClick={() => {
+              setPriorityModalId(id);
+              setShowPriorityModal(true);
+              setOpen(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
+          >
+            Set Priority
           </button>
           <button
             type="button"
@@ -89,7 +115,7 @@ function ActionMenu({
   );
 }
 
-export default function HazardInterface() {
+export default function WorkPlaceInterface() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -97,11 +123,15 @@ export default function HazardInterface() {
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
+  const [showPriorityModal, setShowPriorityModal] = useState(false);
+  const [priorityModalId, setPriorityModalId] = useState(null);
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false); // for DeleteModal
+  const [showModal, setShowModal] = useState(false);
   const [showReportExecute, setShowReportExecute] = useState(false);
   const [reportToView, setReportToView] = useState(null);
+  const [showCorrectiveForm, setShowCorrectiveForm] = useState(false);
+  const [correctiveInspection, setCorrectiveInspection] = useState(null);
 
   useEffect(() => {
     setData([
@@ -109,23 +139,21 @@ export default function HazardInterface() {
         id: 1,
         reportId: "RPT-001",
         assessmentId: "ASM-001",
-        activity: "Chemical Mixing",
         date: "2025-08-30",
-        safetyofficer: "Alice",
-        supervisor: "John",
-        location: "Building A",
+        area: "Warehouse Safety",
+        auditors: "Alice",
         status: "Pending",
+        issues: [],
       },
       {
         id: 2,
         reportId: "RPT-002",
         assessmentId: "ASM-002",
-        activity: "Electrical Maintenance",
         date: "2025-08-28",
-        safetyofficer: "Bob",
-        supervisor: "Jane",
-        location: "Warehouse",
+        area: "Forklift Operation",
+        auditors: "Bob",
         status: "In Progress",
+        issues: [],
       },
     ]);
   }, []);
@@ -135,11 +163,33 @@ export default function HazardInterface() {
     setShowFormModal(true);
   };
 
-  const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
-  const handleEdit = (id) => {setReportToView(id); setShowReportExecute(true);};
+  const handleDelete = (id) => {
+    setItemToDelete(id);
+    setShowModal(true);
+  };
 
+  const handleEdit = (id) => {
+    setReportToView(id);
+    setShowReportExecute(true);
+  };
 
+  const handleAddCorrective = (id) => {
+    const inspection = data.find((d) => d.id === id);
+    if (inspection) {
+      setCorrectiveInspection(inspection);
+      setShowCorrectiveForm(true);
+    }
+  };
 
+   const handleSaveCorrective = (newIssue) => {
+    setData((prev) =>
+      prev.map((entry) =>
+        entry.id === correctiveInspection.id
+          ? { ...entry, issues: [...(entry.issues || []), newIssue] }
+          : entry
+      )
+    );
+  };
 
   const closeFormModal = () => {
     setShowFormModal(false);
@@ -159,10 +209,9 @@ export default function HazardInterface() {
     const haystack = [
       entry.reportId,
       entry.assessmentId,
-      entry.activity,
-      entry.location,
-      entry.safetyofficer,
-      entry.supervisor,
+      entry.date,
+      entry.area,
+      entry.auditors,
     ]
       .filter(Boolean)
       .join(" ")
@@ -174,7 +223,7 @@ export default function HazardInterface() {
   return (
     <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Hazard Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Work Place</h1>
         <button
           onClick={() => {
             setCreateModalSection(0);
@@ -186,32 +235,20 @@ export default function HazardInterface() {
         </button>
       </div>
 
+            <WorkPlaceCreateInspectionModal
+                      isOpen={showCreateModal}
+                      onClose={() => setShowCreateModal(false)}
+                      startSection={createModalSection}
+                    />
 
-                  {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div
-          onClick={() => navigate('/dashboard/hazardform')}
-          className="cursor-pointer bg-white shadow rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition"
-        >
-          <div>
-            <div className="text-red-600 text-3xl mb-2">⚠️</div>
-            <h2 className="text-lg font-semibold text-gray-800">Hazard Report</h2>
-          </div>
-          <div className="text-gray-400 text-xl">→</div>
-        </div>
-
-        <div
-          onClick={() => navigate('/form/risk')}
-          className="cursor-pointer bg-white shadow rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition"
-        >
-          <div>
-            <div className="text-yellow-500 text-3xl mb-2">✅</div>
-            <h2 className="text-lg font-semibold text-gray-800">Risk Assessment</h2>
-          </div>
-          <div className="text-gray-400 text-xl">→</div>
-        </div>
-      </div>
-
+                     <SetPriorityModal
+                           isOpen={showPriorityModal}
+                           onClose={() => {
+                             setShowPriorityModal(false);
+                             setPriorityModalId(null);
+                           }}
+                           inspectionId={priorityModalId}
+                         />
 
       {/* Status Tabs */}
       <div className="flex space-x-4 mb-6" role="tablist">
@@ -243,7 +280,6 @@ export default function HazardInterface() {
         />
       </div>
 
-
       {/* Table */}
       <div className="bg-white shadow rounded-lg p-4">
         <table className="w-full table-auto border border-gray-200">
@@ -252,15 +288,16 @@ export default function HazardInterface() {
               {[
                 "Report ID",
                 "Assessment ID",
-                "Activity",
                 "Date",
-                "Safety Officer",
-                "Supervisors",
-                "Location",
+                "Area",
+                "Auditors",
                 "Status",
                 "Action",
               ].map((header) => (
-                <th key={header} className="border px-4 py-2 text-left text-sm font-medium text-gray-700">
+                <th
+                  key={header}
+                  className="border px-4 py-2 text-left text-sm font-medium text-gray-700"
+                >
                   {header}
                 </th>
               ))}
@@ -271,74 +308,80 @@ export default function HazardInterface() {
               <tr key={entry.id} className="hover:bg-gray-50">
                 <td className="border px-4 py-2 text-sm">{entry.reportId}</td>
                 <td className="border px-4 py-2 text-sm">{entry.assessmentId}</td>
-                <td className="border px-4 py-2 text-sm">{entry.activity}</td>
                 <td className="border px-4 py-2 text-sm">{entry.date}</td>
-                <td className="border px-4 py-2 text-sm">{entry.safetyofficer}</td>
-                <td className="border px-4 py-2 text-sm">{entry.supervisor}</td>
-                <td className="border px-4 py-2 text-sm">{entry.location}</td>
-
+                <td className="border px-4 py-2 text-sm">{entry.area}</td>
+                <td className="border px-4 py-2 text-sm">{entry.auditors}</td>
                 <td className="border px-4 py-2 text-sm">
-  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status]}`}>
-    {entry.status}
-  </span>
-</td>
-<td className="border px-4 py-2 text-sm">
-  <ActionMenu
-    id={entry.id}
-    onStartInspection={handleStartInspection}
-    onEdit={handleEdit}
-    onDelete={handleDelete}
-    setShowCreateModal={setShowCreateModal}
-    setCreateModalSection={setCreateModalSection}
-  />
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status]}`}
+                  >
+                    {entry.status}
+                  </span>
+                </td>
+                <td className="border px-4 py-2 text-sm">
+                  <ActionMenu
+                    id={entry.id}
+                    onStartInspection={handleStartInspection}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    setShowCreateModal={setShowCreateModal}
+                    setPriorityModalId={setPriorityModalId}
+                    setShowPriorityModal={setShowPriorityModal}
+                    setCreateModalSection={setCreateModalSection}
+                    onAddCorrective={handleAddCorrective}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-{showFormModal && activeInspectionId !== null && (
-  <HazardRiskFormModal
-    isOpen={showFormModal}
-    onClose={closeFormModal}
-    inspectionId={activeInspectionId}
-  />
-)}
-
-            {showReportExecute && reportToView && (
-        <HazardManageExecute
-          reportId={reportToView}
+      {/* Corrective Action Modal */}
+      {showCorrectiveForm && correctiveInspection && (
+        <CorrectiveActionFormModal
+          inspection={correctiveInspection}
           onClose={() => {
-            setShowReportExecute(false);
-            setReportToView(null);
+            setShowCorrectiveForm(false);
+            setCorrectiveInspection(null);
           }}
+          onSave={handleSaveCorrective}
         />
       )}
 
 
+      {showFormModal && activeInspectionId !== null && (
+        <WorkPlaceFormModal
+          isOpen={showFormModal}
+          onClose={closeFormModal}
+          inspectionId={activeInspectionId}
+        />
+      )}
 
-<CreateInspectionModal
-  isOpen={showCreateModal}
-  onClose={() => setShowCreateModal(false)}
-  startSection={createModalSection}
-/>
+              {showReportExecute && reportToView && (
+              <WorkPlaceExecuteModal
+                inspection={reportToView}
+                onClose={() => {
+                  setShowReportExecute(false);
+                  setReportToView(null);
+                }}
+              />
+            )}
+      
 
-            <DeleteModal
-  isOpen={showModal}
-  onCancel={() => {
-    setShowModal(false);
-    setItemToDelete(null);
-  }}
-  onConfirm={() => {
-    setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
-    setShowModal(false);
-    setItemToDelete(null);
-  }}
-/>
-
-</div>
-);
+      {/* Delete Modal */}
+      <DeleteModal
+        isOpen={showModal}
+        onCancel={() => {
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => {
+          setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+      />
+    </div>
+  );
 }
-
-                  

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
 import WitnessFormModal from "../Forms/WitnessForm";
-import DeleteModal from "../components/Execute/IncidentNotificationDelete";
+import DeleteModal from "../components/Execute/Delete";
+import WitnessExecute from "../components/Execute/WitnessExecute";
 
 
 
@@ -117,6 +118,8 @@ export default function WitnessStateInterface() {
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemToDelete, setItemToDelete] = useState(null);
+    const [showReportExecute, setShowReportExecute] = useState(false); //for Edit/view modal
+  const [reportToView, setReportToView] = useState(null);
 
   useEffect(() => {
     setData([
@@ -146,8 +149,8 @@ export default function WitnessStateInterface() {
     setShowFormModal(true);
   };
 
-  const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
     const handleDelete = (id) => { setItemToDelete(id);setShowModal(true);};
+  const handleEdit = (id) => {setReportToView(id);setShowReportExecute(true);};
 
 
 
@@ -273,6 +276,16 @@ export default function WitnessStateInterface() {
           isOpen={showFormModal}
           onClose={closeFormModal}
           inspectionId={activeInspectionId}
+        />
+      )}
+
+            {showReportExecute && reportToView && (
+        <WitnessExecute
+          reportId={reportToView}
+          onClose={() => {
+            setShowReportExecute(false);
+            setReportToView(null);
+          }}
         />
       )}
 

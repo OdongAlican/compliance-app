@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
 import FuelStorageFormModal from "../Forms/FuelStorageForm";
-import DeleteModal from "../components/Execute/IncidentNotificationDelete";
+import DeleteModal from "../components/Execute/Delete";
+import FuelExecute from "../components/Execute/FuelExecute";
 
 function ActionMenu({
   id,
@@ -106,6 +107,8 @@ export default function FuelInterface() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false); // for DeleteModal
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showReportExecute, setShowReportExecute] = useState(false);
+  const [reportToView, setReportToView] = useState(null);
 
   useEffect(() => {
     setData([
@@ -137,8 +140,11 @@ export default function FuelInterface() {
     setShowFormModal(true);
   };
 
-  const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
   const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
+  const handleEdit = (inspection) => { setReportToView(inspection); setShowReportExecute(true);}
+ 
+
+
 
   const closeFormModal = () => {
     setShowFormModal(false);
@@ -272,6 +278,19 @@ export default function FuelInterface() {
           inspectionId={activeInspectionId}
         />
       )}
+
+{showReportExecute && reportToView && (
+  <FuelExecute
+    inspection={reportToView}   // full object
+    onClose={() => {
+      setShowReportExecute(false);
+      setReportToView(null);
+    }}
+  />
+)}
+
+
+
 
       <DeleteModal
         isOpen={showModal}

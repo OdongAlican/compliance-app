@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../HazardRiskManagement/CreateInspectionModal";
 import IncidentFormModal from "../../Forms/IncidentForm";
-import DeleteModal from "../Execute/IncidentNotificationDelete";
+import DeleteModal from "../Execute/Delete";
+import IncidentExecute from "../Execute/IncidentExecute";
 
 function ActionMenu({
   id,
@@ -33,18 +34,7 @@ function ActionMenu({
           aria-label={`Actions for row ${id}`}
           className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50"
         >
-         {/* <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onStartInspection(id);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
-            aria-label={`Start inspection for ID ${id}`}
-          >
-            Start Inspection
-          </button>*/}
+
           <button
             type="button"
             role="menuitem"
@@ -108,6 +98,8 @@ export default function IncidentInterface() {
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showReportExecute, setShowReportExecute] = useState(false);
+  const [reportToView, setReportToView] = useState(null);
 
   useEffect(() => {
     setData([
@@ -137,8 +129,8 @@ export default function IncidentInterface() {
     setShowFormModal(true);
   };
 
-  const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
    const handleDelete = (id) => { setItemToDelete(id);setShowModal(true);};
+  const handleEdit = (id) => {setReportToView(id);setShowReportExecute(true);};
 
   
 
@@ -296,7 +288,17 @@ export default function IncidentInterface() {
         />
       )}
 
-                  <DeleteModal
+        {showReportExecute && reportToView && (
+        <IncidentExecute
+          reportId={reportToView}
+          onClose={() => {
+            setShowReportExecute(false);
+            setReportToView(null);
+          }}
+        />
+      )}
+
+   <DeleteModal
   isOpen={showModal}
   onCancel={() => {
     setShowModal(false);

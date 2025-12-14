@@ -30,7 +30,17 @@ import RiskInterface from './components/HazardRiskManagement/RiskAssessment/Risk
 import IncidentNotifyInterface from './Forms-interface/IncidentNotifyInterface';
 import WitnessStateInterface from './Forms-interface/WitnessStateInterface';
 import IncidentInvestigationInterface from './Forms-interface/IncidentInvestigationInterface';
-import IncidentNotificationDelete from './components/Execute/IncidentNotificationDelete';
+import IncidentNotificationDelete from './components/Execute/Delete';
+import Dashboard from './components/Dashboard';
+import ChecklistInterface from './Forms-interface/ChecklistInterface';
+import WorkPlaceInterface from './Forms-interface/WorkPlaceInterface';
+import EmergencyInterface from './Forms-interface/EmergencyInterface';
+import CapaInterface from './Forms-interface/CapaInterface';
+import RecentAuditInterface from './Forms-interface/RecentAuditInterface';
+import PPECompInterface from './Forms-interface/PPECompInterface';
+import ManagementInterface from './Forms-interface/ManagementInterface';
+import UserManagement from './components/Users/UserManagement';
+
 
 
 
@@ -63,9 +73,10 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <div className="flex">
-              <Sidebar sidebarToggle={sidebarToggle} />
-            </div>
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <Dashboard />
+              </Layout>
+            
           }
         />
 
@@ -88,6 +99,16 @@ export default function App() {
             </Layout>
           }
         />
+
+          <Route
+          path="/user-management"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <UserManagement/>
+            </Layout>
+          }
+        />
+
 
 
 
@@ -267,7 +288,73 @@ export default function App() {
           }
         />
 
-        {/* Risk form route (fixed) */}
+        {/* Auditors */}
+        <Route
+          path="/form/checklist"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <ChecklistInterface/>
+            </Layout>
+          }
+        />
+
+                <Route
+          path="/form/workplace"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <WorkPlaceInterface/>
+            </Layout>
+          }
+        />
+           <Route
+          path="/form/emergency"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <EmergencyInterface/>
+            </Layout>
+          }
+        />
+
+             <Route
+          path="/form/capa"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <CapaInterface/>
+            </Layout>
+          }
+        />
+
+
+
+
+              <Route
+          path="/form/audit"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <RecentAuditInterface/>
+            </Layout>
+          }
+        />
+
+         <Route
+          path="/form/ppe-com"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <PPECompInterface/>
+            </Layout>
+          }
+        />
+
+                 <Route
+          path="/form/management"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <ManagementInterface/>
+            </Layout>
+          }
+        />
+
+
       
 
         {/* Direct interface routes (developer/debug) */}

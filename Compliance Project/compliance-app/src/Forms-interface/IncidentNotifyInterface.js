@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
 import NotificationFormModal from "../Forms/NotificationForm";
-import DeleteModal from "../components/Execute/IncidentNotificationDelete";
+import DeleteModal from "../components/Execute/Delete";
+import IncidentNotifyExecute from "../components/Execute/IncidentNotifyExecute";
 
 
 
@@ -111,6 +112,9 @@ const [showModal, setShowModal] = useState(false); // for DeleteModal
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemToDelete, setItemToDelete] = useState(null);
+    const [showReportExecute, setShowReportExecute] = useState(false); //for Edit/view modal
+  const [reportToView, setReportToView] = useState(null);
+
 
 
   useEffect(() => {
@@ -141,17 +145,9 @@ const [showModal, setShowModal] = useState(false); // for DeleteModal
     setShowFormModal(true);
   };
 
-  const handleEdit = (id) => alert(`Edit/View inspection with ID: ${id}`);
- {/* const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this inspection?")) {
-      setData((prev) => prev.filter((entry) => entry.id !== id));
-    }
-  };*/}
+const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
+const handleEdit = (id) => {setReportToView(id);setShowReportExecute(true);};
 
-  const handleDelete = (id) => {
-  setItemToDelete(id);
-  setShowModal(true);
-};
 
 
   const closeFormModal = () => {
@@ -278,6 +274,16 @@ const [showModal, setShowModal] = useState(false); // for DeleteModal
           inspectionId={activeInspectionId}
         />
       )}
+
+      {showReportExecute && reportToView && (
+  <IncidentNotifyExecute
+    reportId={reportToView}
+    onClose={() => {
+      setShowReportExecute(false);
+      setReportToView(null);
+    }}
+  />
+)}
 
       <DeleteModal
   isOpen={showModal}

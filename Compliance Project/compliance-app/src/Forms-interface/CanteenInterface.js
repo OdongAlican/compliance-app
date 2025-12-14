@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { EllipsisVerticalIcon } from '@heroicons/react/20/solid';
 import CanteenFormModal from '../Forms/CanteenForm';
 import CreateInspectionModal from '../Forms/CreateInspectionModal';
-import DeleteModal from '../../src/components/Execute/IncidentNotificationDelete';
+import DeleteModal from '../components/Execute/Delete';
+import CanteenExecute from '../components/Execute/CanteenExecute';
 
 // Action menu for each row
 function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModal, setCreateModalSection }) {
@@ -79,6 +80,8 @@ export default function CanteenInterface() {
   const [activeTab, setActiveTab] = useState('All');
   const [showModal, setShowModal] = useState(false); // for DeleteModal
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showReportExecute, setShowReportExecute] = useState(false);
+  const [reportToView, setReportToView] = useState(null);
 
   useEffect(() => {
     const mockData = [
@@ -101,9 +104,7 @@ export default function CanteenInterface() {
     setShowFormModal(true);
   };
 
-  const handleEdit = (id) => {
-    alert(`Edit/View inspection with ID: ${id}`);
-  };
+  const handleEdit = (inspection) => { setReportToView(inspection); setShowReportExecute(true);}
 
 const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
 
@@ -242,6 +243,16 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
             setItemToDelete(null);
           }}
         />
+
+                    {showReportExecute && reportToView && (
+          <CanteenExecute
+            inspection={reportToView}   // full object
+            onClose={() => {
+              setShowReportExecute(false);
+              setReportToView(null);
+            }}
+          />
+        )}
 
 
     </div>

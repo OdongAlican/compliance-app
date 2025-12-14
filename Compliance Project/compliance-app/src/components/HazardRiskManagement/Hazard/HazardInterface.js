@@ -4,7 +4,7 @@ import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import HazardFormModal from "../../HazardRiskManagement/Hazard/HazardForm";
 import CreateInspectionModal from "../CreateInspectionModal";
 import HazardReportExecute from "../../Execute/HazardReportExecute";
-import DeleteModal from "../../Execute/IncidentNotificationDelete";
+import DeleteModal from "../../Execute/Delete";
 
 
 function ActionMenu({

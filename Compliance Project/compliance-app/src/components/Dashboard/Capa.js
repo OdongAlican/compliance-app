@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import HazardReportExecute from "../Execute/HazardReportExecute";
-
-
-
-
+import DeleteModal from "../Execute/Delete";
+import CreateInspectionModal from "../../Forms/Auditors";
 
 function ActionMenu({
   id,
@@ -35,7 +33,6 @@ function ActionMenu({
           aria-label={`Actions for row ${id}`}
           className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50"
         >
-         
           <button
             type="button"
             role="menuitem"
@@ -91,14 +88,16 @@ function ActionMenu({
 export default function HazardInterface() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [ setShowFormModal] = useState(false);
-  const [ setActiveInspectionId] = useState(null);
-  const [ setShowCreateModal] = useState(false);
-  const [, setCreateModalSection] = useState(0);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [activeInspectionId, setActiveInspectionId] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalSection, setCreateModalSection] = useState(0);
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-   const [showReportExecute, setShowReportExecute] = useState(false);
+  const [showReportExecute, setShowReportExecute] = useState(false);
   const [reportToView, setReportToView] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     setData([
@@ -132,19 +131,11 @@ export default function HazardInterface() {
     setShowFormModal(true);
   };
 
-
-  {/*const handleEdit = (id) => {
-   // open the report execute view as a modal/pane
-   setReportToView(id);
-   setShowReportExecute(true);
- };*/}
-
- const handleEdit = (id) => navigate(`/hazard/report/${id}`);
+  const handleEdit = (id) => navigate(`/hazard/report/${id}`);
 
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this inspection?")) {
-      setData((prev) => prev.filter((entry) => entry.id !== id));
-    }
+    setItemToDelete(id);
+    setShowModal(true);
   };
 
   const closeFormModal = () => {
@@ -181,8 +172,13 @@ export default function HazardInterface() {
     <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Capa Tracking Audit</h1>
-       
       </div>
+
+      <CreateInspectionModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        startSection={createModalSection}
+      />
 
       {/* Status Tabs */}
       <div className="flex space-x-4 mb-6" role="tablist">
@@ -230,7 +226,10 @@ export default function HazardInterface() {
                 "Status",
                 "Action",
               ].map((header) => (
-                <th key={header} className="border px-4 py-2 text-left text-sm font-medium text-gray-700">
+                <th
+                  key={header}
+                  className="border px-4 py-2 text-left text-sm font-medium text-gray-700"
+                >
                   {header}
                 </th>
               ))}
@@ -246,41 +245,53 @@ export default function HazardInterface() {
                 <td className="border px-4 py-2 text-sm">{entry.safetyofficer}</td>
                 <td className="border px-4 py-2 text-sm">{entry.supervisor}</td>
                 <td className="border px-4 py-2 text-sm">{entry.location}</td>
-
                 <td className="border px-4 py-2 text-sm">
-  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status]}`}>
-    {entry.status}
-  </span>
-</td>
-<td className="border px-4 py-2 text-sm">
-  <ActionMenu
-    id={entry.id}
-    onStartInspection={handleStartInspection}
-    onEdit={handleEdit}
-    onDelete={handleDelete}
-    setShowCreateModal={setShowCreateModal}
-    setCreateModalSection={setCreateModalSection}
-  />
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-
-
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status]}`}
+                  >
+                    {entry.status}
+                  </span>
+                </td>
+                <td className="border px-4 py-2 text-sm">
+                  <ActionMenu
+                    id={entry.id}
+                    onStartInspection={handleStartInspection}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    setShowCreateModal={setShowCreateModal}
+                    setCreateModalSection={setCreateModalSection}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* inline report view modal/pane */}
       {showReportExecute && reportToView && (
-       <HazardReportExecute
+        <HazardReportExecute
           reportId={reportToView}
-          onClose={() => { setShowReportExecute(false); setReportToView(null); }}
+          onClose={() => {
+            setShowReportExecute(false);
+            setReportToView(null);
+          }}
         />
       )}
 
-
-</div>
-);
+      {/* Delete Modal */}
+      <DeleteModal
+        isOpen={showModal}
+        onCancel={() => {
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => {
+          setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+      />
+    </div>
+  );
 }
-
-                  
