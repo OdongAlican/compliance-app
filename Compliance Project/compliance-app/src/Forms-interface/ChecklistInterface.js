@@ -238,7 +238,7 @@ export default function ChecklistInterface() {
                 startSection={createModalSection}
               />
 
-                        <SetPriorityModal
+         <SetPriorityModal
        isOpen={showPriorityModal}
        onClose={() => {
          setShowPriorityModal(false);

@@ -1,7 +1,15 @@
+// ...existing code...
 import React, { useState, useEffect } from 'react';
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
+import UserCreateModal from "./UserStaffForm";
+import UserAdminCreateModal from "./UserAdmin";
+import UserAuditCreateModal from "./UserAudit";
+import UserOfficersCreateModal from "./UserOfficersForm";
+import UserSupervisorCreateModal from "./UserSupervisorForm";
+import UserContractorCreateModal from "./UserContractorForm";
+import UserViewFormModal from "./UserViewForm";
 
-function ActionMenu({ id, onEdit, onDelete }) {
+function ActionMenu({ id, onEdit, onDelete, onView }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -23,6 +31,18 @@ function ActionMenu({ id, onEdit, onDelete }) {
           className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded shadow-lg z-50"
         >
           <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onView?.(id);
+              setOpen(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+          >
+            View
+          </button>
+
+           <button
             type="button"
             role="menuitem"
             onClick={() => {
@@ -56,75 +76,53 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [departmentFilter, setDepartmentFilter] = useState("All");
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [showReportExecute, setShowReportExecute] = useState(false);
+  const [reportToView, setReportToView] = useState(null);
+  const ROLE_OPTIONS = ["Staff", "Admin", "Auditors", "Safety Officer", "Supervisor", "Contractor"];
+
+  // modal control for role-specific create
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
 
   useEffect(() => {
     setUsers([
-      {
-        id: 1,
-        name: "Alice Johnson",
-        email: "alice@company.com",
-        role: "Admin",
-        department: "Management",
-        status: "Active",
-      },
-      {
-        id: 2,
-        name: "Bob Smith",
-        email: "bob@company.com",
-        role: "Supervisor",
-        department: "Operations",
-        status: "Active",
-      },
-      {
-        id: 3,
-        name: "Carol White",
-        email: "carol@company.com",
-        role: "Safety Officer",
-        department: "Safety",
-        status: "Active",
-      },
-      {
-        id: 4,
-        name: "David Brown",
-        email: "david@company.com",
-        role: "Staff",
-        department: "Operations",
-        status: "Inactive",
-      },
-      {
-        id: 5,
-        name: "Emma Davis",
-        email: "emma@company.com",
-        role: "Contractor",
-        department: "Maintenance",
-        status: "Active",
-      },
-      {
-        id: 6,
-        name: "Frank Miller",
-        email: "frank@company.com",
-        role: "Auditors",
-        department: "Compliance",
-        status: "Active",
-      },
-      {
-        id: 7,
-        name: "Grace Lee",
-        email: "grace@company.com",
-        role: "Admin",
-        department: "Management",
-        status: "Active",
-      },
+      { id: 1, name: "Alice Johnson", email: "alice@company.com", role: "Admin", department: "Management", status: "Active" },
+      { id: 2, name: "Bob Smith", email: "bob@company.com", role: "Supervisor", department: "Operations", status: "Active" },
+      { id: 3, name: "Carol White", email: "carol@company.com", role: "Safety Officer", department: "Safety", status: "Active" },
+      { id: 4, name: "David Brown", email: "david@company.com", role: "Staff", department: "Operations", status: "Inactive" },
+      { id: 5, name: "Emma Davis", email: "emma@company.com", role: "Contractor", department: "Maintenance", status: "Active" },
+      { id: 6, name: "Frank Miller", email: "frank@company.com", role: "Auditors", department: "Compliance", status: "Active" },
+      { id: 7, name: "Grace Lee", email: "grace@company.com", role: "Admin", department: "Management", status: "Active" }
     ]);
   }, []);
 
-  const handleEdit = (id) => {
-    console.log("Edit user:", id);
+  // open modal for the selected role
+  const handleAddUserRole = (role) => {
+    setAddMenuOpen(false);
+    setSelectedRole(role);
+    setShowCreateModal(true);
   };
 
-  const handleDelete = (id) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id));
+  const handleSaveNewUser = (userData) => {
+    const newUser = { id: Date.now(), ...userData };
+    setUsers((prev) => [newUser, ...prev]);
+    setShowCreateModal(false);
+    setSelectedRole(null);
   };
+
+  const handleEdit = (id) => console.log("Edit user:", id);
+  const handleDelete = (id) => setUsers((prev) => prev.filter((user) => user.id !== id));
+ 
+const handleView = (id) => {
+  const user = users.find((u) => u.id === id);
+    console.log("UserManagement: view user", id, user);
+    if (!user) return;
+    setReportToView(user); // store full object
+    setShowReportExecute(true);
+  };
+
+
 
   const roleColors = {
     Admin: "text-purple-600 bg-purple-100",
@@ -135,21 +133,13 @@ export default function UserManagement() {
     Auditors: "text-red-600 bg-red-100",
   };
 
-  const statusColors = {
-    Active: "text-green-600 bg-green-100",
-    Inactive: "text-red-600 bg-red-100",
-    Pending: "text-yellow-600 bg-yellow-100",
-  };
+  const statusColors = { Active: "text-green-600 bg-green-100", Inactive: "text-red-600 bg-red-100", Pending: "text-yellow-600 bg-yellow-100" };
 
   const filteredUsers = users.filter((user) => {
     const matchesTab = activeTab === "All" || user.role === activeTab;
-    const matchesSearch = [user.name, user.email, user.department]
-      .join(" ")
-      .toLowerCase()
-      .includes((searchTerm || "").toLowerCase());
+    const matchesSearch = [user.name, user.email, user.department].join(" ").toLowerCase().includes((searchTerm || "").toLowerCase());
     const matchesStatus = statusFilter === "All" || user.status === statusFilter;
     const matchesDepartment = departmentFilter === "All" || user.department === departmentFilter;
-
     return matchesTab && matchesSearch && matchesStatus && matchesDepartment;
   });
 
@@ -160,9 +150,36 @@ export default function UserManagement() {
     <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-        <button className="px-4 py-2 bg-primary text-tertiary rounded">
-          + Add User
-        </button>
+
+        <div className="relative inline-block text-left">
+          <button
+            type="button"
+            onClick={() => setAddMenuOpen((v) => !v)}
+            className="inline-flex items-center px-4 py-2 bg-primary text-tertiary rounded"
+            aria-haspopup="menu"
+            aria-expanded={addMenuOpen}
+          >
+            + Add User
+            <svg className="ml-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+
+          {addMenuOpen && (
+            <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50">
+              {ROLE_OPTIONS.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => handleAddUserRole(role)}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Role Tabs */}
@@ -172,11 +189,7 @@ export default function UserManagement() {
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-medium border whitespace-nowrap ${
-              activeTab === tab
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-            }`}
+            className={`px-4 py-2 rounded font-medium border whitespace-nowrap ${activeTab === tab ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}
           >
             {tab}
           </button>
@@ -185,38 +198,15 @@ export default function UserManagement() {
 
       {/* Search Bar and Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input
-          id="user-search"
-          type="text"
-          placeholder="Search by name, email, or department"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 border border-gray-300 rounded px-4 py-2"
-        />
+        <input id="user-search" type="text" placeholder="Search by name, email, or department" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 border border-gray-300 rounded px-4 py-2" />
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-300 rounded px-4 py-2 bg-white"
-        >
-          {statuses.map((status) => (
-            <option key={status} value={status}>
-              Status: {status}
-            </option>
-          ))}
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-gray-300 rounded px-4 py-2 bg-white">
+          {statuses.map((status) => <option key={status} value={status}>Status: {status}</option>)}
         </select>
 
-        <select
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="border border-gray-300 rounded px-4 py-2 bg-white"
-        >
-          {departments.map((dept) => (
-            <option key={dept} value={dept}>
-              Department: {dept}
-            </option>
-          ))}
-        </select>
+      {/*  <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className="border border-gray-300 rounded px-4 py-2 bg-white">
+          {departments.map((dept) => <option key={dept} value={dept}>Department: {dept}</option>)}
+        </select>*/}
       </div>
 
       {/* Table */}
@@ -225,21 +215,14 @@ export default function UserManagement() {
           <thead className="bg-gray-100">
             <tr>
               {["ID", "Name", "Email", "Role", "Department", "Status", "Action"].map((header) => (
-                <th
-                  key={header}
-                  className="border px-4 py-2 text-left text-sm font-medium text-gray-700"
-                >
-                  {header}
-                </th>
+                <th key={header} className="border px-4 py-2 text-left text-sm font-medium text-gray-700">{header}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan="7" className="border px-4 py-2 text-center text-gray-500">
-                  No users found
-                </td>
+                <td colSpan="7" className="border px-4 py-2 text-center text-gray-500">No users found</td>
               </tr>
             ) : (
               filteredUsers.map((user) => (
@@ -247,30 +230,85 @@ export default function UserManagement() {
                   <td className="border px-4 py-2 text-sm">{user.id}</td>
                   <td className="border px-4 py-2 text-sm font-medium">{user.name}</td>
                   <td className="border px-4 py-2 text-sm">{user.email}</td>
-                  <td className="border px-4 py-2 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${roleColors[user.role]}`}>
-                      {user.role}
-                    </span>
-                  </td>
+                  <td className="border px-4 py-2 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${roleColors[user.role]}`}>{user.role}</span></td>
                   <td className="border px-4 py-2 text-sm">{user.department}</td>
-                  <td className="border px-4 py-2 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[user.status]}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="border px-4 py-2 text-sm">
-                    <ActionMenu
-                      id={user.id}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  </td>
+                  <td className="border px-4 py-2 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[user.status]}`}>{user.status}</span></td>
+                  <td className="border px-4 py-2 text-sm"><ActionMenu id={user.id} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} /></td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Role-specific create modal */}
+      {showCreateModal && (
+        <UserCreateModal
+          isOpen={showCreateModal}
+          role={selectedRole}
+          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
+          onSave={handleSaveNewUser}
+        />
+      )}
+
+      {showCreateModal && selectedRole === "Admin" && (
+        <UserAdminCreateModal
+          isOpen={showCreateModal}
+          role={selectedRole}
+          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
+          onSave={handleSaveNewUser}
+        />
+      )}
+
+      {showCreateModal && selectedRole === "Auditors" && (
+        <UserAuditCreateModal
+          isOpen={showCreateModal}
+          role={selectedRole}
+          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
+          onSave={handleSaveNewUser}
+        />
+      )}
+
+      {showCreateModal && selectedRole === "Safety Officer" && (
+        <UserOfficersCreateModal
+          isOpen={showCreateModal}
+          role={selectedRole}
+          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
+          onSave={handleSaveNewUser}
+        />
+      )}
+
+      {showCreateModal && selectedRole === "Supervisor" && (
+        <UserSupervisorCreateModal
+          isOpen={showCreateModal}
+          role={selectedRole}
+          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
+          onSave={handleSaveNewUser}
+        />
+      )}
+
+      {showCreateModal && selectedRole === "Contractor" && (
+        <UserContractorCreateModal
+          isOpen={showCreateModal}
+          role={selectedRole}
+          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
+          onSave={handleSaveNewUser}
+        />
+      )}
+
+{/* View user in a centered form modal */}
+      {showReportExecute && reportToView && (
+        <UserViewFormModal
+          isOpen={showReportExecute}
+          user={reportToView}
+          onClose={() => {
+            setShowReportExecute(false);
+            setReportToView(null);
+          }}
+        />
+      )}
+
     </div>
   );
 }
+// ...existing code...
