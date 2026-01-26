@@ -80,15 +80,27 @@ export default function App() {
           }
         />
 
-        {/* Hazard routes */}
-      {/* <Route
-          path="/hazard/dashboard"
+       {/* <Route
+          path="/sidebar"
           element={
             <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <HazardDashboard />
-            </Layout>
+              <Sidebar />
+              </Layout>
+            
           }
         />*/}
+
+           
+
+        {/* Hazard routes */}
+       <Route
+          path="/sidebar"
+          element={
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+              <Sidebar />
+            </Layout>
+          }
+        />
 
 
         <Route
