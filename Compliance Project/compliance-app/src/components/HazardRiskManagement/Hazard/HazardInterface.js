@@ -145,12 +145,11 @@ export default function HazardInterface() {
     setShowFormModal(true);
   };
 
-
-  {/*const handleEdit = (id) => {
-   // open the report execute view as a modal/pane
-   setReportToView(id);
-   setShowReportExecute(true);
- };*/}
+  // const handleEdit = (id) => {
+  //   // open the report execute view as a modal/pane
+  //   setReportToView(id);
+  //   setShowReportExecute(true);
+  // };
 
  const handleEdit = (id) => navigate(`/hazard/report/${id}`);
 

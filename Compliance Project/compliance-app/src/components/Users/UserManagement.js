@@ -75,7 +75,7 @@ export default function UserManagement() {
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [departmentFilter, setDepartmentFilter] = useState("All");
+  const [departmentFilter] = useState("All");
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [showReportExecute, setShowReportExecute] = useState(false);
   const [reportToView, setReportToView] = useState(null);
@@ -143,7 +143,7 @@ const handleView = (id) => {
     return matchesTab && matchesSearch && matchesStatus && matchesDepartment;
   });
 
-  const departments = ["All", ...new Set(users.map((u) => u.department))];
+  // const departments = ["All", ...new Set(users.map((u) => u.department))];
   const statuses = ["All", ...new Set(users.map((u) => u.status))];
 
   return (

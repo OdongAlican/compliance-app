@@ -88,9 +88,9 @@ function ActionMenu({
 export default function HazardInterface() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [showFormModal, setShowFormModal] = useState(false);
+  const [, setShowFormModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [activeInspectionId, setActiveInspectionId] = useState(null);
+  const [, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
   const [activeTab, setActiveTab] = useState("All");
@@ -138,10 +138,10 @@ export default function HazardInterface() {
     setShowModal(true);
   };
 
-  const closeFormModal = () => {
-    setShowFormModal(false);
-    setActiveInspectionId(null);
-  };
+  // const closeFormModal = () => {
+  //   setShowFormModal(false);
+  //   setActiveInspectionId(null);
+  // };
 
   const statusColors = {
     Pending: "text-red-600 bg-red-100",

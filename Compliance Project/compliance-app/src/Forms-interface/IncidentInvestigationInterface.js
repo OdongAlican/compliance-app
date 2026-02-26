@@ -1,5 +1,5 @@
 import React, { useState, useEffect, } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../Forms/CreateInspectionModal";
 import IncidentInvestigationFormModal from "../Forms/IncidentInvestigationForm";
@@ -115,7 +115,7 @@ export default function IncidentNotifyInterface() {
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showReportExecute, setShowReportExecute] = useState(false);
@@ -168,7 +168,7 @@ export default function IncidentNotifyInterface() {
     All: "text-gray-700 bg-gray-100",
   };
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // Filter data by status and search term
   const filteredData = data.filter((entry) => {

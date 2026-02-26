@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+// import { ChevronDown } from "lucide-react";
 
 const AccordianContext = React.createContext();
 
@@ -18,29 +18,29 @@ function RecentAuditForm({ children, value, onChange, ...props }) {
   );
 }
 
-function AccordianItem({ children, value, trigger, ...props }) {
-  const { selected, setSelected } = React.useContext(AccordianContext);
-  const open = selected === value;
-
-  return (
-    <li className="border rounded" {...props}>
-      <header
-        role="button"
-        onClick={() => setSelected(open ? null : value)}
-        className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
-      >
-        {trigger}
-        <ChevronDown
-          size={16}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </header>
-      <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
-        {open && <div className="p-4 bg-white">{children}</div>}
-      </div>
-    </li>
-  );
-}
+// function AccordianItem({ children, value, trigger, ...props }) {
+//   const { selected, setSelected } = React.useContext(AccordianContext);
+//   const open = selected === value;
+//
+//   return (
+//     <li className="border rounded" {...props}>
+//       <header
+//         role="button"
+//         onClick={() => setSelected(open ? null : value)}
+//         className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
+//       >
+//         {trigger}
+//         <ChevronDown
+//           size={16}
+//           className={`transition-transform ${open ? "rotate-180" : ""}`}
+//         />
+//       </header>
+//       <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
+//         {open && <div className="p-4 bg-white">{children}</div>}
+//       </div>
+//     </li>
+//   );
+// }
 
 
 const sections = [
@@ -55,7 +55,7 @@ export default function RiskFormModal({
   startSection = 0,
 }) {
   const [currentSection, setCurrentSection] = useState(startSection);
-  const [issues, setIssues] = useState([{ issue: "", action: "", person: "", date: "" }]);
+  // const [issues, setIssues] = useState([{ issue: "", action: "", person: "", date: "" }]);
 
   const [objectiveStatement, setObjectiveStatement] = useState("");
   const [scopeStatement, setScopeStatement] = useState("");
@@ -65,21 +65,26 @@ export default function RiskFormModal({
     if (isOpen) setCurrentSection(startSection ?? 0);
   }, [isOpen, startSection]);
 
-  const updateIssue = (idx, field, value) => {
-    setIssues((prev) =>
-      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it))
-    );
-  };
+  // const updateIssue = (idx, field, value) => {
+  //   setIssues((prev) =>
+  //     prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it))
+  //   );
+  // };
 
-  const deleteIssue = (idx) => setIssues((prev) => prev.filter((_, i) => i !== idx));
+  // const deleteIssue = (idx) => setIssues((prev) => prev.filter((_, i) => i !== idx));
 
   const nextSection = () => setCurrentSection((s) => Math.min(sections.length - 1, s + 1));
   const prevSection = () => setCurrentSection((s) => Math.max(0, s - 1));
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
-  };
+  // NOTE: This modal doesn't currently wire inputs into a `formData` state.
+  // Keeping the handler commented for future wiring to avoid ESLint `no-undef`.
+  // const handleChange = (e) => {
+  //   const { name, value, type, checked } = e.target;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [name]: type === "checkbox" ? checked : value,
+  //   }));
+  // };
 
   const handleSubmit = (e) => {
     e?.preventDefault?.();

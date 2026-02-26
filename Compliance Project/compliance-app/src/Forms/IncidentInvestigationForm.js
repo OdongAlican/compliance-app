@@ -1,34 +1,34 @@
 import React, { useState } from "react";
-import { ChevronDown } from "lucide-react";
+// import { ChevronDown } from "lucide-react";
 
 // Accordion context
-const AccordianContext = React.createContext();
+// const AccordianContext = React.createContext();
 
 
 
-function AccordianItem({ children, value, trigger, ...props }) {
-  const { selected, setSelected } = React.useContext(AccordianContext);
-  const open = selected === value;
-
-  return (
-    <li className="border rounded" {...props}>
-      <header
-        role="button"
-        onClick={() => setSelected(open ? null : value)}
-        className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
-      >
-        {trigger}
-        <ChevronDown
-          size={16}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </header>
-      <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
-        {open && <div className="p-4 bg-white">{children}</div>}
-      </div>
-    </li>
-  );
-}
+// function AccordianItem({ children, value, trigger, ...props }) {
+//   const { selected, setSelected } = React.useContext(AccordianContext);
+//   const open = selected === value;
+//
+//   return (
+//     <li className="border rounded" {...props}>
+//       <header
+//         role="button"
+//         onClick={() => setSelected(open ? null : value)}
+//         className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
+//       >
+//         {trigger}
+//         <ChevronDown
+//           size={16}
+//           className={`transition-transform ${open ? "rotate-180" : ""}`}
+//         />
+//       </header>
+//       <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
+//         {open && <div className="p-4 bg-white">{children}</div>}
+//       </div>
+//     </li>
+//   );
+// }
 
 
 const sections = [
@@ -43,21 +43,21 @@ const sections = [
 
 export default function IncidentInvestigationFormModal({ isOpen, onClose, inspectionId }) {
   const [currentSection, setCurrentSection] = useState(0);
-  const [ setIssues] = useState([
-    { issue: "", action: "", person: "", date: "" }
-  ]);
+  // const [issues, setIssues] = useState([
+  //   { issue: "", action: "", person: "", date: "" }
+  // ]);
 
-  const updateIssue = (idx, field, value) => {
-    setIssues((prevIssues) =>
-      prevIssues.map((issue, i) =>
-        i === idx ? { ...issue, [field]: value } : issue
-      )
-    );
-  };
+  // const updateIssue = (idx, field, value) => {
+  //   setIssues((prevIssues) =>
+  //     prevIssues.map((issue, i) =>
+  //       i === idx ? { ...issue, [field]: value } : issue
+  //     )
+  //   );
+  // };
 
-  const deleteIssue = (idx) => {
-    setIssues((prevIssues) => prevIssues.filter((_, i) => i !== idx));
-  };
+  // const deleteIssue = (idx) => {
+  //   setIssues((prevIssues) => prevIssues.filter((_, i) => i !== idx));
+  // };
 
   const nextSection = () => {
     if (currentSection < sections.length - 1) {

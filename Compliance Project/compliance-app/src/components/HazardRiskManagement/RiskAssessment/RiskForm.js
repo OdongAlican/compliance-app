@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+// import { ChevronDown } from "lucide-react";
 
 const AccordianContext = React.createContext();
 
@@ -18,64 +18,66 @@ function RiskForm({ children, value, onChange, ...props }) {
   );
 }
 
-function AccordianItem({ children, value, trigger, ...props }) {
-  const { selected, setSelected } = React.useContext(AccordianContext);
-  const open = selected === value;
-
-  return (
-    <li className="border rounded" {...props}>
-      <header
-        role="button"
-        onClick={() => setSelected(open ? null : value)}
-        className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
-      >
-        {trigger}
-        <ChevronDown
-          size={16}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </header>
-      <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
-        {open && <div className="p-4 bg-white">{children}</div>}
-      </div>
-    </li>
-  );
-}
-
-function ChecklistSection({ items }) {
-  return (
-    <table className="w-full border border-gray-300 table-auto border-collapse">
-      <thead className="bg-gray-100">
-        <tr>
-          <th className="px-4 py-2 text-left border border-gray-300">Item</th>
-          <th className="px-4 py-2 text-center border border-gray-300">√ / ⤫ / N/A</th>
-          <th className="px-4 py-2 text-left border border-gray-300">Comments</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-        {items.map((item, i) => (
-          <tr key={i}>
-            <td className="px-4 py-2 border border-gray-300">{item}</td>
-            <td className="px-4 py-2 text-center">
-              <select className="border rounded px-2 py-1">
-                <option value="√">√</option>
-                <option value="⤫">⤫</option>
-                <option value="N/A">N/A</option>
-              </select>
-            </td>
-            <td className="px-4 py-2">
-              <input
-                type="text"
-                placeholder="Enter comment"
-                className="w-full border rounded px-2 py-1"
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
+// NOTE: keeping these helpers commented out for future use.
+// They are currently unused in the modal UI.
+// function AccordianItem({ children, value, trigger, ...props }) {
+//   const { selected, setSelected } = React.useContext(AccordianContext);
+//   const open = selected === value;
+//
+//   return (
+//     <li className="border rounded" {...props}>
+//       <header
+//         role="button"
+//         onClick={() => setSelected(open ? null : value)}
+//         className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
+//       >
+//         {trigger}
+//         <ChevronDown
+//           size={16}
+//           className={`transition-transform ${open ? "rotate-180" : ""}`}
+//         />
+//       </header>
+//       <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
+//         {open && <div className="p-4 bg-white">{children}</div>}
+//       </div>
+//     </li>
+//   );
+// }
+//
+// function ChecklistSection({ items }) {
+//   return (
+//     <table className="w-full border border-gray-300 table-auto border-collapse">
+//       <thead className="bg-gray-100">
+//         <tr>
+//           <th className="px-4 py-2 text-left border border-gray-300">Item</th>
+//           <th className="px-4 py-2 text-center border border-gray-300">√ / ⤫ / N/A</th>
+//           <th className="px-4 py-2 text-left border border-gray-300">Comments</th>
+//         </tr>
+//       </thead>
+//       <tbody className="divide-y divide-gray-200">
+//         {items.map((item, i) => (
+//           <tr key={i}>
+//             <td className="px-4 py-2 border border-gray-300">{item}</td>
+//             <td className="px-4 py-2 text-center">
+//               <select className="border rounded px-2 py-1">
+//                 <option value="√">√</option>
+//                 <option value="⤫">⤫</option>
+//                 <option value="N/A">N/A</option>
+//               </select>
+//             </td>
+//             <td className="px-4 py-2">
+//               <input
+//                 type="text"
+//                 placeholder="Enter comment"
+//                 className="w-full border rounded px-2 py-1"
+//               />
+//             </td>
+//           </tr>
+//         ))}
+//       </tbody>
+//     </table>
+//   );
+// }
 
 const sections = [
   "General Information",
@@ -91,7 +93,7 @@ export default function RiskFormModal({
   startSection = 0,
 }) {
   const [currentSection, setCurrentSection] = useState(startSection);
-  const [issues, setIssues] = useState([{ issue: "", action: "", person: "", date: "" }]);
+  // const [issues, setIssues] = useState([{ issue: "", action: "", person: "", date: "" }]);
   const [formData, setFormData] = useState({
     date: "",
     name: "",
@@ -106,13 +108,13 @@ export default function RiskFormModal({
     if (isOpen) setCurrentSection(startSection ?? 0);
   }, [isOpen, startSection]);
 
-  const updateIssue = (idx, field, value) => {
-    setIssues((prev) =>
-      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it))
-    );
-  };
-
-  const deleteIssue = (idx) => setIssues((prev) => prev.filter((_, i) => i !== idx));
+  // const updateIssue = (idx, field, value) => {
+  //   setIssues((prev) =>
+  //     prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it))
+  //   );
+  // };
+  //
+  // const deleteIssue = (idx) => setIssues((prev) => prev.filter((_, i) => i !== idx));
 
   const nextSection = () => setCurrentSection((s) => Math.min(sections.length - 1, s + 1));
   const prevSection = () => setCurrentSection((s) => Math.max(0, s - 1));

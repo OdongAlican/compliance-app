@@ -87,21 +87,21 @@ const sections = [
 
 export default function ChecklistCreateInspectionFormModal({ isOpen, onClose, inspectionId }) {
   const [currentSection, setCurrentSection] = useState(0);
-  const [issues, setIssues] = useState([
-    { issue: "", action: "", person: "", date: "" }
-  ]);
+  // const [issues, setIssues] = useState([
+  //   { issue: "", action: "", person: "", date: "" }
+  // ]);
 
-  const updateIssue = (idx, field, value) => {
-    setIssues((prevIssues) =>
-      prevIssues.map((issue, i) =>
-        i === idx ? { ...issue, [field]: value } : issue
-      )
-    );
-  };
+  // const updateIssue = (idx, field, value) => {
+  //   setIssues((prevIssues) =>
+  //     prevIssues.map((issue, i) =>
+  //       i === idx ? { ...issue, [field]: value } : issue
+  //     )
+  //   );
+  // };
 
-  const deleteIssue = (idx) => {
-    setIssues((prevIssues) => prevIssues.filter((_, i) => i !== idx));
-  };
+  // const deleteIssue = (idx) => {
+  //   setIssues((prevIssues) => prevIssues.filter((_, i) => i !== idx));
+  // };
 
   const nextSection = () => {
     if (currentSection < sections.length - 1) {

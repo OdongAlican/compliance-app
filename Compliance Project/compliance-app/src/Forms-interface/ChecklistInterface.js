@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import DeleteModal from "../components/Execute/Delete";
 import ChecklistFormModal from "../Forms/ChecklistForm";
@@ -126,7 +126,7 @@ onAddCorrective,
 }
 
 export default function ChecklistInterface() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);

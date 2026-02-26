@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import CreateInspectionModal from "../CreateInspectionModal";
 import RiskFormModal from "../../HazardRiskManagement/RiskAssessment/RiskForm";
-import HazardReportExecute from "../../Execute/HazardReportExecute";
+// import HazardReportExecute from "../../Execute/HazardReportExecute";
 import DeleteModal from "../../Execute/Delete";
 import RiskAssessExecute from "../../Execute/RiskAssesExecute";
 
@@ -105,7 +105,7 @@ function ActionMenu({
 }
 
 export default function RiskInterface() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -151,7 +151,7 @@ export default function RiskInterface() {
     setShowFormModal(true);
   };
 
-   {/*const handleEdit = (id) => navigate(`/hazard/report/${id}`);*/}
+  // const handleEdit = (id) => navigate(`/hazard/report/${id}`);
      const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
      const handleEdit = (id) => { setReportToView(id); setShowReportExecute(true);};
 

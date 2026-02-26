@@ -57,8 +57,8 @@ export default function RiskFormModal({
   const [currentSection, setCurrentSection] = useState(startSection);
   const [issues, setIssues] = useState([{ issue: "", action: "", person: "", date: "" }]);
 
-  const [objectiveStatement, setObjectiveStatement] = useState("");
-  const [scopeStatement, setScopeStatement] = useState("");
+  // const [objectiveStatement, setObjectiveStatement] = useState("");
+  // const [scopeStatement, setScopeStatement] = useState("");
  
 
   useEffect(() => {
@@ -76,10 +76,15 @@ export default function RiskFormModal({
   const nextSection = () => setCurrentSection((s) => Math.min(sections.length - 1, s + 1));
   const prevSection = () => setCurrentSection((s) => Math.max(0, s - 1));
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
-  };
+  // NOTE: This modal doesn't currently wire inputs into a `formData` state.
+  // Keeping the handler commented for future wiring to avoid ESLint `no-undef`.
+  // const handleChange = (e) => {
+  //   const { name, value, type, checked } = e.target;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [name]: type === "checkbox" ? checked : value,
+  //   }));
+  // };
 
   const handleSubmit = (e) => {
     e?.preventDefault?.();

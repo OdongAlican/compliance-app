@@ -1,6 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-const colors = require('tailwindcss/colors');
-
 module.exports = {
   content: [
     "./index.html",
@@ -9,8 +7,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ...colors, // ⬅️ This brings back Tailwind's full color palette
-
         // Your custom colors
         primary: '#1785cf',
         primary2: '#f3f6fb',

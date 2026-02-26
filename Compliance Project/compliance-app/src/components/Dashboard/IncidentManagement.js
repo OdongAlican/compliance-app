@@ -95,7 +95,7 @@ export default function IncidentInterface() {
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showReportExecute, setShowReportExecute] = useState(false);

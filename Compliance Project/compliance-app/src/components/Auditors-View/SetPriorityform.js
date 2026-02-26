@@ -4,10 +4,10 @@ export default function SetPriorityModal({ isOpen, onClose, onSubmit }) {
   const [priority, setPriority] = useState('');
   const [dueDate, setDueDate] = useState('2025-09-15');
 
- {/* const handleSubmit = () => {
-    onSubmit({ priority, dueDate });
-    onClose();
-  };*/}
+  // const handleSubmit = () => {
+  //   onSubmit({ priority, dueDate });
+  //   onClose();
+  // };
 
 
 

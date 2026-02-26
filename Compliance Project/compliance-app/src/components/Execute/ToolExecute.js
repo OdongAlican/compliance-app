@@ -21,60 +21,62 @@ export default function ToolExecute({ inspection, onClose }) {
     );
   }
 
-  const renderIssues = () => {
-    return (
-      <div className="overflow-x-auto">
-        {inspection.issues?.length ? (
-          <table className="w-full table-auto border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left">Issue</th>
-                <th className="px-4 py-2 text-left">Action</th>
-                <th className="px-4 py-2 text-left">Responsible</th>
-                <th className="px-4 py-2 text-left">Status</th>
-                <th className="px-4 py-2 text-left">Priority</th>
-                <th className="px-4 py-2 text-left">Due Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inspection.issues.map((item, index) => (
-                <tr key={index} className="border-t">
-                  <td className="px-4 py-2">{item.issue || "N/A"}</td>
-                  <td className="px-4 py-2">{item.action || "N/A"}</td>
-                  <td className="px-4 py-2">{item.responsible || "N/A"}</td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-1 rounded text-white text-xs ${
-                      item.status === "Resolved"
-                        ? "bg-green-500"
-                        : item.status === "Pending"
-                        ? "bg-yellow-500"
-                        : "bg-gray-400"
-                    }`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-1 rounded text-white text-xs ${
-                      item.priority === "High"
-                        ? "bg-red-500"
-                        : item.priority === "Medium"
-                        ? "bg-orange-400"
-                        : "bg-blue-400"
-                    }`}>
-                      {item.priority}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">{item.dueDate || "N/A"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="text-gray-500">No issues identified.</div>
-        )}
-      </div>
-    );
-  };
+  // NOTE: keeping this helper commented out for later reuse.
+  // The issues table is currently rendered inline below, so this function is unused.
+  // const renderIssues = () => {
+  //   return (
+  //     <div className="overflow-x-auto">
+  //       {inspection.issues?.length ? (
+  //         <table className="w-full table-auto border border-gray-300">
+  //           <thead className="bg-gray-100">
+  //             <tr>
+  //               <th className="px-4 py-2 text-left">Issue</th>
+  //               <th className="px-4 py-2 text-left">Action</th>
+  //               <th className="px-4 py-2 text-left">Responsible</th>
+  //               <th className="px-4 py-2 text-left">Status</th>
+  //               <th className="px-4 py-2 text-left">Priority</th>
+  //               <th className="px-4 py-2 text-left">Due Date</th>
+  //             </tr>
+  //           </thead>
+  //           <tbody>
+  //             {inspection.issues.map((item, index) => (
+  //               <tr key={index} className="border-t">
+  //                 <td className="px-4 py-2">{item.issue || "N/A"}</td>
+  //                 <td className="px-4 py-2">{item.action || "N/A"}</td>
+  //                 <td className="px-4 py-2">{item.responsible || "N/A"}</td>
+  //                 <td className="px-4 py-2">
+  //                   <span className={`px-2 py-1 rounded text-white text-xs ${
+  //                     item.status === "Resolved"
+  //                       ? "bg-green-500"
+  //                       : item.status === "Pending"
+  //                       ? "bg-yellow-500"
+  //                       : "bg-gray-400"
+  //                   }`}>
+  //                     {item.status}
+  //                   </span>
+  //                 </td>
+  //                 <td className="px-4 py-2">
+  //                   <span className={`px-2 py-1 rounded text-white text-xs ${
+  //                     item.priority === "High"
+  //                       ? "bg-red-500"
+  //                       : item.priority === "Medium"
+  //                       ? "bg-orange-400"
+  //                       : "bg-blue-400"
+  //                   }`}>
+  //                     {item.priority}
+  //                   </span>
+  //                 </td>
+  //                 <td className="px-4 py-2">{item.dueDate || "N/A"}</td>
+  //               </tr>
+  //             ))}
+  //           </tbody>
+  //         </table>
+  //       ) : (
+  //         <div className="text-gray-500">No issues identified.</div>
+  //       )}
+  //     </div>
+  //   );
+  // };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">

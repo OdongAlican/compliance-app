@@ -98,9 +98,9 @@ export default function SignIn() {
       {/* Terms & Policy */}
       <p className="text-sm text-gray-600 mt-6 text-center">
         By creating an account you agree to CompanyName’s{' '}
-        <a href="#" className="underline text-blue-600">
+        <button type="button" className="underline text-blue-600">
           Terms & Policy
-        </a>
+        </button>
       </p>
     </div>
   );
