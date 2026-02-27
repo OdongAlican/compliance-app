@@ -2,6 +2,7 @@ import React from "react";
 import { ResponsiveMenu } from "./Home/ResponsiveMenu";
 import { HomeMenu } from "../mockData/data";
 import { Link } from "react-router-dom";
+import { Button } from "./ui/Button";
 
 
 
@@ -11,8 +12,8 @@ export function PublicLayout({ children }) {
   return (
     <>
       {/* Full-width sticky header with shadow */}
-      <header className="sticky top-0 z-50 bg-white shadow-md w-full">
-        <div className="max-w-7xl mx-auto flex justify-between items-center py-8 px-4">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-200 w-full">
+        <div className="max-w-7xl mx-auto flex justify-between items-center py-6 px-4">
 
           {/* Logo */}
           <div className="text-2xl flex items-center gap-2 font-bold uppercase">
@@ -38,13 +39,11 @@ export function PublicLayout({ children }) {
           {/* Action Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <Link to="/Login">
-            <button className="border-2 border-primary text-primary px-6 py-2 rounded-md hover:bg-indigo-700 hover:text-white transition font-semibold">
-              Login
-            </button></Link>
+              <Button variant="outline">Login</Button>
+            </Link>
             <Link to="/signin">
-            <button className="bg-primary hover:bg-primary text-tertiary px-6 py-2 rounded-md border-2 border-primary transition font-semibold">
-              Sign up for free
-            </button></Link>
+              <Button>Sign up for free</Button>
+            </Link>
 
 
           </div>

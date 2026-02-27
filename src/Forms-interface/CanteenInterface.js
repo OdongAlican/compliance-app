@@ -18,13 +18,13 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
         <EllipsisVerticalIcon className="h-5 w-5" />
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-10">
+        <div className="ui-menu absolute right-0 mt-2 w-48 z-10">
           <button
             onClick={() => {
               onStartInspection(id);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+            className="ui-menu-item text-primary"
           >
             Start Inspection
           </button>
@@ -34,7 +34,7 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
               setShowCreateModal(true);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-black-600 hover:bg-gray-100"
+            className="ui-menu-item text-gray-800"
           >
             Assign Safetyofficer
           </button>
@@ -44,7 +44,7 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
               setShowCreateModal(true);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-black-600 hover:bg-gray-100"
+            className="ui-menu-item text-gray-800"
           >
             Assign Supervisor
           </button>
@@ -53,7 +53,7 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
               onEdit?.(id);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
+            className="ui-menu-item text-yellow-700"
           >
             View
           </button>
@@ -62,7 +62,7 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
               onDelete?.(id);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            className="ui-menu-item text-red-700"
           >
             Delete
           </button>
@@ -117,8 +117,8 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Canteen Inspection</h1>
+    <div className="p-6 max-w-7xl mx-auto ui-page">
+      <h1 className="ui-title mb-6">Canteen Inspection</h1>
 
       {/* + Create Inspection button */}
       <div className="flex justify-end mb-4">
@@ -127,7 +127,7 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
             setCreateModalSection(0); // Always start at first section for create
             setShowCreateModal(true);
           }}
-          className="px-4 py-2 bg-primary text-tertiary rounded"
+          className="ui-btn ui-btn-primary"
         >
           + Create Inspection
         </button>
@@ -145,15 +145,15 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-4 mb-6">
+      <div className="ui-tabs mb-6">
         {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-medium border ${
+            className={`ui-tab border ${
               activeTab === tab
                 ? `${statusColors[tab]} border-transparent`
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
             }`}
           >
             {tab}
@@ -166,13 +166,13 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
         <input
           type="text"
           placeholder="Search"
-          className="w-full md:w-1/3 border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring focus:border-blue-500"
+          className="ui-input w-full md:w-1/3"
         />
       </div>
 
-      <div className="bg-white shadow rounded-lg p-4">
-        <table className="w-full table-auto border border-gray-200">
-          <thead className="bg-gray-100">
+      <div className="ui-card p-4">
+        <table className="ui-table">
+          <thead>
             <tr>
               {[
                 'ID',
@@ -187,7 +187,7 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
               ].map((header) => (
                 <th
                   key={header}
-                  className="border px-4 py-2 text-left text-sm font-medium text-gray-700"
+                  className="ui-th"
                 >
                   {header}
                 </th>
@@ -196,15 +196,15 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
           </thead>
           <tbody>
             {data.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50">
-                <td className="border px-4 py-2 text-sm">{entry.id}</td>
-                <td className="border px-4 py-2 text-sm">{entry.schoolname}</td>
-                <td className="border px-4 py-2 text-sm">{entry.location}</td>
-                <td className="border px-4 py-2 text-sm">{entry.dateofinspection}</td>
-                <td className="border px-4 py-2 text-sm">{entry.time}</td>
-                <td className="border px-4 py-2 text-sm">{entry.safetyofficer}</td>
-                <td className="border px-4 py-2 text-sm">{entry.supervisor}</td>
-                <td className="border px-4 py-2 text-sm">
+              <tr key={entry.id} className="ui-row">
+                <td className="ui-td">{entry.id}</td>
+                <td className="ui-td">{entry.schoolname}</td>
+                <td className="ui-td">{entry.location}</td>
+                <td className="ui-td">{entry.dateofinspection}</td>
+                <td className="ui-td">{entry.time}</td>
+                <td className="ui-td">{entry.safetyofficer}</td>
+                <td className="ui-td">{entry.supervisor}</td>
+                <td className="ui-td">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
                       statusColors[entry.status] || 'bg-gray-100 text-gray-700'
@@ -213,7 +213,7 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
                     {entry.status}
                   </span>
                 </td>
-                <td className="border px-4 py-2 text-sm">
+                <td className="ui-td">
                   <ActionMenu
                     id={entry.id}
                     onStartInspection={handleStartInspection}

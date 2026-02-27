@@ -2,3 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+	html {
+		@apply h-full scroll-smooth;
+	}
+
+	body {
+		@apply min-h-full bg-gray-50 text-gray-900 antialiased;
+	}
+
+	:focus-visible {
+		@apply outline-none ring-2 ring-primary/30 ring-offset-2 ring-offset-gray-50;
+	}
+}
+
+@layer components {
+	.ui-page {
+		@apply min-h-screen bg-gray-50;
+	}
+
+	.ui-card {
+		@apply bg-white border border-gray-200 rounded-xl shadow-sm;
+	}
+
+	.ui-card-header {
+		@apply flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4;
+	}
+
+	.ui-card-body {
+		@apply px-6 py-5;
+	}
+
+	.ui-title {
+		@apply text-2xl font-semibold text-gray-900;
+	}
+
+	.ui-subtitle {
+		@apply text-sm text-gray-600;
+	}
+
+	.ui-label {
+		@apply mb-1 block text-sm font-medium text-gray-700;
+	}
+
+	.ui-hint {
+		@apply mt-1 block text-xs text-gray-500;
+	}
+
+	.ui-error {
+		@apply mt-1 block text-xs font-medium text-red-600;
+	}
+
+	.ui-input {
+		@apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400;
+		@apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+	}
+
+	.ui-select {
+		@apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900;
+		@apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+	}
+
+	.ui-textarea {
+		@apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400;
+		@apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+	}
+
+	.ui-btn {
+		@apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold;
+		@apply transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50;
+	}
+
+	.ui-btn-primary {
+		@apply bg-primary text-white hover:brightness-95;
+	}
+
+	.ui-btn-outline {
+		@apply border border-gray-300 bg-white text-gray-900 hover:bg-gray-50;
+	}
+
+	.ui-btn-ghost {
+		@apply bg-transparent text-gray-700 hover:bg-gray-100;
+	}
+
+	.ui-btn-danger {
+		@apply bg-red-600 text-white hover:bg-red-700;
+	}
+
+	.ui-badge {
+		@apply inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold;
+	}
+
+	.ui-table {
+		@apply w-full table-auto;
+	}
+
+	.ui-table thead {
+		@apply bg-gray-50;
+	}
+
+	.ui-th {
+		@apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600;
+	}
+
+	.ui-td {
+		@apply px-4 py-3 text-sm text-gray-800;
+	}
+
+	.ui-row {
+		@apply border-t border-gray-200 hover:bg-gray-50;
+	}
+
+	.ui-tabs {
+		@apply flex flex-wrap gap-2;
+	}
+
+	.ui-tab {
+		@apply inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition-colors;
+	}
+
+	.ui-menu {
+		@apply rounded-xl border border-gray-200 bg-white shadow-sm p-1;
+	}
+
+	.ui-menu-item {
+		@apply w-full rounded-lg px-3 py-2 text-left text-sm font-medium;
+		@apply text-gray-700 hover:bg-gray-50 transition-colors;
+	}
+}
+

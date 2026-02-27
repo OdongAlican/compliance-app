@@ -1,5 +1,6 @@
 import { Sidebar } from './Sidebar';
 import { useState } from 'react';
+import { Button } from './ui/Button';
 // import { Navbar } from './Navbar';
 
 export function Layout({ children, sidebarToggle, setSidebarToggle }) {
@@ -16,13 +17,15 @@ export function Layout({ children, sidebarToggle, setSidebarToggle }) {
       />
 
       {/* Mobile toggle button */}
-      {sidebarToggle && (
-        <button
-          onClick={() => setSidebarToggle(false)}
-          className="md:hidden fixed top-4 left-4 z-50 bg-blue-600 text-white px-3 py-2 rounded shadow"
+      {!sidebarToggle && (
+        <Button
+          onClick={() => setSidebarToggle(true)}
+          className="md:hidden fixed top-4 left-4 z-50 shadow-sm"
+          size="sm"
+          aria-label="Open menu"
         >
-          Open Menu
-        </button>
+          Menu
+        </Button>
       )}
 
       {/* Main content */}

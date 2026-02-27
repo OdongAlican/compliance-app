@@ -31,7 +31,7 @@ function ActionMenu({
         <div
           role="menu"
           aria-label={`Actions for row ${id}`}
-          className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50"
+          className="absolute right-0 mt-2 w-44 z-50 ui-menu"
         >
           <button
             type="button"
@@ -40,7 +40,7 @@ function ActionMenu({
               onStartInspection(id);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+            className="ui-menu-item text-primary"
             aria-label={`Start inspection for ID ${id}`}
           >
             Start Inspection
@@ -53,7 +53,7 @@ function ActionMenu({
               setShowCreateModal(true);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+            className="ui-menu-item"
           >
             Assign Safety Officer
           </button>
@@ -65,7 +65,7 @@ function ActionMenu({
               setShowCreateModal(true);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+            className="ui-menu-item"
           >
             Assign Supervisor
           </button>
@@ -76,7 +76,7 @@ function ActionMenu({
               onEdit?.(id);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
+            className="ui-menu-item text-yellow-700"
           >
             View
           </button>
@@ -87,7 +87,7 @@ function ActionMenu({
               onDelete?.(id);
               setOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            className="ui-menu-item text-red-700"
           >
             Delete
           </button>
@@ -168,8 +168,8 @@ export default function VehicleInterface() {
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Vehicle Inspection</h1>
+    <div className="p-6 max-w-7xl mx-auto ui-page">
+      <h1 className="ui-title mb-6">Vehicle Inspection</h1>
       {/* Create Inspection Button and Modal */}
       <div className="flex justify-end mb-4">
         <button
@@ -178,7 +178,7 @@ export default function VehicleInterface() {
             setCreateModalSection(0);
             setShowCreateModal(true);
           }}
-          className="px-4 py-2 bg-primary text-tertiary rounded"
+          className="ui-btn ui-btn-primary"
           aria-label="Create inspection"
         >
           + Create Inspection
@@ -190,16 +190,16 @@ export default function VehicleInterface() {
         />
       </div>
       {/* Status Tabs */}
-      <div className="flex space-x-4 mb-6" role="tablist">
+      <div className="ui-tabs mb-6" role="tablist">
         {["All", "Pending", "In Progress", "Completed", "Approved"].map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-medium border ${
+            className={`ui-tab border ${
               activeTab === tab
                 ? `${statusColors[tab]} border-transparent`
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
             }`}
           >
             {tab}
@@ -214,11 +214,11 @@ export default function VehicleInterface() {
           placeholder="Search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-1/3 border border-gray-300 rounded px-4 py-2"
+          className="ui-input w-full md:w-1/3"
         />
       </div>
-      <div className="bg-white shadow rounded-lg p-4">
-        <table className="w-full table-auto border border-gray-200">
+      <div className="ui-card p-4">
+        <table className="ui-table border border-gray-200">
           <thead className="bg-gray-100">
             <tr>
               {[
@@ -232,7 +232,7 @@ export default function VehicleInterface() {
                 "Status",
                 "Action",
               ].map((header) => (
-                <th key={header} className="border px-4 py-2 text-left text-sm font-medium text-gray-700">
+                <th key={header} className="ui-th border border-gray-200">
                   {header}
                 </th>
               ))}
@@ -240,7 +240,7 @@ export default function VehicleInterface() {
           </thead>
           <tbody>
             {filteredData.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50">
+              <tr key={entry.id} className="ui-row">
                 <td className="border px-4 py-2 text-sm">{entry.id}</td>
                 <td className="border px-4 py-2 text-sm">{entry.vehiclename}</td>
                 <td className="border px-4 py-2 text-sm">{entry.location}</td>

@@ -20,7 +20,7 @@ export const Sidebar = ({ sidebarToggle, setSidebarToggle, isMinimized, setIsMin
 
   return (
     <div
-      className={`${sidebarToggle ? 'block' : 'hidden'} md:block fixed inset-y-0 left-0 bg-white overflow-y-auto shadow-lg z-40 transition-all duration-300 ${
+      className={`${sidebarToggle ? 'block' : 'hidden'} md:block fixed inset-y-0 left-0 bg-white overflow-y-auto border-r border-gray-200 shadow-sm z-40 transition-all duration-300 ${
         isMinimized ? 'w-24 px-3 py-8' : 'w-72 px-6 py-8'
       }`}
     >
@@ -37,7 +37,7 @@ export const Sidebar = ({ sidebarToggle, setSidebarToggle, isMinimized, setIsMin
       {!isMinimized && (
         <div className="mb-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold">
               <FaShieldAlt size={24} />
             </div>
             <h2 className="text-xl font-bold text-gray-800">Admin Dashboard</h2>
@@ -143,7 +143,7 @@ const SidebarItem = ({ to, icon: IconComponent, label, minimized }) => (
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
           isActive
-            ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
+            ? 'bg-primary2 text-primary border-l-4 border-primary'
             : 'text-gray-600 hover:bg-gray-50'
         } ${minimized ? 'justify-center p-2' : ''}`
       }

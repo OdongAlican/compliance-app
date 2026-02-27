@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from '../ui/Button';
 
 import { Products } from '../Pages/Products';
 import { Solutions } from '../Pages/Solutions';
@@ -25,37 +26,34 @@ export function Home() {
         className="min-h-screen bg-cover bg-center flex items-center justify-center px-6 py-12"
         style={{ backgroundImage: "url('/image.png')" }} // Ensure this image is placed inside your public folder
       >
-        <div className="bg-white bg-opacity-90 rounded-md p-8 text-center max-w-5xl shadow-md min-h-[60vh] w-full">
+        <div className="ui-card bg-white/90 supports-[backdrop-filter]:bg-white/75 backdrop-blur p-8 text-center max-w-5xl shadow-sm min-h-[60vh] w-full">
           
           {/* Improvement System Button */}
           <div className="flex justify-center mb-6">
-            <button className="px-5 py-2 bg-  text-gray-700 font-semibold rounded hover:bg-white/90 transition">
+            <Button variant="ghost" className="bg-white/60 hover:bg-white/80">
               Improvement System
-            </button>
+            </Button>
           </div>
 
           {/* Hero Headline */}
-          <h1 className="text-5xl font-bold text-indigo-800 mb-6">
-            Build a Safer,<br/>
-             Smarter Workplace
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            Build a Safer,<br />
+            <span className="text-primary">Smarter Workplace</span>
           </h1>
 
           {/* Call-to-Action Buttons */}
           <div className="flex gap-4 justify-center mb-6">
             <Link to="/signin">
-            <button className="px-6 py-2 bg-white text-primary rounded hover:bg-primary-700 transition">
-              Sign In
-            </button></Link>
-            <button className="px-6 py-2 bg-primary text-tertiary border border-indigo-600 rounded hover:bg-indigo-50 transition">
-              Book a Demo
-            </button>
+              <Button variant="outline">Sign In</Button>
+            </Link>
+            <Button>Book a Demo</Button>
           </div>
 
           {/* Feature Icons Section */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 place-items-center text-center">
             {features.map((feature) => (
               <div key={feature.id} className="flex flex-col items-center p-4">
-                <div className="bg-indigo-100 text-indigo-700 p-4 rounded-full text-2xl hover:bg-indigo-200 transition">
+                <div className="bg-primary2 text-primary p-4 rounded-full text-2xl hover:brightness-95 transition">
 
                   <img src={feature.icon} alt={feature.label} className="w-8 h-8 cursor-pointer" />
                 </div>
