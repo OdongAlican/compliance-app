@@ -139,7 +139,7 @@ export default function CanteenInterface({ darkMode }) {
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th colSpan={10} className={`sticky top-0 z-10 px-4 py-6 bg-opacity-90 backdrop-blur-sm backdrop-filter ${darkMode ? 'bg-gray-950 border-b border-blue-900' : 'bg-blue-50 border-b border-blue-100'} rounded-t-xl`}>
+              <th colSpan={10} className="sticky top-0 z-10 px-4 py-6 bg-white border-b border-blue-100 rounded-t-xl">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex gap-2">
                     {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map((tab) => (
@@ -148,7 +148,7 @@ export default function CanteenInterface({ darkMode }) {
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-full font-medium border text-sm transition-colors focus:outline-none ${activeTab === tab
                             ? `${statusColors[tab]} border-transparent shadow`
-                            : `${darkMode ? 'bg-gray-900 text-blue-200 border-blue-800 hover:bg-gray-800' : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-100'}`
+                            : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-100'
                           }`}
                       >
                         {tab}
@@ -159,14 +159,14 @@ export default function CanteenInterface({ darkMode }) {
                     <input
                       type="text"
                       placeholder="Search..."
-                      className={`px-4 py-2 rounded-lg border w-48 font-medium transition-colors focus:outline-none ${darkMode ? 'bg-gray-900 text-blue-100 border-blue-800 placeholder-blue-300' : 'bg-white text-blue-900 border-blue-200 placeholder-blue-400'}`}
+                      className="px-4 py-2 rounded-lg border w-48 font-medium transition-colors focus:outline-none bg-white text-blue-900 border-blue-200 placeholder-blue-400"
                     />
                     <button
                       onClick={() => {
                         setCreateModalSection(0);
                         setShowCreateModal(true);
                       }}
-                      className={`px-5 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base ${darkMode ? 'bg-blue-900 text-blue-100 border-blue-800 hover:bg-blue-800' : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100'}`}
+                      className="px-5 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
                     >
                       + Create Inspection
                     </button>
