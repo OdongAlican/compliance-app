@@ -61,7 +61,7 @@ export default function App() {
   // Global Navbar for theme toggle
   const AppNavbar = () => (
     <nav className={`w-full flex items-center justify-between px-6 py-3 mb-8 rounded-lg shadow-sm ${darkMode ? "bg-gray-900" : "bg-white"}`}>
-      <span className={`font-bold text-lg ${darkMode ? "text-white" : "text-blue-900"}`}>Compliance App</span>
+      <span className={`font-bold text-lg ${darkMode ? "text-white" : "text-blue-900"}`}></span>
       <button
         className={`flex items-center gap-2 px-4 py-1 rounded-full font-medium border ${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-blue-50 text-blue-900 border-blue-200"}`}
         onClick={() => setDarkMode((d) => !d)}
@@ -91,7 +91,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle} darkMode={darkMode}>
               <Dashboard />
               </Layout>
             
@@ -115,7 +115,7 @@ export default function App() {
           path="/sidebar"
           element={
             <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <Sidebar />
+              <Sidebar darkMode={darkMode} />
             </Layout>
           }
         />

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from './ui/Button';
 // import { Navbar } from './Navbar';
 
-export function Layout({ children, sidebarToggle, setSidebarToggle }) {
+export function Layout({ children, sidebarToggle, setSidebarToggle, darkMode }) {
   const [isMinimized, setIsMinimized] = useState(false);
 
   return (
@@ -14,6 +14,7 @@ export function Layout({ children, sidebarToggle, setSidebarToggle }) {
         setSidebarToggle={setSidebarToggle}
         isMinimized={isMinimized}
         setIsMinimized={setIsMinimized}
+        darkMode={darkMode}
       />
 
       {/* Mobile toggle button */}
