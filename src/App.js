@@ -1,6 +1,7 @@
 // ...existing code...
 import './index.css';
 import React, { useState } from 'react';
+import { FaSun, FaMoon } from "react-icons/fa";
 import { BrowserRouter as Router, Routes, Route,useParams } from 'react-router-dom';
 import HazardReportExecute from './components/Execute/HazardReportExecute';
 import { Sidebar } from './components/Sidebar';
@@ -55,10 +56,27 @@ function HazardReportExecuteWrapper() {
 
 export default function App() {
   const [sidebarToggle, setSidebarToggle] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Global Navbar for theme toggle
+  const AppNavbar = () => (
+    <nav className={`w-full flex items-center justify-between px-6 py-3 mb-8 rounded-lg shadow-sm ${darkMode ? "bg-gray-900" : "bg-white"}`}>
+      <span className={`font-bold text-lg ${darkMode ? "text-white" : "text-blue-900"}`}>Compliance App</span>
+      <button
+        className={`flex items-center gap-2 px-4 py-1 rounded-full font-medium border ${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-blue-50 text-blue-900 border-blue-200"}`}
+        onClick={() => setDarkMode((d) => !d)}
+      >
+        {darkMode ? <FaSun className="text-yellow-400" /> : <FaMoon className="text-blue-700" />}
+        {darkMode ? "Light Theme" : "Dark Theme"}
+      </button>
+    </nav>
+  );
 
   return (
     <Router>
-      <Routes>
+      <div className={darkMode ? "bg-gray-950 min-h-screen" : "bg-white min-h-screen"}>
+        <AppNavbar />
+        <Routes>
         {/* Public home */}
         <Route
           path="/"
@@ -201,7 +219,7 @@ export default function App() {
           path="/inspection"
           element={
             <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <InspectionForm />
+              <InspectionForm darkMode={darkMode} />
             </Layout>
           }
         />
@@ -379,6 +397,7 @@ export default function App() {
         <Route path="/forms-interface/swimmingpool-interface" element={<SwimmingPoolInterface />} />
 
       </Routes>
+      </div>
     </Router>
   );
 }
