@@ -72,7 +72,7 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
   );
 }
 
-export default function CanteenInterface() {
+export default function CanteenInterface({ darkMode }) {
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -104,75 +104,82 @@ export default function CanteenInterface() {
     setShowFormModal(true);
   };
 
-  const handleEdit = (inspection) => { setReportToView(inspection); setShowReportExecute(true);}
+  const handleEdit = (inspection) => { setReportToView(inspection); setShowReportExecute(true); }
 
-const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
+  const handleDelete = (id) => { setItemToDelete(id); setShowModal(true); };
 
-  const statusColors = {
-    Pending: 'text-red-600 bg-red-100',
-    Completed: 'text-green-600 bg-green-100',
-    'In Progress': 'text-yellow-600 bg-yellow-100',
-    Approved: 'text-blue-600 bg-blue-100',
-    All: 'text-gray-700 bg-gray-100',
-  };
+  const statusColors = darkMode
+    ? {
+      Pending: 'text-red-300 bg-red-900',
+      Completed: 'text-green-300 bg-green-900',
+      'In Progress': 'text-yellow-300 bg-yellow-900',
+      Approved: 'text-blue-300 bg-blue-900',
+      All: 'text-blue-200 bg-gray-900',
+    }
+    : {
+      Pending: 'text-red-600 bg-red-100',
+      Completed: 'text-green-600 bg-green-100',
+      'In Progress': 'text-yellow-600 bg-yellow-100',
+      Approved: 'text-blue-600 bg-blue-100',
+      All: 'text-blue-900 bg-blue-50',
+    };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto ui-page">
-      <h1 className="ui-title mb-6">Canteen Inspection</h1>
-
-      {/* + Create Inspection button */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => {
-            setCreateModalSection(0); // Always start at first section for create
-            setShowCreateModal(true);
-          }}
-          className="ui-btn ui-btn-primary"
-        >
-          + Create Inspection
-        </button>
-       {/* <CreateInspectionModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          startSection={createModalSection}
-        />*/}
-                <CreateInspectionModal
-          key={`create-${createModalSection}`} // ✅ Optional key if section changes
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          startSection={createModalSection}
-        />
+    <div className={`p-6 max-w-7xl mx-auto min-h-screen ${darkMode ? 'bg-gray-950 text-blue-100' : 'bg-white text-gray-900'}`}>
+      {/* Title Card - now full width, reduced height, simplified text */}
+      <div className={`w-full text-left mb-8 rounded-xl shadow-lg p-5 border ${darkMode ? 'bg-gray-900 border-blue-900' : 'bg-white border-blue-100'}`}>
+        <div className="flex items-center justify-between">
+          <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-blue-900'}`}>Canteen Inspection</h1>
+          <span className={`block w-10 h-1 rounded ${darkMode ? 'bg-blue-600' : 'bg-blue-400'}`}></span>
+        </div>
+        <p className={`mt-2 text-sm sm:text-base font-normal ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>All inspections and assignments in one place.</p>
       </div>
 
-      {/* Tabs */}
-      <div className="ui-tabs mb-6">
-        {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`ui-tab border ${
-              activeTab === tab
-                ? `${statusColors[tab]} border-transparent`
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search"
-          className="ui-input w-full md:w-1/3"
-        />
-      </div>
-
-      <div className="ui-card p-4">
-        <table className="ui-table">
+      <div className={`rounded-xl shadow-lg overflow-x-auto p-0 ${darkMode ? 'bg-gray-900 border border-blue-900' : 'bg-white border border-blue-100'}`}>
+        <table className="min-w-full border-separate border-spacing-0">
           <thead>
+            <tr>
+              <th colSpan={10} className={`sticky top-0 z-10 px-4 py-6 bg-opacity-90 backdrop-blur-sm backdrop-filter ${darkMode ? 'bg-gray-950 border-b border-blue-900' : 'bg-blue-50 border-b border-blue-100'} rounded-t-xl`}>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex gap-2">
+                    {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 rounded-full font-medium border text-sm transition-colors focus:outline-none ${activeTab === tab
+                            ? `${statusColors[tab]} border-transparent shadow`
+                            : `${darkMode ? 'bg-gray-900 text-blue-200 border-blue-800 hover:bg-gray-800' : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-100'}`
+                          }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className={`px-4 py-2 rounded-lg border w-48 font-medium transition-colors focus:outline-none ${darkMode ? 'bg-gray-900 text-blue-100 border-blue-800 placeholder-blue-300' : 'bg-white text-blue-900 border-blue-200 placeholder-blue-400'}`}
+                    />
+                    <button
+                      onClick={() => {
+                        setCreateModalSection(0);
+                        setShowCreateModal(true);
+                      }}
+                      className={`px-5 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base ${darkMode ? 'bg-blue-900 text-blue-100 border-blue-800 hover:bg-blue-800' : 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100'}`}
+                    >
+                      + Create Inspection
+                    </button>
+                  </div>
+                  <CreateInspectionModal
+                    key={`create-${createModalSection}`}
+                    isOpen={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                    startSection={createModalSection}
+                  />
+                </div>
+              </th>
+            </tr>
             <tr>
               {[
                 'ID',
@@ -184,36 +191,45 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
                 'Supervisor',
                 'Status',
                 'Action',
-              ].map((header) => (
+              ].map((header, idx) => (
                 <th
                   key={header}
-                  className="ui-th"
+                  className={`sticky top-0 z-10 border-b ${darkMode ? 'border-blue-900 bg-gray-950 text-blue-200' : 'border-blue-100 bg-blue-50 text-blue-900'} py-4 px-4 text-left text-sm font-semibold backdrop-blur-sm backdrop-filter ${idx === 0 ? 'rounded-tl-xl' : ''} ${idx === 8 ? 'rounded-tr-xl' : ''}`}
                 >
                   {header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {data.map((entry) => (
-              <tr key={entry.id} className="ui-row">
-                <td className="ui-td">{entry.id}</td>
-                <td className="ui-td">{entry.schoolname}</td>
-                <td className="ui-td">{entry.location}</td>
-                <td className="ui-td">{entry.dateofinspection}</td>
-                <td className="ui-td">{entry.time}</td>
-                <td className="ui-td">{entry.safetyofficer}</td>
-                <td className="ui-td">{entry.supervisor}</td>
-                <td className="ui-td">
+          <tbody className={darkMode ? 'divide-y divide-blue-900 bg-gray-900' : 'divide-y divide-blue-100 bg-white'}>
+            {data.map((entry, idx) => (
+              <tr
+                key={entry.id}
+                className={`transition-colors duration-150 ${darkMode ? (idx % 2 === 0 ? 'bg-gray-900' : 'bg-gray-950/80 hover:bg-blue-950/80') : (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/60 hover:bg-blue-100')}`}
+              >
+                <td className="py-6 px-4 font-semibold whitespace-nowrap">{entry.id}</td>
+                <td className="py-6 px-4 whitespace-nowrap">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className={darkMode ? 'text-blue-100 font-semibold' : 'text-blue-900 font-semibold'}>{entry.schoolname}</div>
+                      <div className={darkMode ? 'text-blue-300 text-xs' : 'text-blue-700 text-xs'}>{entry.location}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-6 px-4 whitespace-nowrap">{entry.location}</td>
+                <td className="py-6 px-4 whitespace-nowrap">{entry.dateofinspection}</td>
+                <td className="py-6 px-4 whitespace-nowrap">{entry.time}</td>
+                <td className="py-6 px-4 whitespace-nowrap">{entry.safetyofficer}</td>
+                <td className="py-6 px-4 whitespace-nowrap">{entry.supervisor}</td>
+                <td className="py-6 px-4 whitespace-nowrap">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      statusColors[entry.status] || 'bg-gray-100 text-gray-700'
-                    }`}
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status] || (darkMode ? 'bg-gray-900 text-blue-200' : 'bg-gray-100 text-gray-700')
+                      }`}
                   >
                     {entry.status}
                   </span>
                 </td>
-                <td className="ui-td">
+                <td className="py-6 px-4 whitespace-nowrap">
                   <ActionMenu
                     id={entry.id}
                     onStartInspection={handleStartInspection}
@@ -231,28 +247,28 @@ const handleDelete = (id) => {setItemToDelete(id); setShowModal(true);};
 
       {/* Modal Form from CanteenForm.js */}
       <CanteenFormModal isOpen={showFormModal} onClose={() => setShowFormModal(false)} />
-        <DeleteModal
+      <DeleteModal
         isOpen={showModal}
         onCancel={() => {
-            setShowModal(false);
-            setItemToDelete(null);
-          }}
-          onConfirm={() => {
-            setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
-            setShowModal(false);
-            setItemToDelete(null);
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => {
+          setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+      />
+
+      {showReportExecute && reportToView && (
+        <CanteenExecute
+          inspection={reportToView}   // full object
+          onClose={() => {
+            setShowReportExecute(false);
+            setReportToView(null);
           }}
         />
-
-                    {showReportExecute && reportToView && (
-          <CanteenExecute
-            inspection={reportToView}   // full object
-            onClose={() => {
-              setShowReportExecute(false);
-              setReportToView(null);
-            }}
-          />
-        )}
+      )}
 
 
     </div>
