@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
 
 
@@ -8,11 +11,39 @@ const sections = [
   { name: "Assign Supervisor", count: null },
 ];
 
-export default function CreateInspectionModal({
-  isOpen,
-  onClose,
-  startSection = 0,
-}) {
+export default function CreateInspectionModal(props) {
+  // Validation schema for step 1
+  const inspectionSchema = yup.object().shape({
+    title: yup.string().required("Title is required"),
+    location: yup.string().required("Location is required"),
+    date: yup.string().required("Date is required"),
+    time: yup.string().required("Time is required"),
+    notes: yup.string(),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: {
+      errors,
+      // isValid 
+    },
+    trigger,
+    // getValues,
+    // reset,
+  } = useForm({
+    resolver: yupResolver(inspectionSchema),
+    mode: "onChange",
+    defaultValues: {
+      title: "",
+      location: "",
+      date: "",
+      time: "",
+      notes: "",
+    },
+  });
+
+  const { isOpen, onClose, startSection = 0 } = props;
   const [currentSection, setCurrentSection] = useState(startSection);
 
   // When modal opens, jump to requested section
@@ -122,16 +153,40 @@ export default function CreateInspectionModal({
 
         <main className="px-8 pb-8 pt-2 min-h-[200px]">
           {currentSection === 0 && (
-            <section>
+            <form onSubmit={handleSubmit(() => setCurrentSection(1))} autoComplete="off">
               <h3 className="font-medium mb-6 text-blue-900">Inspection Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 placeholder-blue-400 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all" placeholder="Title / Name" />
-                <input className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 placeholder-blue-400 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all" placeholder="Location" />
-                <input type="date" className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all" />
-                <input type="time" className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all" />
-                <textarea className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 placeholder-blue-400 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all md:col-span-2" placeholder="Notes (optional)" />
+                <div>
+                  <input {...register("title")}
+                    className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 placeholder-blue-400 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all w-full"
+                    placeholder="Title / Name" />
+                  {errors.title && <p className="text-xs text-red-500 mt-1 font-normal text-left">{errors.title.message}</p>}
+                </div>
+                <div>
+                  <input {...register("location")}
+                    className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 placeholder-blue-400 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all w-full"
+                    placeholder="Location" />
+                  {errors.location && <p className="text-xs text-red-500 mt-1 font-normal text-left">{errors.location.message}</p>}
+                </div>
+                <div>
+                  <input type="date" {...register("date")}
+                    className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all w-full"
+                  />
+                  {errors.date && <p className="text-xs text-red-500 mt-1 font-normal text-left">{errors.date.message}</p>}
+                </div>
+                <div>
+                  <input type="time" {...register("time")}
+                    className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all w-full"
+                  />
+                  {errors.time && <p className="text-xs text-red-500 mt-1 font-normal text-left">{errors.time.message}</p>}
+                </div>
+                <div className="md:col-span-2">
+                  <textarea {...register("notes")}
+                    className="border border-blue-200 rounded-xl px-4 py-2 bg-white text-blue-900 placeholder-blue-400 focus:ring-2 focus:ring-blue-600 text-base font-normal shadow-sm transition-all w-full"
+                    placeholder="Notes (optional)" />
+                </div>
               </div>
-            </section>
+            </form>
           )}
 
           {currentSection === 1 && (
@@ -177,26 +232,44 @@ export default function CreateInspectionModal({
               </svg>
               Previous
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (currentSection < sections.length - 1) {
-                  setCurrentSection((s) => s + 1);
-                } else {
-                  // final submit action for create inspection flow
-                  alert("Inspection created");
-                  handleClose();
-                }
-              }}
-              className={`inline-flex items-center gap-2 px-6 py-2 rounded-md font-semibold transition-all border text-base shadow-md focus:outline-none focus:ring-2 focus:ring-green-400
-                ${currentSection === sections.length - 1 ? "bg-green-600 text-white border-green-600 hover:bg-green-700" : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"}
-              `}
-            >
-              {currentSection === sections.length - 1 ? "Finish" : "Next"}
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            {currentSection === 0 ? (
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const valid = await trigger();
+                  if (valid) setCurrentSection(1);
+                  // If not valid, errors will show below fields automatically
+                }}
+                className="inline-flex items-center gap-2 px-6 py-2 rounded-md font-semibold transition-all border text-base shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+              >
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentSection < sections.length - 1) {
+                    setCurrentSection((s) => s + 1);
+                  } else {
+                    // final submit action for create inspection flow
+                    alert("Inspection created");
+                    handleClose();
+                  }
+                }}
+                className={`inline-flex items-center gap-2 px-6 py-2 rounded-md font-semibold transition-all border text-base shadow-md focus:outline-none focus:ring-2 focus:ring-green-400
+                  ${currentSection === sections.length - 1 ? "bg-green-600 text-white border-green-600 hover:bg-green-700" : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"}
+                `}
+              >
+                {currentSection === sections.length - 1 ? "Finish" : "Next"}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
           <div className="text-sm font-medium text-blue-500 bg-blue-50 rounded-full px-4 py-1 shadow-sm">Step {currentSection + 1} of {sections.length}</div>
         </footer>
