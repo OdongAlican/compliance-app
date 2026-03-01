@@ -30,7 +30,7 @@ export default function CreateInspectionModal({
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-100/70 via-white/80 to-blue-200/80 backdrop-blur-sm z-[120]" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[120]" />
       {/* Modal Card */}
       <div className={`relative z-[130] bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-8 border border-blue-200 flex flex-col${typeof window !== 'undefined' && window.darkMode ? ' dark:bg-gray-950 dark:border-blue-900' : ''}`}>
         <button
