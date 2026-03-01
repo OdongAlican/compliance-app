@@ -37,7 +37,11 @@ export default function CreateInspectionModal({
       <div className={`relative z-[130] bg-white rounded-3xl shadow-3xl w-full max-w-2xl p-0 border border-blue-100 flex flex-col overflow-hidden${typeof window !== 'undefined' && window.darkMode ? ' dark:bg-gray-950 dark:border-blue-900' : ''}`}>
         <div className="px-8 pt-8 pb-4 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <svg width="32" height="32" fill="none" viewBox="0 0 32 32" className="text-blue-600"><circle cx="16" cy="16" r="16" fill="currentColor" /></svg>
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 text-blue-600">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3v2.25m4.5-2.25v2.25m-7.5 4.5h12.75m-1.5 0v9a2.25 2.25 0 01-2.25 2.25H8.25A2.25 2.25 0 016 18.75v-9m12.75 0a2.25 2.25 0 00-2.25-2.25H7.5A2.25 2.25 0 005.25 9.75m0 0V18.75A2.25 2.25 0 007.5 21h9a2.25 2.25 0 002.25-2.25V9.75" />
+              </svg>
+            </span>
             <h1 className="text-xl font-semibold tracking-tight text-blue-900">Create Inspection</h1>
           </div>
           <button
@@ -159,15 +163,18 @@ export default function CreateInspectionModal({
 
         {/* Navigation / actions */}
         <footer className="px-8 pb-8 flex justify-between items-center">
-          <div>
+          <div className="flex gap-3 items-center">
             <button
               type="button"
               onClick={() => setCurrentSection((s) => Math.max(0, s - 1))}
               disabled={currentSection === 0}
-              className={`px-5 py-2 rounded-xl mr-2 font-medium transition-colors border text-base shadow-sm
-                ${currentSection === 0 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100"}
+              className={`inline-flex items-center gap-2 px-6 py-2 rounded-md font-semibold transition-all border text-base shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400
+                ${currentSection === 0 ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-white text-blue-700 border-blue-300 hover:bg-blue-50 hover:text-blue-900"}
               `}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
               Previous
             </button>
             <button
@@ -181,12 +188,17 @@ export default function CreateInspectionModal({
                   handleClose();
                 }
               }}
-              className="px-5 py-2 rounded-xl font-medium transition-colors border text-base bg-green-600 text-white border-green-600 hover:bg-green-700 shadow-sm"
+              className={`inline-flex items-center gap-2 px-6 py-2 rounded-md font-semibold transition-all border text-base shadow-md focus:outline-none focus:ring-2 focus:ring-green-400
+                ${currentSection === sections.length - 1 ? "bg-green-600 text-white border-green-600 hover:bg-green-700" : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"}
+              `}
             >
               {currentSection === sections.length - 1 ? "Finish" : "Next"}
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
-          <div className="text-sm text-blue-400">Step {currentSection + 1} of {sections.length}</div>
+          <div className="text-sm font-medium text-blue-500 bg-blue-50 rounded-full px-4 py-1 shadow-sm">Step {currentSection + 1} of {sections.length}</div>
         </footer>
       </div>
     </div>
