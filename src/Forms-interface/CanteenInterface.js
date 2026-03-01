@@ -129,10 +129,22 @@ export default function CanteenInterface({ darkMode }) {
       {/* Title Card - now full width, reduced height, simplified text */}
       <div className={`w-full text-left mb-8 rounded-xl shadow-lg p-5 border ${darkMode ? 'bg-gray-900 border-blue-900' : 'bg-white border-blue-100'}`}>
         <div className="flex items-center justify-between">
-          <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-blue-900'}`}>Canteen Inspection</h1>
-          <span className={`block w-10 h-1 rounded ${darkMode ? 'bg-blue-600' : 'bg-blue-400'}`}></span>
+          <div>
+            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-blue-900'}`}>Canteen Inspection</h1>
+            <p className={`mt-2 text-sm sm:text-base font-normal ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>All inspections and assignments in one place.</p>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                setCreateModalSection(0);
+                setShowCreateModal(true);
+              }}
+              className="px-5 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+            >
+              + Create Inspection
+            </button>
+          </div>
         </div>
-        <p className={`mt-2 text-sm sm:text-base font-normal ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>All inspections and assignments in one place.</p>
       </div>
 
       <div className={`rounded-xl shadow-lg overflow-x-auto p-0 ${darkMode ? 'bg-gray-900 border border-blue-900' : 'bg-white border border-blue-100'}`}>
@@ -163,12 +175,38 @@ export default function CanteenInterface({ darkMode }) {
                     />
                     <button
                       onClick={() => {
-                        setCreateModalSection(0);
-                        setShowCreateModal(true);
+                        // Export logic: download CSV of table data
+                        const csvRows = [
+                          ['ID', 'School Name', 'Location', 'Date of Inspection', 'Time', 'Safety Officer', 'Supervisor', 'Status'],
+                          ...data.map(entry => [
+                            entry.id,
+                            entry.schoolname,
+                            entry.location,
+                            entry.dateofinspection,
+                            entry.time,
+                            entry.safetyofficer,
+                            entry.supervisor,
+                            entry.status
+                          ])
+                        ];
+                        const csvContent = csvRows.map(e => e.map(a => `"${a}"`).join(",")).join("\n");
+                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'canteen-inspections.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
                       }}
-                      className="px-5 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                      className="px-4 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base bg-white text-blue-900 border-blue-300 hover:bg-blue-50 flex items-center gap-2"
+                      title="Export table as CSV"
                     >
-                      + Create Inspection
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 8l-4-4m4 4l4-4M4 20h16" />
+                      </svg>
+                      Export
                     </button>
                   </div>
                   <CreateInspectionModal
