@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { ChevronDownIcon } from '@heroicons/react/16/solid';
+
 
 const sections = [
-  "Create Inspection",
-  "Assign Safety Officer",
-  "Assign Supervisor",
+  { name: "Create Inspection", count: null },
+  { name: "Assign Safety Officer", count: null },
+  { name: "Assign Supervisor", count: null },
 ];
 
 export default function CreateInspectionModal({
@@ -47,43 +49,70 @@ export default function CreateInspectionModal({
           </button>
         </div>
 
-        {/* Stepper */}
+        {/* Modern Tabs Navigation - Tailwind style, replaces old stepper */}
         <div className="px-8 pt-6 pb-2">
-          <div className="flex items-center justify-center gap-0">
-            {sections.map((label, idx) => {
-              const completed = idx < currentSection;
-              const isCurrent = idx === currentSection;
-              return (
-                <React.Fragment key={label}>
-                  <div
-                    className="flex flex-col items-center cursor-pointer"
-                    onClick={() => setCurrentSection(idx)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter") setCurrentSection(idx); }}
-                  >
-                    <div
-                      className={`w-9 h-9 flex items-center justify-center rounded-full border-2 font-bold text-lg transition-all duration-200
-                        ${completed ? "bg-green-600 text-white border-green-600" : isCurrent ? "bg-blue-600 text-white border-blue-600 shadow-lg" : "bg-white text-gray-700 border-gray-300"}
-                      `}
-                      aria-current={isCurrent}
+          {/* Mobile dropdown */}
+          <div className="grid grid-cols-1 sm:hidden mb-4">
+            <select
+              value={sections[currentSection].name}
+              aria-label="Select a tab"
+              className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-2 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+              onChange={e => {
+                const idx = sections.findIndex(s => s.name === e.target.value);
+                if (idx !== -1) setCurrentSection(idx);
+              }}
+            >
+              {sections.map((tab) => (
+                <option key={tab.name}>{tab.name}</option>
+              ))}
+            </select>
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end fill-gray-500"
+            />
+          </div>
+          {/* Desktop tabs */}
+          <div className="hidden sm:block mb-4">
+            <div className="border-b border-blue-100">
+              <nav aria-label="Tabs" className="-mb-px flex space-x-8">
+                {sections.map((tab, idx) => {
+                  const completed = idx < currentSection;
+                  const isCurrent = idx === currentSection;
+                  return (
+                    <button
+                      key={tab.name}
+                      type="button"
+                      aria-current={isCurrent ? 'page' : undefined}
+                      onClick={() => setCurrentSection(idx)}
+                      className={[
+                        isCurrent
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:border-blue-200 hover:text-blue-700',
+                        'flex items-center border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap transition-colors',
+                      ].join(' ')}
                     >
-                      {completed ? <span>&#10003;</span> : idx + 1}
-                    </div>
-                    <div className={`mt-2 text-sm ${isCurrent ? "font-semibold text-blue-900" : "text-gray-500"}`}>
-                      {label}
-                    </div>
-                  </div>
-                  {/* connector */}
-                  {idx !== sections.length - 1 && (
-                    <div
-                      className={`flex-1 h-0.5 mx-2 ${idx < currentSection ? "bg-green-600" : "bg-gray-200"}`}
-                      aria-hidden="true"
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
+                      <span className="inline-flex items-center gap-2">
+                        <span className={[
+                          'inline-flex items-center justify-center rounded-full w-6 h-6 text-xs font-semibold',
+                          completed ? 'bg-green-100 text-green-700 border border-green-300' : isCurrent ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-500 border border-gray-200',
+                        ].join(' ')}>
+                          {completed ? <span>&#10003;</span> : idx + 1}
+                        </span>
+                        {tab.name}
+                        {tab.count ? (
+                          <span className={[
+                            isCurrent ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-900',
+                            'ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium md:inline-block',
+                          ].join(' ')}>
+                            {tab.count}
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           </div>
         </div>
 
