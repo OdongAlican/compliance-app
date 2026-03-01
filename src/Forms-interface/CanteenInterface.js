@@ -151,7 +151,7 @@ export default function CanteenInterface({ darkMode }) {
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th colSpan={10} className="sticky top-0 z-10 px-4 py-6 bg-white border-b border-blue-100 rounded-t-xl">
+              <th colSpan={10} className="top-0 z-[10] px-4 py-6 bg-white border-b border-blue-100 rounded-t-xl">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex gap-2">
                     {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map((tab) => (
@@ -159,8 +159,8 @@ export default function CanteenInterface({ darkMode }) {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-full font-medium border text-sm transition-colors focus:outline-none ${activeTab === tab
-                            ? `${statusColors[tab]} border-transparent shadow`
-                            : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-100'
+                          ? `${statusColors[tab]} border-transparent shadow`
+                          : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-100'
                           }`}
                       >
                         {tab}
@@ -232,7 +232,7 @@ export default function CanteenInterface({ darkMode }) {
               ].map((header, idx) => (
                 <th
                   key={header}
-                  className={`sticky top-0 z-10 border-b ${darkMode ? 'border-blue-900 bg-gray-950 text-blue-200' : 'border-blue-100 bg-blue-50 text-blue-900'} py-4 px-4 text-left text-sm font-semibold backdrop-blur-sm backdrop-filter ${idx === 0 ? 'rounded-tl-xl' : ''} ${idx === 8 ? 'rounded-tr-xl' : ''}`}
+                  className={`sticky top-0 z-[10] border-b ${darkMode ? 'border-blue-900 bg-gray-950 text-blue-200' : 'border-blue-100 bg-blue-50 text-blue-900'} py-4 px-4 text-left text-sm font-semibold backdrop-blur-sm backdrop-filter ${idx === 0 ? 'rounded-tl-xl' : ''} ${idx === 8 ? 'rounded-tr-xl' : ''}`}
                 >
                   {header}
                 </th>
@@ -261,7 +261,7 @@ export default function CanteenInterface({ darkMode }) {
                 <td className="py-6 px-4 whitespace-nowrap">{entry.supervisor}</td>
                 <td className="py-6 px-4 whitespace-nowrap">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status] || (darkMode ? 'bg-gray-900 text-blue-200' : 'bg-gray-100 text-gray-700')
+                    className={`px-2 py-2 rounded-md text-xs font-medium ${statusColors[entry.status] || (darkMode ? 'bg-gray-900 text-blue-200' : 'bg-gray-100 text-gray-700')
                       }`}
                   >
                     {entry.status}
