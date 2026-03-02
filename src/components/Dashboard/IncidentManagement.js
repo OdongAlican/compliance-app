@@ -1,19 +1,27 @@
-import React, { useState, useEffect, } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, UserGroupIcon, ClipboardDocumentListIcon } from "@heroicons/react/24/outline";
 import CreateInspectionModal from "../HazardRiskManagement/CreateInspectionModal";
 import IncidentFormModal from "../../Forms/IncidentForm";
 import DeleteModal from "../Execute/Delete";
 import IncidentExecute from "../Execute/IncidentExecute";
 
-function ActionMenu({
-  id,
-  onStartInspection,
-  onEdit,
-  onDelete,
-  setShowCreateModal,
-  setCreateModalSection,
-}) {
+const STATUS_STYLE = {
+  Pending:      { background: "color-mix(in srgb,#d29922 15%,transparent)", color: "#d29922" },
+  "In Progress":{ background: "color-mix(in srgb,#58a6ff 15%,transparent)", color: "#58a6ff" },
+  Completed:    { background: "color-mix(in srgb,#3fb950 15%,transparent)", color: "#3fb950" },
+  Approved:     { background: "color-mix(in srgb,#3fb950 15%,transparent)", color: "#3fb950" },
+};
+
+const INCIDENT_CARDS = [
+  { label: "Incident Notification", icon: ExclamationTriangleIcon, color: "#f85149", route: "/dashboard/incidentform" },
+  { label: "Witness Statement",     icon: UserGroupIcon,             color: "#d29922", route: "/form/witness" },
+  { label: "Incident Investigation",icon: ClipboardDocumentListIcon, color: "#58a6ff", route: "/form/description" },
+];
+
+function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModal, setCreateModalSection }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,7 +29,8 @@ function ActionMenu({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="p-1 text-gray-500 hover:text-gray-700"
+        style={{ color: "var(--text-muted)" }}
+        className="p-1 rounded hover:opacity-80 transition-opacity"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Open actions"
@@ -29,69 +38,40 @@ function ActionMenu({
         <EllipsisVerticalIcon className="h-5 w-5" aria-hidden="true" />
       </button>
       {open && (
-        <div
-          role="menu"
-          aria-label={`Actions for row ${id}`}
-          className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50"
-        >
-
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setCreateModalSection(1);
-              setShowCreateModal(true);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
-          >
-            Assign Safety Officer
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setCreateModalSection(2);
-              setShowCreateModal(true);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
-          >
-            Assign Supervisor
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onEdit?.(id);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100"
-          >
-            View
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onDelete?.(id);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-          >
-            Delete
-          </button>
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div role="menu" aria-label={`Actions for row ${id}`} className="ui-menu absolute right-0 mt-1 z-50">
+            <button type="button" role="menuitem" className="ui-menu-item"
+              onClick={() => { setCreateModalSection(1); setShowCreateModal(true); setOpen(false); }}>
+              Assign Safety Officer
+            </button>
+            <button type="button" role="menuitem" className="ui-menu-item"
+              onClick={() => { setCreateModalSection(2); setShowCreateModal(true); setOpen(false); }}>
+              Assign Supervisor
+            </button>
+            <button type="button" role="menuitem" className="ui-menu-item"
+              onClick={() => { onEdit?.(id); setOpen(false); }}
+              style={{ color: "var(--accent)" }}>
+              View
+            </button>
+            <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
+            <button type="button" role="menuitem" className="ui-menu-item"
+              onClick={() => { onDelete?.(id); setOpen(false); }}
+              style={{ color: "var(--danger)" }}>
+              Delete
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-
 export default function IncidentInterface() {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [showModal, setShowModal] = useState(false); // for DeleteModal
+  const [showModal, setShowModal] = useState(false);
   const [activeInspectionId, setActiveInspectionId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalSection, setCreateModalSection] = useState(0);
@@ -103,213 +83,127 @@ export default function IncidentInterface() {
 
   useEffect(() => {
     setData([
-      {
-        id: 1,
-        typeofincident: "Slip and Fall",
-        dateofinspection: "2024-08-15",
-        timeofinspection: "10:00 AM",
-        personinvolved: "Jane Smith",
-        reportedby: "John Doe",
-        status: "Pending",
-      },
-      {
-        id: 2,
-        typeofincident: "Slip and Fall",
-        dateofinspection: "2024-08-15",
-        timeofinspection: "10:00 AM",
-        personinvolved: "Jane Smith",
-        reportedby: "John Doe",
-        status: "Completed",
-      },
+      { id: 1, typeofincident: "Slip and Fall", dateofinspection: "2024-08-15", timeofinspection: "10:00 AM", personinvolved: "Jane Smith", reportedby: "John Doe", status: "Pending" },
+      { id: 2, typeofincident: "Slip and Fall", dateofinspection: "2024-08-15", timeofinspection: "10:00 AM", personinvolved: "Jane Smith", reportedby: "John Doe", status: "Completed" },
     ]);
   }, []);
 
-  const handleStartInspection = (id) => {
-    setActiveInspectionId(id);
-    setShowFormModal(true);
-  };
+  const handleStartInspection = (id) => { setActiveInspectionId(id); setShowFormModal(true); };
+  const handleDelete = (id) => { setItemToDelete(id); setShowModal(true); };
+  const handleEdit = (id) => { setReportToView(id); setShowReportExecute(true); };
+  const closeFormModal = () => { setShowFormModal(false); setActiveInspectionId(null); };
 
-   const handleDelete = (id) => { setItemToDelete(id);setShowModal(true);};
-  const handleEdit = (id) => {setReportToView(id);setShowReportExecute(true);};
-
-  
-
-  const closeFormModal = () => {
-    setShowFormModal(false);
-    setActiveInspectionId(null);
-  };
-
- const statusColors = {
-    Pending: "text-red-600 bg-red-100",
-    Completed: "text-green-600 bg-green-100",
-    "In Progress": "text-yellow-600 bg-yellow-100",
-    Approved: "text-blue-600 bg-blue-100",
-    All: "text-gray-700 bg-gray-100",
-  };
-
-  const navigate = useNavigate();
-
-  // Filter data by status and search term
   const filteredData = data.filter((entry) => {
     const matchesTab = activeTab === "All" || entry.status === activeTab;
-    const matchesSearch =
-      entry.typeofincident.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.dateofinspection.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.timeofinspection.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.personinvolved.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.reportedby.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = [entry.typeofincident, entry.dateofinspection, entry.timeofinspection, entry.personinvolved, entry.reportedby]
+      .join(" ").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Incidents Inspection</h1>
-      {/* Create Inspection Button and Modal */}
-      <div className="flex justify-end mb-4">
-      
-        <CreateInspectionModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          startSection={createModalSection}
-        />
+    <div className="p-6 max-w-7xl mx-auto min-h-screen" style={{ color: "var(--text)" }}>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Incidents Inspection</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Track and manage workplace incident reports</p>
       </div>
 
+      <CreateInspectionModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} startSection={createModalSection} />
 
-
-                  {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div
-          onClick={() => navigate('/dashboard/incidentform')}
-          className="cursor-pointer bg-white shadow rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition"
-        >
-          <div>
-            <div className="text-red-600 text-3xl mb-2">⚠️</div>
-            <h2 className="text-lg font-semibold text-gray-800">Incident Notification</h2>
-          </div>
-          <div className="text-gray-400 text-xl">→</div>
-        </div>
-
-        <div
-          onClick={() => navigate('/form/witness')}
-          className="cursor-pointer bg-white shadow rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition"
-        >
-          <div>
-            <div className="text-yellow-500 text-3xl mb-2">✅</div>
-            <h2 className="text-lg font-semibold text-gray-800">Witness Statement</h2>
-          </div>
-          <div className="text-gray-400 text-xl">→</div>
-        </div>
-
-
-                <div
-          onClick={() => navigate('/form/description')}
-          className="cursor-pointer bg-white shadow rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition"
-        >
-          <div>
-            <div className="text-yellow-500 text-3xl mb-2">✅</div>
-            <h2 className="text-lg font-semibold text-gray-800">Incident Investigation</h2>
-          </div>
-          <div className="text-gray-400 text-xl">→</div>
-        </div>
+      {/* Quick Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {INCIDENT_CARDS.map(({ label, icon: Icon, color, route }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => navigate(route)}
+            className="ui-card flex items-center gap-4 p-5 text-left hover:scale-[1.01] transition-transform group cursor-pointer"
+          >
+            <span className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{ background: `color-mix(in srgb,${color} 15%,transparent)` }}>
+              <Icon className="w-6 h-6" style={{ color }} />
+            </span>
+            <span className="flex-1 font-semibold text-sm" style={{ color: "var(--text)" }}>{label}</span>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--text-muted)" }}>→</span>
+          </button>
+        ))}
       </div>
 
-
-
-
-      {/* Search Bar */}
-      <div className="mb-4">
+      {/* Search */}
+      <div className="relative max-w-xs mb-6">
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--text-muted)" }} />
         <input
-          id="pool-search"
+          id="incident-search"
           type="text"
-          placeholder="Search"
+          placeholder="Search incidents…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-1/3 border border-gray-300 rounded px-4 py-2"
+          className="ui-input pl-9 w-full"
         />
       </div>
 
-
-
-
-      <div className="bg-white shadow rounded-lg p-4">
-        <table className="w-full table-auto border border-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              {[
-                "ID",
-                "Type of Incident",
-                "Date of Inspection",
-                "Time of Inspection",
-                "Person in Involved",
-                "Reported By",
-                "Status",
-                "Action",
-              ].map((header) => (
-                <th key={header} className="border px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50">
-                <td className="border px-4 py-2 text-sm">{entry.id}</td>
-                <td className="border px-4 py-2 text-sm">{entry.typeofincident}</td>
-                <td className="border px-4 py-2 text-sm">{entry.dateofinspection}</td>
-                <td className="border px-4 py-2 text-sm">{entry.timeofinspection}</td>
-                <td className="border px-4 py-2 text-sm">{entry.personinvolved}</td>
-                <td className="border px-4 py-2 text-sm">{entry.reportedby}</td>
-                <td className="border px-4 py-2 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[entry.status]}`}>
-                    {entry.status}
-                  </span>
-                </td>
-                <td className="border px-4 py-2 text-sm">
-                  <ActionMenu
-                    id={entry.id}
-                    onStartInspection={handleStartInspection}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    setShowCreateModal={setShowCreateModal}
-                    setCreateModalSection={setCreateModalSection}
-                  />
-                </td>
+      {/* Table */}
+      <div className="ui-card overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-raised)" }}>
+                {["ID", "Type of Incident", "Date", "Time", "Person Involved", "Reported By", "Status", "Action"].map((h) => (
+                  <th key={h} className="ui-th">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>No incidents found.</td></tr>
+              ) : filteredData.map((entry) => (
+                <tr key={entry.id} className="ui-row">
+                  <td className="ui-td font-mono text-xs">{entry.id}</td>
+                  <td className="ui-td font-medium">{entry.typeofincident}</td>
+                  <td className="ui-td">{entry.dateofinspection}</td>
+                  <td className="ui-td">{entry.timeofinspection}</td>
+                  <td className="ui-td">{entry.personinvolved}</td>
+                  <td className="ui-td">{entry.reportedby}</td>
+                  <td className="ui-td">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                      style={STATUS_STYLE[entry.status] || { background: "color-mix(in srgb,var(--text-muted) 15%,transparent)", color: "var(--text-muted)" }}>
+                      {entry.status}
+                    </span>
+                  </td>
+                  <td className="ui-td">
+                    <ActionMenu
+                      id={entry.id}
+                      onStartInspection={handleStartInspection}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      setShowCreateModal={setShowCreateModal}
+                      setCreateModalSection={setCreateModalSection}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
       {showFormModal && activeInspectionId !== null && (
-        <IncidentFormModal
-          isOpen={showFormModal}
-          onClose={closeFormModal}
-          inspectionId={activeInspectionId}
-        />
+        <IncidentFormModal isOpen={showFormModal} onClose={closeFormModal} inspectionId={activeInspectionId} />
       )}
 
-        {showReportExecute && reportToView && (
-        <IncidentExecute
-          reportId={reportToView}
-          onClose={() => {
-            setShowReportExecute(false);
-            setReportToView(null);
-          }}
-        />
+      {showReportExecute && reportToView && (
+        <IncidentExecute reportId={reportToView} onClose={() => { setShowReportExecute(false); setReportToView(null); }} />
       )}
 
-   <DeleteModal
-  isOpen={showModal}
-  onCancel={() => {
-    setShowModal(false);
-    setItemToDelete(null);
-  }}
-  onConfirm={() => {
-    setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
-    setShowModal(false);
-    setItemToDelete(null);
-  }}
-/>
+      <DeleteModal
+        isOpen={showModal}
+        onCancel={() => { setShowModal(false); setItemToDelete(null); }}
+        onConfirm={() => {
+          setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
+          setShowModal(false);
+          setItemToDelete(null);
+        }}
+      />
     </div>
   );
 }

@@ -3,31 +3,42 @@ import { ResponsiveMenu } from "./Home/ResponsiveMenu";
 import { HomeMenu } from "../mockData/data";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/Button";
-
-
+import { FaSun, FaMoon } from "react-icons/fa";
+import { useTheme } from "../context/ThemeContext";
 
 export function PublicLayout({ children }) {
   const [open, setOpen] = React.useState(false);
+  const { darkMode, setDarkMode } = useTheme();
 
   return (
     <>
-      {/* Full-width sticky header with shadow */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-200 w-full">
-        <div className="max-w-7xl mx-auto flex justify-between items-center py-6 px-4">
-
+      {/* ── Sticky Header ── */}
+      <header
+        style={{
+          background:   'var(--bg-surface)',
+          borderBottom: '1px solid var(--border)',
+        }}
+        className="sticky top-0 z-50 w-full backdrop-blur supports-[backdrop-filter]:bg-transparent"
+      >
+        <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-5">
           {/* Logo */}
-          <div className="text-2xl flex items-center gap-2 font-bold uppercase">
-            <Link to="/" className="navbar-logo text-primary">Compliance-App</Link>
-          </div>
+          <Link
+            to="/"
+            style={{ color: 'var(--accent)' }}
+            className="text-xl font-black uppercase tracking-tight"
+          >
+            ComplianceHub
+          </Link>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop nav */}
           <nav className="hidden md:block">
-            <ul className="flex items-center gap-6 text-gray-600">
+            <ul className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
               {HomeMenu.map((item) => (
                 <li key={item.id}>
                   <a
                     href={item.link}
-                    className="inline-block py-1 px-3 hover:text-primary font-semibold"
+                    style={{ color: 'var(--text-muted)' }}
+                    className="inline-block py-1.5 px-3 rounded-lg text-sm font-medium hover:bg-[color:var(--bg-raised)] hover:text-[color:var(--text)] transition-colors"
                   >
                     {item.title}
                   </a>
@@ -36,44 +47,39 @@ export function PublicLayout({ children }) {
             </ul>
           </nav>
 
-          {/* Action Buttons */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link to="/Login">
-              <Button variant="outline">Login</Button>
-            </Link>
-            <Link to="/signin">
-              <Button>Sign up for free</Button>
-            </Link>
-
-
+          {/* Actions */}
+          <div className="hidden md:flex items-center gap-2">
+            {/* Theme toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:opacity-80 transition-opacity"
+              title={darkMode ? 'Light Mode' : 'Dark Mode'}
+            >
+              {darkMode ? <FaSun size={14} className="text-yellow-400" /> : <FaMoon size={14} className="text-blue-500" />}
+            </button>
+            <Link to="/Login"><Button variant="outline" size="sm">Login</Button></Link>
+            <Link to="/signin"><Button size="sm">Get Started</Button></Link>
           </div>
 
-          {/* Mobile Hamburger Icon */}
-          <div className="md:hidden" onClick={() => setOpen(!open)}>
-            <span className="text-4xl text-gray-700">&#9776;</span>
-          </div>
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden text-2xl"
+            style={{ color: 'var(--text)' }}
+            onClick={() => setOpen(!open)}
+            aria-label="Menu"
+          >
+            &#9776;
+          </button>
         </div>
 
-        {/* Mobile Overlay Menu */}
         <ResponsiveMenu open={open} />
       </header>
 
       {/* Page Content */}
-      <main className="max-w-6xl mx-auto px-4 md:px-8 py-6">
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-8">
         {children}
       </main>
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

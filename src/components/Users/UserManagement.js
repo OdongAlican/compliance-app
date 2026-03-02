@@ -1,6 +1,6 @@
-// ...existing code...
 import React, { useState, useEffect } from 'react';
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import UserCreateModal from "./UserStaffForm";
 import UserAdminCreateModal from "./UserAdmin";
 import UserAuditCreateModal from "./UserAudit";
@@ -8,6 +8,24 @@ import UserOfficersCreateModal from "./UserOfficersForm";
 import UserSupervisorCreateModal from "./UserSupervisorForm";
 import UserContractorCreateModal from "./UserContractorForm";
 import UserViewFormModal from "./UserViewForm";
+
+const ROLE_COLORS = {
+  Admin:           { background: "color-mix(in srgb,#a371f7 15%,transparent)", color: "#a371f7" },
+  Supervisor:      { background: "color-mix(in srgb,#58a6ff 15%,transparent)", color: "#58a6ff" },
+  "Safety Officer":{ background: "color-mix(in srgb,#3fb950 15%,transparent)", color: "#3fb950" },
+  Staff:           { background: "color-mix(in srgb,#8b949e 15%,transparent)", color: "#8b949e" },
+  Contractor:      { background: "color-mix(in srgb,#f0883e 15%,transparent)", color: "#f0883e" },
+  Auditors:        { background: "color-mix(in srgb,#f85149 15%,transparent)", color: "#f85149" },
+};
+
+const STATUS_STYLE = {
+  Active:   { background: "color-mix(in srgb,#3fb950 15%,transparent)", color: "#3fb950" },
+  Inactive: { background: "color-mix(in srgb,#f85149 15%,transparent)", color: "#f85149" },
+  Pending:  { background: "color-mix(in srgb,#d29922 15%,transparent)", color: "#d29922" },
+};
+
+const ROLE_OPTIONS = ["Staff", "Admin", "Auditors", "Safety Officer", "Supervisor", "Contractor"];
+const ROLE_TABS = ["All", "Admin", "Supervisor", "Safety Officer", "Staff", "Contractor", "Auditors"];
 
 function ActionMenu({ id, onEdit, onDelete, onView }) {
   const [open, setOpen] = useState(false);
@@ -17,7 +35,8 @@ function ActionMenu({ id, onEdit, onDelete, onView }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="p-1 text-gray-500 hover:text-gray-700"
+        style={{ color: "var(--text-muted)" }}
+        className="p-1 rounded hover:opacity-80 transition-opacity"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Open actions"
@@ -25,46 +44,26 @@ function ActionMenu({ id, onEdit, onDelete, onView }) {
         <EllipsisVerticalIcon className="h-5 w-5" aria-hidden="true" />
       </button>
       {open && (
-        <div
-          role="menu"
-          aria-label={`Actions for user ${id}`}
-          className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded shadow-lg z-50"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onView?.(id);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
-          >
-            View
-          </button>
-
-           <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onEdit?.(id);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onDelete?.(id);
-              setOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-          >
-            Delete
-          </button>
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div role="menu" aria-label={`Actions for user ${id}`} className="ui-menu absolute right-0 mt-1 z-50">
+            <button type="button" role="menuitem" className="ui-menu-item"
+              style={{ color: "var(--accent)" }}
+              onClick={() => { onView?.(id); setOpen(false); }}>
+              View
+            </button>
+            <button type="button" role="menuitem" className="ui-menu-item"
+              onClick={() => { onEdit?.(id); setOpen(false); }}>
+              Edit
+            </button>
+            <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
+            <button type="button" role="menuitem" className="ui-menu-item"
+              style={{ color: "var(--danger)" }}
+              onClick={() => { onDelete?.(id); setOpen(false); }}>
+              Delete
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -79,9 +78,7 @@ export default function UserManagement() {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [showReportExecute, setShowReportExecute] = useState(false);
   const [reportToView, setReportToView] = useState(null);
-  const ROLE_OPTIONS = ["Staff", "Admin", "Auditors", "Safety Officer", "Supervisor", "Contractor"];
 
-  // modal control for role-specific create
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
 
@@ -93,47 +90,22 @@ export default function UserManagement() {
       { id: 4, name: "David Brown", email: "david@company.com", role: "Staff", department: "Operations", status: "Inactive" },
       { id: 5, name: "Emma Davis", email: "emma@company.com", role: "Contractor", department: "Maintenance", status: "Active" },
       { id: 6, name: "Frank Miller", email: "frank@company.com", role: "Auditors", department: "Compliance", status: "Active" },
-      { id: 7, name: "Grace Lee", email: "grace@company.com", role: "Admin", department: "Management", status: "Active" }
+      { id: 7, name: "Grace Lee", email: "grace@company.com", role: "Admin", department: "Management", status: "Active" },
     ]);
   }, []);
 
-  // open modal for the selected role
-  const handleAddUserRole = (role) => {
-    setAddMenuOpen(false);
-    setSelectedRole(role);
-    setShowCreateModal(true);
-  };
-
-  const handleSaveNewUser = (userData) => {
-    const newUser = { id: Date.now(), ...userData };
-    setUsers((prev) => [newUser, ...prev]);
-    setShowCreateModal(false);
-    setSelectedRole(null);
-  };
-
+  const handleAddUserRole = (role) => { setAddMenuOpen(false); setSelectedRole(role); setShowCreateModal(true); };
+  const handleSaveNewUser = (userData) => { setUsers((prev) => [{ id: Date.now(), ...userData }, ...prev]); setShowCreateModal(false); setSelectedRole(null); };
   const handleEdit = (id) => console.log("Edit user:", id);
   const handleDelete = (id) => setUsers((prev) => prev.filter((user) => user.id !== id));
- 
-const handleView = (id) => {
-  const user = users.find((u) => u.id === id);
-    console.log("UserManagement: view user", id, user);
+  const handleView = (id) => {
+    const user = users.find((u) => u.id === id);
     if (!user) return;
-    setReportToView(user); // store full object
+    setReportToView(user);
     setShowReportExecute(true);
   };
 
-
-
-  const roleColors = {
-    Admin: "text-purple-600 bg-purple-100",
-    Supervisor: "text-blue-600 bg-blue-100",
-    "Safety Officer": "text-green-600 bg-green-100",
-    Staff: "text-gray-600 bg-gray-100",
-    Contractor: "text-orange-600 bg-orange-100",
-    Auditors: "text-red-600 bg-red-100",
-  };
-
-  const statusColors = { Active: "text-green-600 bg-green-100", Inactive: "text-red-600 bg-red-100", Pending: "text-yellow-600 bg-yellow-100" };
+  const statuses = ["All", ...new Set(users.map((u) => u.status))];
 
   const filteredUsers = users.filter((user) => {
     const matchesTab = activeTab === "All" || user.role === activeTab;
@@ -143,172 +115,154 @@ const handleView = (id) => {
     return matchesTab && matchesSearch && matchesStatus && matchesDepartment;
   });
 
-  // const departments = ["All", ...new Set(users.map((u) => u.department))];
-  const statuses = ["All", ...new Set(users.map((u) => u.status))];
-
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-
-        <div className="relative inline-block text-left">
+    <div className="p-6 max-w-7xl mx-auto min-h-screen" style={{ color: "var(--text)" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>User Management</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Manage system users, roles, and permissions</p>
+        </div>
+        {/* Add User Dropdown */}
+        <div className="relative">
           <button
             type="button"
             onClick={() => setAddMenuOpen((v) => !v)}
-            className="inline-flex items-center px-4 py-2 bg-primary text-tertiary rounded"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            style={{ background: "var(--accent)", color: "#fff" }}
             aria-haspopup="menu"
             aria-expanded={addMenuOpen}
           >
-            + Add User
-            <svg className="ml-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+            <PlusIcon className="h-4 w-4" />
+            Add User
           </button>
-
           {addMenuOpen && (
-            <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50">
-              {ROLE_OPTIONS.map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => handleAddUserRole(role)}
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setAddMenuOpen(false)} />
+              <div className="ui-menu absolute right-0 mt-1 z-50">
+                {ROLE_OPTIONS.map((role) => (
+                  <button key={role} type="button" className="ui-menu-item" onClick={() => handleAddUserRole(role)}>
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* Role Tabs */}
-      <div className="flex space-x-4 mb-6 overflow-x-auto" role="tablist">
-        {["All", "Admin", "Supervisor", "Safety Officer", "Staff", "Contractor", "Auditors"].map((tab) => (
+      <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto" role="tablist">
+        {ROLE_TABS.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded font-medium border whitespace-nowrap ${activeTab === tab ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}
+            role="tab"
+            aria-selected={activeTab === tab}
+            className="px-3 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition-all"
+            style={
+              activeTab === tab
+                ? { background: "var(--accent)", color: "#fff", borderColor: "var(--accent)" }
+                : { background: "transparent", color: "var(--text-muted)", borderColor: "var(--border)" }
+            }
           >
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Search Bar and Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input id="user-search" type="text" placeholder="Search by name, email, or department" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 border border-gray-300 rounded px-4 py-2" />
-
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-gray-300 rounded px-4 py-2 bg-white">
-          {statuses.map((status) => <option key={status} value={status}>Status: {status}</option>)}
+      {/* Search + Status Filter */}
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--text-muted)" }} />
+          <input
+            id="user-search"
+            type="text"
+            placeholder="Search by name, email, or department…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="ui-input pl-9 w-full"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="ui-select"
+          style={{ minWidth: "160px" }}
+        >
+          {statuses.map((s) => <option key={s} value={s}>Status: {s}</option>)}
         </select>
-
-      {/*  <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className="border border-gray-300 rounded px-4 py-2 bg-white">
-          {departments.map((dept) => <option key={dept} value={dept}>Department: {dept}</option>)}
-        </select>*/}
       </div>
 
       {/* Table */}
-      <div className="bg-white shadow rounded-lg p-4">
-        <table className="w-full table-auto border border-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              {["ID", "Name", "Email", "Role", "Department", "Status", "Action"].map((header) => (
-                <th key={header} className="border px-4 py-2 text-left text-sm font-medium text-gray-700">{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="border px-4 py-2 text-center text-gray-500">No users found</td>
+      <div className="ui-card overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-raised)" }}>
+                {["ID", "Name", "Email", "Role", "Department", "Status", "Action"].map((h) => (
+                  <th key={h} className="ui-th">{h}</th>
+                ))}
               </tr>
-            ) : (
-              filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="border px-4 py-2 text-sm">{user.id}</td>
-                  <td className="border px-4 py-2 text-sm font-medium">{user.name}</td>
-                  <td className="border px-4 py-2 text-sm">{user.email}</td>
-                  <td className="border px-4 py-2 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${roleColors[user.role]}`}>{user.role}</span></td>
-                  <td className="border px-4 py-2 text-sm">{user.department}</td>
-                  <td className="border px-4 py-2 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[user.status]}`}>{user.status}</span></td>
-                  <td className="border px-4 py-2 text-sm"><ActionMenu id={user.id} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} /></td>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>No users found.</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredUsers.map((user) => (
+                <tr key={user.id} className="ui-row">
+                  <td className="ui-td font-mono text-xs">{user.id}</td>
+                  <td className="ui-td font-semibold">{user.name}</td>
+                  <td className="ui-td" style={{ color: "var(--text-muted)" }}>{user.email}</td>
+                  <td className="ui-td">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                      style={ROLE_COLORS[user.role] || { background: "color-mix(in srgb,var(--text-muted) 15%,transparent)", color: "var(--text-muted)" }}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="ui-td">{user.department}</td>
+                  <td className="ui-td">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                      style={STATUS_STYLE[user.status] || {}}>
+                      {user.status}
+                    </span>
+                  </td>
+                  <td className="ui-td">
+                    <ActionMenu id={user.id} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Role-specific create modal */}
-      {showCreateModal && (
-        <UserCreateModal
-          isOpen={showCreateModal}
-          role={selectedRole}
-          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
-          onSave={handleSaveNewUser}
-        />
+      {/* Role-specific create modals */}
+      {showCreateModal && !selectedRole && (
+        <UserCreateModal isOpen role={selectedRole} onClose={() => { setShowCreateModal(false); setSelectedRole(null); }} onSave={handleSaveNewUser} />
       )}
-
       {showCreateModal && selectedRole === "Admin" && (
-        <UserAdminCreateModal
-          isOpen={showCreateModal}
-          role={selectedRole}
-          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
-          onSave={handleSaveNewUser}
-        />
+        <UserAdminCreateModal isOpen role={selectedRole} onClose={() => { setShowCreateModal(false); setSelectedRole(null); }} onSave={handleSaveNewUser} />
       )}
-
       {showCreateModal && selectedRole === "Auditors" && (
-        <UserAuditCreateModal
-          isOpen={showCreateModal}
-          role={selectedRole}
-          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
-          onSave={handleSaveNewUser}
-        />
+        <UserAuditCreateModal isOpen role={selectedRole} onClose={() => { setShowCreateModal(false); setSelectedRole(null); }} onSave={handleSaveNewUser} />
       )}
-
       {showCreateModal && selectedRole === "Safety Officer" && (
-        <UserOfficersCreateModal
-          isOpen={showCreateModal}
-          role={selectedRole}
-          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
-          onSave={handleSaveNewUser}
-        />
+        <UserOfficersCreateModal isOpen role={selectedRole} onClose={() => { setShowCreateModal(false); setSelectedRole(null); }} onSave={handleSaveNewUser} />
       )}
-
       {showCreateModal && selectedRole === "Supervisor" && (
-        <UserSupervisorCreateModal
-          isOpen={showCreateModal}
-          role={selectedRole}
-          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
-          onSave={handleSaveNewUser}
-        />
+        <UserSupervisorCreateModal isOpen role={selectedRole} onClose={() => { setShowCreateModal(false); setSelectedRole(null); }} onSave={handleSaveNewUser} />
       )}
-
       {showCreateModal && selectedRole === "Contractor" && (
-        <UserContractorCreateModal
-          isOpen={showCreateModal}
-          role={selectedRole}
-          onClose={() => { setShowCreateModal(false); setSelectedRole(null); }}
-          onSave={handleSaveNewUser}
-        />
+        <UserContractorCreateModal isOpen role={selectedRole} onClose={() => { setShowCreateModal(false); setSelectedRole(null); }} onSave={handleSaveNewUser} />
       )}
 
-{/* View user in a centered form modal */}
       {showReportExecute && reportToView && (
-        <UserViewFormModal
-          isOpen={showReportExecute}
-          user={reportToView}
-          onClose={() => {
-            setShowReportExecute(false);
-            setReportToView(null);
-          }}
-        />
+        <UserViewFormModal isOpen={showReportExecute} user={reportToView} onClose={() => { setShowReportExecute(false); setReportToView(null); }} />
       )}
-
     </div>
   );
 }
-// ...existing code...
+

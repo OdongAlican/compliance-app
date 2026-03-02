@@ -1,167 +1,225 @@
 import React from 'react';
-import { 
-  FaHome, 
-  FaClipboard, 
-  FaExclamationTriangle, 
-  FaBell, 
-  FaCheckCircle, 
-  FaUsers, 
-  FaCogs, 
-  FaChartBar, 
-  FaQuestionCircle, 
+import {
+  FaHome,
+  FaClipboard,
+  FaExclamationTriangle,
+  FaBell,
+  FaCheckCircle,
+  FaUsers,
+  FaCogs,
+  FaChartBar,
   FaSignOutAlt,
   FaChevronRight,
   FaChevronLeft,
+  FaSun,
+  FaMoon,
 } from 'react-icons/fa';
-import { MdOutlineDashboard } from "react-icons/md";
-
+import { MdOutlineDashboard } from 'react-icons/md';
 import { NavLink } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
-export const Sidebar = ({ sidebarToggle, setSidebarToggle, isMinimized, setIsMinimized, darkMode }) => {
+const NAV_SECTIONS = [
+  {
+    label: 'Menu',
+    items: [
+      { to: '/',                    icon: FaHome,                label: 'Home' },
+      { to: '/inspection',          icon: FaClipboard,           label: 'Inspection' },
+      { to: '/hazard/report',       icon: FaExclamationTriangle, label: 'Hazard & Risk' },
+      { to: '/incident-management', icon: FaBell,                label: 'Incidents' },
+      { to: '/health-and-safety',   icon: FaCheckCircle,         label: 'Health & Safety' },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { to: '/user-management', icon: FaUsers, label: 'Users' },
+    ],
+  },
+  {
+    label: 'Others',
+    items: [
+      { to: '/capa',      icon: FaCogs,     label: 'CAPA' },
+      { to: '/analytics', icon: FaChartBar, label: 'Analytics' },
+    ],
+  },
+];
+
+export const Sidebar = ({ sidebarToggle, setSidebarToggle, isMinimized, setIsMinimized }) => {
+  const { darkMode, setDarkMode } = useTheme();
 
   return (
-    <div
-      className={`${sidebarToggle ? 'block' : 'hidden'} md:block fixed inset-y-0 left-0 overflow-y-auto z-40 transition-all duration-300 ${
-        isMinimized ? 'w-24 px-3 py-8' : 'w-72 px-6 py-8'
-      } ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-950 to-blue-900 border-r border-blue-900 shadow-lg' : 'bg-white/80 backdrop-blur border-r border-gray-200 shadow-sm'}`}
-    >
-      {/* Close button for mobile */}
-      <button
-        onClick={() => setSidebarToggle(false)}
-        className={`md:hidden absolute top-4 right-4 text-xl ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}
-        aria-label="Close sidebar"
+    <>
+      {/* Mobile backdrop */}
+      {sidebarToggle && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+          onClick={() => setSidebarToggle(false)}
+        />
+      )}
+
+      <aside
+        style={{
+          background:  'var(--bg-surface)',
+          borderRight: '1px solid var(--border)',
+        }}
+        className={`
+          fixed inset-y-0 left-0 z-40
+          flex flex-col
+          transition-all duration-300 ease-in-out
+          ${sidebarToggle ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+          ${isMinimized ? 'w-[72px]' : 'w-64'}
+          overflow-hidden shadow-[var(--shadow-md)]
+        `}
       >
-        &times;
-      </button>
-
-      {/* Header */}
-      {!isMinimized && (
-        <div className="mb-8 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${darkMode ? 'bg-blue-900 text-white' : 'bg-primary text-white'}`}> 
-              <MdOutlineDashboard size={24} />
-            </div>
-            <h2 className={`text-xl font-bold ${darkMode ? 'text-blue-100' : 'text-gray-800'}`}>Admin Dashboard</h2>
-          </div>
-          <button
-            onClick={() => setIsMinimized(!isMinimized)}
-            className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-blue-900 text-blue-300' : 'hover:bg-gray-100 text-gray-600'}`}
-            title={isMinimized ? 'Expand' : 'Minimize'}
-          >
-            <FaChevronLeft size={18} />
-          </button>
-        </div>
-      )}
-
-      {isMinimized && (
-        <div className="mb-8 flex items-center justify-center">
-          <button
-            onClick={() => setIsMinimized(!isMinimized)}
-            className={`p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-blue-950 text-blue-300' : 'hover:bg-gray-100 text-gray-600'}`}
-            title="Expand"
-          >
-            <FaChevronRight size={20} />
-          </button>
-        </div>
-      )}
-
-      {/* Navigation Sections */}
-      <nav className={`${isMinimized ? 'space-y-8' : 'space-y-8 pb-6'}`}>
-        {/* Menu Section */}
-        <div>
-          {!isMinimized && <h3 className={`text-xs font-semibold uppercase tracking-wide mb-4 ${darkMode ? 'text-blue-300' : 'text-gray-500'}`}>Menu</h3>}
-          <ul className={isMinimized ? 'space-y-2 flex flex-col items-center' : 'space-y-3'}>
-            <SidebarItem to="/" icon={FaHome} label="Home" minimized={isMinimized} darkMode={darkMode} />
-            <SidebarItem to="/inspection" icon={FaClipboard} label="Inspection" minimized={isMinimized} darkMode={darkMode} />
-            <SidebarItem to="/hazard/report" icon={FaExclamationTriangle} label="Hazard & Risk Management" minimized={isMinimized} darkMode={darkMode} />
-            <SidebarItem to="/incident-management" icon={FaBell} label="Incidents Management" minimized={isMinimized} darkMode={darkMode} />
-            <SidebarItem to="/health-and-safety" icon={FaCheckCircle} label="Health & Safety Audit" minimized={isMinimized} darkMode={darkMode} />
-          </ul>
-        </div>
-
-        {/* Management Section */}
-        <div className={`pt-20 border-t ${darkMode ? 'border-blue-900' : 'border-gray-200'}`}> 
-          {!isMinimized && <h3 className={`text-xs font-semibold uppercase tracking-wide mb-4 mt-4 ${darkMode ? 'text-blue-300' : 'text-gray-500'}`}>Management</h3>}
-          <ul className={isMinimized ? 'space-y-2 flex flex-col items-center' : 'space-y-3'}>
-            <SidebarItem to="/user-management" icon={FaUsers} label="Users" minimized={isMinimized} darkMode={darkMode} />
-          </ul>
-        </div>
-
-        {/* Others Section */}
-        <div className={`pt-20 border-t ${darkMode ? 'border-blue-900' : 'border-gray-200'}`}> 
-          {!isMinimized && <h3 className={`text-xs font-semibold uppercase tracking-wide mb-4 mt-4 ${darkMode ? 'text-blue-300' : 'text-gray-500'}`}>Others</h3>}
-          <ul className={isMinimized ? 'space-y-2 flex flex-col items-center' : 'space-y-3'}>
-            <SidebarItem to="/capa" icon={FaCogs} label="CAPA" minimized={isMinimized} darkMode={darkMode} />
-            <SidebarItem to="/analytics" icon={FaChartBar} label="Analytics" minimized={isMinimized} darkMode={darkMode} />
-          </ul>
-        </div>
-      </nav>
-
-      {/* Divider */}
-      {!isMinimized && <div className={`${darkMode ? 'border-t border-blue-900' : 'border-t border-gray-200'} my-6`}></div>}
-
-      {/* Account Section */}
-      {!isMinimized && (
-        <div className="space-y-4">
-          <h3 className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-blue-300' : 'text-gray-500'}`}>Account</h3>
-          <ul className="space-y-3">
-            <AccountItem icon={FaQuestionCircle} label="Help Center" minimized={isMinimized} darkMode={darkMode} />
-            <AccountItem icon={FaCogs} label="Settings" minimized={isMinimized} darkMode={darkMode} />
-          </ul>
-        </div>
-      )}
-
-      {/* Profile Card */}
-      {!isMinimized && (
-        <div className={`${darkMode ? 'bg-gradient-to-tr from-gray-900 via-blue-950 to-blue-900 border border-blue-900' : 'bg-white border border-gray-200'} rounded-lg p-4 shadow-sm mt-6`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/profile1.jpg" 
-                alt="Profile" 
-                className="w-12 h-12 rounded-full object-cover border-2 border-blue-400" 
-              />
-              <div>
-                <p className={`font-semibold text-sm ${darkMode ? 'text-blue-100' : 'text-gray-800'}`}>Paul Amegah</p>
-                <p className={`text-xs ${darkMode ? 'text-blue-300' : 'text-gray-500'}`}>paul@gmail.com</p>
+        {/* ── Logo / Header ── */}
+        <div
+          style={{ borderBottom: '1px solid var(--border)' }}
+          className="flex items-center justify-between px-3 py-4 shrink-0 h-16"
+        >
+          {!isMinimized ? (
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div
+                style={{ background: 'linear-gradient(135deg, var(--accent), #7c3aed)' }}
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_14px_color-mix(in_srgb,var(--accent)_35%,transparent)]"
+              >
+                <MdOutlineDashboard size={18} className="text-white" />
+              </div>
+              <div className="min-w-0">
+                <p style={{ color: 'var(--text)' }} className="font-bold text-sm truncate leading-tight">ComplianceHub</p>
+                <p style={{ color: 'var(--text-muted)' }} className="text-[10px] truncate">Admin Portal</p>
               </div>
             </div>
-            <button className={`${darkMode ? 'text-blue-300 hover:text-blue-500' : 'text-gray-400 hover:text-gray-600'} transition-colors`}>
-              <FaSignOutAlt size={18} />
-            </button>
-          </div>
+          ) : (
+            <div
+              style={{ background: 'linear-gradient(135deg, var(--accent), #7c3aed)' }}
+              className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto"
+            >
+              <MdOutlineDashboard size={18} className="text-white" />
+            </div>
+          )}
+
+          <button
+            onClick={() => setIsMinimized(!isMinimized)}
+            style={{ color: 'var(--text-muted)', background: 'var(--bg-raised)' }}
+            className="hidden md:flex items-center justify-center w-6 h-6 rounded-lg hover:opacity-80 transition-opacity shrink-0 ml-1"
+            title={isMinimized ? 'Expand' : 'Collapse'}
+          >
+            {isMinimized ? <FaChevronRight size={10} /> : <FaChevronLeft size={10} />}
+          </button>
         </div>
-      )}
-    </div>
+
+        {/* ── Navigation ── */}
+        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-5">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              {!isMinimized && (
+                <p
+                  style={{ color: 'var(--text-muted)' }}
+                  className="text-[10px] font-semibold uppercase tracking-widest px-2 mb-1.5"
+                >
+                  {section.label}
+                </p>
+              )}
+              <ul className="space-y-0.5">
+                {section.items.map((item) => (
+                  <SidebarItem
+                    key={item.to}
+                    to={item.to}
+                    icon={item.icon}
+                    label={item.label}
+                    minimized={isMinimized}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        {/* ── Bottom actions ── */}
+        <div style={{ borderTop: '1px solid var(--border)' }} className="shrink-0 p-2 space-y-1.5">
+          {/* Dark / light toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}
+            className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:opacity-80 transition-all duration-150 ${isMinimized ? 'justify-center' : ''}`}
+            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {darkMode
+              ? <FaSun size={14} className="text-yellow-400 shrink-0" />
+              : <FaMoon size={14} className="text-blue-500 shrink-0" />
+            }
+            {!isMinimized && <span style={{ color: 'var(--text)' }}>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
+          </button>
+
+          {/* Profile */}
+          {!isMinimized ? (
+            <div
+              style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  style={{ background: 'linear-gradient(135deg, var(--accent), #7c3aed)' }}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                >
+                  PA
+                </div>
+                <div className="min-w-0">
+                  <p style={{ color: 'var(--text)' }} className="text-xs font-semibold truncate">Paul Amegah</p>
+                  <p style={{ color: 'var(--text-muted)' }} className="text-[10px] truncate">Admin</p>
+                </div>
+              </div>
+              <button style={{ color: 'var(--text-muted)' }} className="hover:opacity-70 transition-opacity shrink-0" title="Sign out">
+                <FaSignOutAlt size={13} />
+              </button>
+            </div>
+          ) : (
+            <button
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-raised)' }}
+              className="w-full flex justify-center p-2.5 rounded-xl hover:opacity-80 transition-opacity"
+              title="Sign out"
+            >
+              <FaSignOutAlt size={14} />
+            </button>
+          )}
+        </div>
+      </aside>
+    </>
   );
 };
 
-// Reusable Sidebar Item Component
-const SidebarItem = ({ to, icon: IconComponent, label, minimized, darkMode }) => (
+/* ── SidebarItem ── */
+const SidebarItem = ({ to, icon: Icon, label, minimized }) => (
   <li>
     <NavLink
       to={to}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium ${
-          isActive
-            ? `${darkMode ? 'bg-blue-900 text-blue-200 border-l-4 border-blue-400' : 'bg-primary2 text-primary border-l-4 border-primary'}`
-            : `${darkMode ? 'text-blue-200 hover:bg-blue-950' : 'text-gray-600 hover:bg-gray-50'}`
-        } ${minimized ? 'justify-center p-2' : ''}`
-      }
       title={minimized ? label : ''}
+      style={({ isActive }) =>
+        isActive
+          ? {
+              background:  'color-mix(in srgb, var(--accent) 15%, transparent)',
+              color:       'var(--accent)',
+              borderLeft:  '2px solid var(--accent)',
+              paddingLeft: minimized ? undefined : 'calc(0.75rem - 2px)',
+            }
+          : { color: 'var(--text-muted)' }
+      }
+      className={({ isActive }) => `
+        flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+        transition-all duration-150 cursor-pointer select-none
+        ${minimized ? 'justify-center' : ''}
+        ${!isActive ? 'hover:bg-[color:var(--bg-raised)] hover:text-[color:var(--text)]' : ''}
+      `}
     >
-      <IconComponent size={18} />
-      {!minimized && label}
+      {({ isActive }) => (
+        <>
+          <Icon size={15} className="shrink-0" />
+          {!minimized && <span>{label}</span>}
+        </>
+      )}
     </NavLink>
   </li>
 );
 
-// Account Item Component (non-clickable for now)
-const AccountItem = ({ icon: IconComponent, label, minimized, darkMode }) => (
-  <li>
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${darkMode ? 'text-blue-200 hover:bg-blue-950' : 'text-gray-600 hover:bg-gray-50'} ${minimized ? 'justify-center p-2' : ''}`} title={minimized ? label : ''}>
-      <IconComponent size={18} />
-      {!minimized && label}
-    </div>
-  </li>
-);
+export default Sidebar;

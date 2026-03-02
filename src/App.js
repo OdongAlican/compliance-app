@@ -1,10 +1,9 @@
 // ...existing code...
 import './index.css';
 import React, { useState } from 'react';
-import { FaSun, FaMoon } from "react-icons/fa";
-import { BrowserRouter as Router, Routes, Route,useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
 import HazardReportExecute from './components/Execute/HazardReportExecute';
-import { Sidebar } from './components/Sidebar';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home/Home';
 import IncidentInvestigationForm from './components/Dashboard/IncidentManagement';
@@ -33,6 +32,7 @@ import WitnessStateInterface from './Forms-interface/WitnessStateInterface';
 import IncidentInvestigationInterface from './Forms-interface/IncidentInvestigationInterface';
 import IncidentNotificationDelete from './components/Execute/Delete';
 import Dashboard from './components/Dashboard';
+import { Sidebar } from './components/Sidebar';
 import ChecklistInterface from './Forms-interface/ChecklistInterface';
 import WorkPlaceInterface from './Forms-interface/WorkPlaceInterface';
 import EmergencyInterface from './Forms-interface/EmergencyInterface';
@@ -56,26 +56,11 @@ function HazardReportExecuteWrapper() {
 
 export default function App() {
   const [sidebarToggle, setSidebarToggle] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Global Navbar for theme toggle
-  const AppNavbar = () => (
-    <nav className={`w-full flex items-center justify-between px-6 py-3 mb-8 rounded-lg shadow-sm ${darkMode ? "bg-gray-900" : "bg-white"}`}>
-      <span className={`font-bold text-lg ${darkMode ? "text-white" : "text-blue-900"}`}></span>
-      <button
-        className={`flex items-center gap-2 px-4 py-1 rounded-full font-medium border ${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-blue-50 text-blue-900 border-blue-200"}`}
-        onClick={() => setDarkMode((d) => !d)}
-      >
-        {darkMode ? <FaSun className="text-yellow-400" /> : <FaMoon className="text-blue-700" />}
-        {darkMode ? "Light Theme" : "Dark Theme"}
-      </button>
-    </nav>
-  );
 
   return (
+    <ThemeProvider>
     <Router>
-      <div className={darkMode ? "bg-gray-950 min-h-screen" : "bg-white min-h-screen"}>
-        <AppNavbar />
+      <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)', transition: 'background .3s, color .3s' }}>
         <Routes>
         {/* Public home */}
         <Route
@@ -91,7 +76,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle} darkMode={darkMode}>
+            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
               <Dashboard />
               </Layout>
             
@@ -115,7 +100,7 @@ export default function App() {
           path="/sidebar"
           element={
             <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <Sidebar darkMode={darkMode} />
+              <Sidebar />
             </Layout>
           }
         />
@@ -219,7 +204,7 @@ export default function App() {
           path="/inspection"
           element={
             <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <InspectionForm darkMode={darkMode} />
+              <InspectionForm />
             </Layout>
           }
         />
@@ -399,6 +384,7 @@ export default function App() {
       </Routes>
       </div>
     </Router>
+    </ThemeProvider>
   );
 }
 // ...existing code...
