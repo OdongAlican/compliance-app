@@ -26,6 +26,7 @@ function InfoGrid({ items }) {
       ))}
     </div>
   );
+  
 }
 
 function ChecklistTable({ checklist }) {
