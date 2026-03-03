@@ -1,69 +1,62 @@
-import { useState, useEffect } from 'react';
-import { EllipsisVerticalIcon } from '@heroicons/react/20/solid';
+import { useState, useEffect, useRef } from 'react';
+import {
+  EllipsisVerticalIcon,
+  MagnifyingGlassIcon,
+  ArrowDownTrayIcon,
+  ClipboardDocumentCheckIcon,
+  FunnelIcon,
+  CalendarDaysIcon,
+} from '@heroicons/react/24/outline';
 import CanteenFormModal from '../Forms/CanteenForm';
 import CreateInspectionModal from '../Forms/CreateInspectionModal';
 import DeleteModal from '../components/Execute/Delete';
 import CanteenExecute from '../components/Execute/CanteenExecute';
 
-// Action menu for each row
-function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModal, setCreateModalSection }) {
+const STATUS_STYLE = {
+  Pending:       { background: 'color-mix(in srgb,#f85149 15%,transparent)', color: '#f85149' },
+  'In Progress': { background: 'color-mix(in srgb,#d29922 15%,transparent)', color: '#d29922' },
+  Completed:     { background: 'color-mix(in srgb,#3fb950 15%,transparent)', color: '#3fb950' },
+  Approved:      { background: 'color-mix(in srgb,#58a6ff 15%,transparent)', color: '#58a6ff' },
+};
+
+function ActionMenu({ id, entry, onStartInspection, onView, onDelete, setShowCreateModal, setCreateModalSection }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
 
   return (
-    <div className="relative inline-block text-left">
-      <button
-        onClick={() => setOpen(!open)}
-        className="p-1 text-gray-500 hover:text-gray-700"
-      >
+    <div className="relative inline-block" ref={ref}>
+      <button onClick={() => setOpen(!open)}
+        className="p-1.5 rounded-lg transition-colors"
+        style={{ color: 'var(--text-muted)', background: open ? 'var(--bg-raised)' : 'transparent' }}>
         <EllipsisVerticalIcon className="h-5 w-5" />
       </button>
       {open && (
-        <div className="ui-menu absolute right-0 mt-2 w-48 z-10">
-          <button
-            onClick={() => {
-              onStartInspection(id);
-              setOpen(false);
-            }}
-            className="ui-menu-item text-primary"
-          >
+        <div className="ui-menu absolute right-0 mt-1 w-52 z-30">
+          <button className="ui-menu-item" style={{ color: 'var(--accent)' }}
+            onClick={() => { onStartInspection(id); setOpen(false); }}>
             Start Inspection
           </button>
-          <button
-            onClick={() => {
-              setCreateModalSection(1); // 1 = Safety Officers section
-              setShowCreateModal(true);
-              setOpen(false);
-            }}
-            className="ui-menu-item text-gray-800"
-          >
-            Assign Safetyofficer
+          <button className="ui-menu-item" style={{ color: 'var(--text)' }}
+            onClick={() => { setCreateModalSection(1); setShowCreateModal(true); setOpen(false); }}>
+            Assign Safety Officer
           </button>
-          <button
-            onClick={() => {
-              setCreateModalSection(2); // 2 = Supervisors section
-              setShowCreateModal(true);
-              setOpen(false);
-            }}
-            className="ui-menu-item text-gray-800"
-          >
+          <button className="ui-menu-item" style={{ color: 'var(--text)' }}
+            onClick={() => { setCreateModalSection(2); setShowCreateModal(true); setOpen(false); }}>
             Assign Supervisor
           </button>
-          <button
-            onClick={() => {
-              onEdit?.(id);
-              setOpen(false);
-            }}
-            className="ui-menu-item text-yellow-700"
-          >
-            View
+          <button className="ui-menu-item" style={{ color: 'var(--warning)' }}
+            onClick={() => { onView(entry); setOpen(false); }}>
+            View Details
           </button>
-          <button
-            onClick={() => {
-              onDelete?.(id);
-              setOpen(false);
-            }}
-            className="ui-menu-item text-red-700"
-          >
+          <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
+          <button className="ui-menu-item" style={{ color: 'var(--danger)' }}
+            onClick={() => { onDelete(id); setOpen(false); }}>
             Delete
           </button>
         </div>
@@ -72,243 +65,207 @@ function ActionMenu({ id, onStartInspection, onEdit, onDelete, setShowCreateModa
   );
 }
 
-export default function CanteenInterface({ darkMode }) {
+const COLS = ['#', 'School / Canteen', 'Location', 'Date', 'Time', 'Safety Officer', 'Supervisor', 'Status', ''];
+
+export default function CanteenInterface() {
   const [data, setData] = useState([]);
   const [showFormModal, setShowFormModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createModalSection, setCreateModalSection] = useState(0); // 0 = first section
-  const [activeTab, setActiveTab] = useState('All');
-  const [showModal, setShowModal] = useState(false); // for DeleteModal
+  const [createModalSection, setCreateModalSection] = useState(0);
+  const [showModal, setShowModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [showReportExecute, setShowReportExecute] = useState(false);
+  const [showExecute, setShowExecute] = useState(false);
   const [reportToView, setReportToView] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    const mockData = [
-      {
-        id: 1,
-        schoolname: 'Sunrise High',
-        location: 'Downtown',
-        dateofinspection: '2024-08-15',
-        time: '10:00 AM',
-        safetyofficer: 'Jane Smith',
-        supervisor: 'John Doe',
-        status: 'Pending',
-      },
-    ];
-    setData(mockData);
+    setData([
+      { id: 1, schoolname: 'Sunrise High',    location: 'Downtown',     dateofinspection: '2025-08-15', time: '10:00 AM', safetyofficer: 'Jane Smith',  supervisor: 'John Doe',    status: 'Pending'     },
+      { id: 2, schoolname: 'Greenfield Acad', location: 'North Ridge',  dateofinspection: '2025-08-20', time: '09:30 AM', safetyofficer: 'Mark Lee',    supervisor: 'Alice Brown', status: 'In Progress' },
+      { id: 3, schoolname: 'Bayside College', location: 'Harbour View', dateofinspection: '2025-07-10', time: '02:00 PM', safetyofficer: 'Sarah Kim',   supervisor: 'Tom Clark',   status: 'Completed'   },
+      { id: 4, schoolname: 'Mountain View',   location: 'Uptown',       dateofinspection: '2025-07-25', time: '11:15 AM', safetyofficer: 'Paul Amegah', supervisor: 'Grace Addo',  status: 'Approved'    },
+    ]);
   }, []);
 
-  // When Start Inspection is clicked, open the modal
-  const handleStartInspection = (id) => {
-    setShowFormModal(true);
+  const filtered = data.filter((e) => {
+    const matchStatus = statusFilter === 'All' || e.status === statusFilter;
+    const matchSearch = !search ||
+      e.schoolname.toLowerCase().includes(search.toLowerCase()) ||
+      e.location.toLowerCase().includes(search.toLowerCase()) ||
+      e.safetyofficer.toLowerCase().includes(search.toLowerCase());
+    const matchFrom = !dateFrom || e.dateofinspection >= dateFrom;
+    const matchTo   = !dateTo   || e.dateofinspection <= dateTo;
+    return matchStatus && matchSearch && matchFrom && matchTo;
+  });
+
+  const handleExport = () => {
+    const rows = [
+      ['ID', 'School Name', 'Location', 'Date', 'Time', 'Safety Officer', 'Supervisor', 'Status'],
+      ...filtered.map(e => [e.id, e.schoolname, e.location, e.dateofinspection, e.time, e.safetyofficer, e.supervisor, e.status]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'canteen-inspections.csv' });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  const handleEdit = (inspection) => { setReportToView(inspection); setShowReportExecute(true); }
-
-  const handleDelete = (id) => { setItemToDelete(id); setShowModal(true); };
-
-  const statusColors = darkMode
-    ? {
-      Pending: 'text-red-300 bg-red-900',
-      Completed: 'text-green-300 bg-green-900',
-      'In Progress': 'text-yellow-300 bg-yellow-900',
-      Approved: 'text-blue-300 bg-blue-900',
-      All: 'text-blue-200 bg-gray-900',
-    }
-    : {
-      Pending: 'text-red-600 bg-red-100',
-      Completed: 'text-green-600 bg-green-100',
-      'In Progress': 'text-yellow-600 bg-yellow-100',
-      Approved: 'text-blue-600 bg-blue-100',
-      All: 'text-blue-900 bg-blue-50',
-    };
+  const hasFilters = statusFilter !== 'All' || search || dateFrom || dateTo;
 
   return (
-    <div className={`p-6 max-w-7xl mx-auto min-h-screen ${darkMode ? 'bg-gray-950 text-blue-100' : 'bg-white text-gray-900'}`}>
-      {/* Title Card - now full width, reduced height, simplified text */}
-      <div className={`w-full text-left mb-8 rounded-xl shadow-lg p-5 border ${darkMode ? 'bg-gray-900 border-blue-900' : 'bg-white border-blue-100'}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-blue-900'}`}>Canteen Inspection</h1>
-            <p className={`mt-2 text-sm sm:text-base font-normal ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>All inspections and assignments in one place.</p>
+    <div className="ui-page" style={{ color: 'var(--text)' }}>
+
+      {/* PAGE HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'color-mix(in srgb,var(--accent) 15%,transparent)' }}>
+            <ClipboardDocumentCheckIcon className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           </div>
           <div>
-            <button
-              onClick={() => {
-                setCreateModalSection(0);
-                setShowCreateModal(true);
-              }}
-              className="px-5 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-            >
-              + Create Inspection
-            </button>
+            <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--text)' }}>Canteen Inspection</h1>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>All inspections and assignments in one place.</p>
           </div>
+        </div>
+        <button
+          onClick={() => { setCreateModalSection(0); setShowCreateModal(true); }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
+          style={{ background: 'var(--accent)' }}>
+          + Create Inspection
+        </button>
+      </div>
+
+      {/* FILTER BAR */}
+      <div className="ui-card mb-4 p-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap">
+          {/* Search */}
+          <div className="flex items-center gap-2 flex-1 min-w-[180px] rounded-lg px-3 py-2.5"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <MagnifyingGlassIcon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search school, officer, location…"
+              style={{ background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: '13px', width: '100%' }} />
+          </div>
+          {/* Status dropdown */}
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 min-w-[160px]"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <FunnelIcon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              style={{ background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: '13px', width: '100%', border: 'none', cursor: 'pointer' }}>
+              {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map(s => (
+                <option key={s} value={s} style={{ background: 'var(--bg-surface)', color: 'var(--text)' }}>{s}</option>
+              ))}
+            </select>
+          </div>
+          {/* Date range */}
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2.5"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <CalendarDaysIcon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              title="From date"
+              style={{ background: 'transparent', outline: 'none', color: dateFrom ? 'var(--text)' : 'var(--text-muted)', fontSize: '13px', border: 'none', cursor: 'pointer' }} />
+            <span style={{ color: 'var(--border)', fontWeight: 600 }}>–</span>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              title="To date"
+              style={{ background: 'transparent', outline: 'none', color: dateTo ? 'var(--text)' : 'var(--text-muted)', fontSize: '13px', border: 'none', cursor: 'pointer' }} />
+          </div>
+          {/* Export */}
+          <button onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg)' }}>
+            <ArrowDownTrayIcon className="w-4 h-4" /> Export CSV
+          </button>
         </div>
       </div>
 
-      <div className={`rounded-xl shadow-lg overflow-x-auto p-0 ${darkMode ? 'bg-gray-900 border border-blue-900' : 'bg-white border border-blue-100'}`}>
-        <table className="min-w-full border-separate border-spacing-0">
-          <thead>
-            <tr>
-              <th colSpan={10} className="top-0 z-[10] px-4 py-6 bg-white border-b border-blue-100 rounded-t-xl">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex gap-2">
-                    {['All', 'Pending', 'In Progress', 'Completed', 'Approved'].map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-2 rounded-full font-medium border text-sm transition-colors focus:outline-none ${activeTab === tab
-                          ? `${statusColors[tab]} border-transparent shadow`
-                          : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-100'
-                          }`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="px-4 py-2 rounded-lg border w-48 font-medium transition-colors focus:outline-none bg-white text-blue-900 border-blue-200 placeholder-blue-400"
-                    />
-                    <button
-                      onClick={() => {
-                        // Export logic: download CSV of table data
-                        const csvRows = [
-                          ['ID', 'School Name', 'Location', 'Date of Inspection', 'Time', 'Safety Officer', 'Supervisor', 'Status'],
-                          ...data.map(entry => [
-                            entry.id,
-                            entry.schoolname,
-                            entry.location,
-                            entry.dateofinspection,
-                            entry.time,
-                            entry.safetyofficer,
-                            entry.supervisor,
-                            entry.status
-                          ])
-                        ];
-                        const csvContent = csvRows.map(e => e.map(a => `"${a}"`).join(",")).join("\n");
-                        const blob = new Blob([csvContent], { type: 'text/csv' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'canteen-inspections.csv';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
-                      }}
-                      className="px-4 py-2 rounded-lg font-semibold shadow-sm transition-colors border text-base bg-white text-blue-900 border-blue-300 hover:bg-blue-50 flex items-center gap-2"
-                      title="Export table as CSV"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 8l-4-4m4 4l4-4M4 20h16" />
-                      </svg>
-                      Export
-                    </button>
-                  </div>
-                  <CreateInspectionModal
-                    key={`create-${createModalSection}`}
-                    isOpen={showCreateModal}
-                    onClose={() => setShowCreateModal(false)}
-                    startSection={createModalSection}
-                  />
-                </div>
-              </th>
-            </tr>
-            <tr>
-              {[
-                'ID',
-                'School Name',
-                'Location',
-                'Date of Inspection',
-                'Time',
-                'Safety Officer',
-                'Supervisor',
-                'Status',
-                'Action',
-              ].map((header, idx) => (
-                <th
-                  key={header}
-                  className={`sticky top-0 z-[10] border-b ${darkMode ? 'border-blue-900 bg-gray-950 text-blue-200' : 'border-blue-100 bg-blue-50 text-blue-900'} py-4 px-4 text-left text-sm font-semibold backdrop-blur-sm backdrop-filter ${idx === 0 ? 'rounded-tl-xl' : ''} ${idx === 8 ? 'rounded-tr-xl' : ''}`}
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className={darkMode ? 'divide-y divide-blue-900 bg-gray-900' : 'divide-y divide-blue-100 bg-white'}>
-            {data.map((entry, idx) => (
-              <tr
-                key={entry.id}
-                className={`transition-colors duration-150 ${darkMode ? (idx % 2 === 0 ? 'bg-gray-900' : 'bg-gray-950/80 hover:bg-blue-950/80') : (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/60 hover:bg-blue-100')}`}
-              >
-                <td className="py-6 px-4 font-semibold whitespace-nowrap">{entry.id}</td>
-                <td className="py-6 px-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className={darkMode ? 'text-blue-100 font-semibold' : 'text-blue-900 font-semibold'}>{entry.schoolname}</div>
-                      <div className={darkMode ? 'text-blue-300 text-xs' : 'text-blue-700 text-xs'}>{entry.location}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-6 px-4 whitespace-nowrap">{entry.location}</td>
-                <td className="py-6 px-4 whitespace-nowrap">{entry.dateofinspection}</td>
-                <td className="py-6 px-4 whitespace-nowrap">{entry.time}</td>
-                <td className="py-6 px-4 whitespace-nowrap">{entry.safetyofficer}</td>
-                <td className="py-6 px-4 whitespace-nowrap">{entry.supervisor}</td>
-                <td className="py-6 px-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 py-2 rounded-md text-xs font-medium ${statusColors[entry.status] || (darkMode ? 'bg-gray-900 text-blue-200' : 'bg-gray-100 text-gray-700')
-                      }`}
-                  >
-                    {entry.status}
-                  </span>
-                </td>
-                <td className="py-6 px-4 whitespace-nowrap">
-                  <ActionMenu
-                    id={entry.id}
-                    onStartInspection={handleStartInspection}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    setShowCreateModal={setShowCreateModal}
-                    setCreateModalSection={setCreateModalSection}
-                  />
-                </td>
+      {/* TABLE */}
+      <div className="ui-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                {COLS.map((h, i) => (
+                  <th key={i} className="ui-th text-left whitespace-nowrap">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={COLS.length} className="py-16 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                    No records match the current filters.
+                  </td>
+                </tr>
+              ) : filtered.map((entry) => {
+                const s = STATUS_STYLE[entry.status] || { background: 'var(--bg-raised)', color: 'var(--text-muted)' };
+                return (
+                  <tr key={entry.id} className="ui-row">
+                    <td className="ui-td font-mono text-xs" style={{ color: 'var(--text-muted)' }}>#{entry.id}</td>
+                    <td className="ui-td">
+                      <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{entry.schoolname}</span>
+                    </td>
+                    <td className="ui-td text-sm whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{entry.location}</td>
+                    <td className="ui-td text-sm whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{entry.dateofinspection}</td>
+                    <td className="ui-td text-sm whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{entry.time}</td>
+                    <td className="ui-td text-sm" style={{ color: 'var(--text)' }}>{entry.safetyofficer}</td>
+                    <td className="ui-td text-sm" style={{ color: 'var(--text)' }}>{entry.supervisor}</td>
+                    <td className="ui-td">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={s}>{entry.status}</span>
+                    </td>
+                    <td className="ui-td">
+                      <ActionMenu
+                        id={entry.id}
+                        entry={entry}
+                        onStartInspection={() => setShowFormModal(true)}
+                        onView={(e) => { setReportToView(e); setShowExecute(true); }}
+                        onDelete={(id) => { setItemToDelete(id); setShowModal(true); }}
+                        setShowCreateModal={setShowCreateModal}
+                        setCreateModalSection={setCreateModalSection}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {/* Table footer */}
+        <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Showing {filtered.length} of {data.length} records
+          </span>
+          {hasFilters && (
+            <button onClick={() => { setSearch(''); setStatusFilter('All'); setDateFrom(''); setDateTo(''); }}
+              className="text-xs font-medium hover:opacity-70 transition-opacity"
+              style={{ color: 'var(--accent)' }}>
+              Clear all filters
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Modal Form from CanteenForm.js */}
+      {/* MODALS */}
+      <CreateInspectionModal
+        key={`create-${createModalSection}`}
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        startSection={createModalSection}
+      />
       <CanteenFormModal isOpen={showFormModal} onClose={() => setShowFormModal(false)} />
       <DeleteModal
         isOpen={showModal}
-        onCancel={() => {
-          setShowModal(false);
-          setItemToDelete(null);
-        }}
-        onConfirm={() => {
-          setData((prev) => prev.filter((entry) => entry.id !== itemToDelete));
-          setShowModal(false);
-          setItemToDelete(null);
-        }}
+        onCancel={() => { setShowModal(false); setItemToDelete(null); }}
+        onConfirm={() => { setData(p => p.filter(e => e.id !== itemToDelete)); setShowModal(false); setItemToDelete(null); }}
       />
-
-      {showReportExecute && reportToView && (
+      {showExecute && reportToView && (
         <CanteenExecute
-          inspection={reportToView}   // full object
-          onClose={() => {
-            setShowReportExecute(false);
-            setReportToView(null);
-          }}
+          inspection={reportToView}
+          onClose={() => { setShowExecute(false); setReportToView(null); }}
         />
       )}
-
-
     </div>
   );
 }

@@ -24,57 +24,66 @@ function AccordianItem({ children, value, trigger, ...props }) {
   const open = selected === value;
 
   return (
-    <li className="border rounded" {...props}>
+    <li className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }} {...props}>
       <header
         role="button"
         onClick={() => setSelected(open ? null : value)}
-        className="flex justify-between items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 font-medium cursor-pointer"
+        className="flex justify-between items-center px-4 py-3 font-medium cursor-pointer select-none"
+        style={{ background: "var(--bg-raised)", color: "var(--text)" }}
       >
-        {trigger}
+        <span className="text-sm font-semibold">{trigger}</span>
         <ChevronDown
           size={16}
           className={`transition-transform ${open ? "rotate-180" : ""}`}
+          style={{ color: "var(--text-muted)" }}
         />
       </header>
       <div className="overflow-hidden transition-all duration-300" style={{ height: open ? "auto" : 0 }}>
-        {open && <div className="p-4 bg-white">{children}</div>}
+        {open && <div className="p-4" style={{ background: "var(--bg-surface)" }}>{children}</div>}
       </div>
     </li>
   );
 }
 
 function ChecklistSection({ items }) {
+  const cellBorder = { borderBottom: "1px solid var(--border)" };
   return (
-    <table className="w-full border border-gray-300 table-auto border-collapse">
-      <thead className="bg-gray-100">
-        <tr>
-          <th className="px-4 py-2 text-left border border-gray-300">Item</th>
-          <th className="px-4 py-2 text-center border border-gray-300">√ / ⤫ / N/A</th>
-          <th className="px-4 py-2 text-left border border-gray-300">Comments</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-        {items.map((item, i) => (
-          <tr key={i} className={item.isCategoryEnd ? "mb-6" : ""}>
-            <td className="px-4 py-2 border border-gray-300">{item}</td>
-            <td className="px-4 py-2 text-center">
-              <select className="border rounded px-2 py-1">
-                <option value="√">√</option>
-                <option value="⤫">⤫</option>
-                <option value="N/A">N/A</option>
-              </select>
-            </td>
-            <td className="px-4 py-2">
-              <input
-                type="text"
-                placeholder="Enter comment"
-                className="w-full border rounded px-2 py-1"
-              />
-            </td>
+    <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--border)" }}>
+      <table className="min-w-full">
+        <thead>
+          <tr style={{ background: "var(--bg-raised)", ...cellBorder }}>
+            <th className="ui-th text-left">Item</th>
+            <th className="ui-th text-center">Result</th>
+            <th className="ui-th text-left">Comments</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {items.map((item, i) => (
+            <tr key={i} className="ui-row" style={cellBorder}>
+              <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{item}</td>
+              <td className="ui-td text-center">
+                <select
+                  className="text-sm rounded-lg px-2 py-1 outline-none"
+                  style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+                >
+                  <option value="√">√ Pass</option>
+                  <option value="⤫">⤫ Fail</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </td>
+              <td className="ui-td">
+                <input
+                  type="text"
+                  placeholder="Enter comment"
+                  className="w-full text-sm rounded-lg px-2 py-1.5 outline-none"
+                  style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -130,19 +139,40 @@ export default function CanteenFormModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative p-6">
-        <button
-          onClick={() => {
-            onClose();
-            setCurrentSection(0);
-          }}
-          className="absolute top-3 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
-        >
-          &times;
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}>
+      <div className="rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg, 0 25px 50px rgba(0,0,0,0.5))" }}>
 
-        <div className="flex justify-between items-center mb-8 px-4">
+        {/* Modal header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 rounded-t-2xl"
+          style={{ background: "var(--bg-raised)", borderBottom: "1px solid var(--border)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)" }}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                style={{ color: "var(--accent)" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>CONFIDENTIAL</p>
+              <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>Canteen Inspection Form</h2>
+            </div>
+          </div>
+          <button
+            onClick={() => { onClose(); setCurrentSection(0); }}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold transition-colors"
+            style={{ background: "var(--bg)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+          >
+            &times;
+          </button>
+        </div>
+
+        <div className="p-6">
+
+        <div className="flex justify-between items-center mb-8 px-2">
           {sections.map((label, index) => {
             const isCompleted = index < currentSection;
             const isCurrent = index === currentSection;
@@ -150,16 +180,22 @@ export default function CanteenFormModal({ isOpen, onClose }) {
             return (
               <div key={index} className="flex flex-col items-center text-center flex-1">
                 <div
-                  className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm mb-1
-                    ${isCompleted ? "bg-white text-white" : isCurrent ? "bg-primary text-tertiary" : "bg-gray-300 text-gray-700"}
-                  `}
+                  className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm mb-1"
+                  style={
+                    isCompleted
+                      ? { background: "var(--success)", color: "#fff" }
+                      : isCurrent
+                      ? { background: "var(--accent)", color: "#fff" }
+                      : { background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }
+                  }
                 >
                   {isCompleted ? "✓" : index + 1}
                 </div>
                 <span
-                  className={`text-sm rounded-full font-bold mb-1 ${
-                    isCurrent ? "text-blue-600" : isCompleted ? "text-secondary2" : "text-gray-500"
-                  }`}
+                  className="text-xs font-semibold mt-1"
+                  style={{
+                    color: isCurrent ? "var(--accent)" : isCompleted ? "var(--success)" : "var(--text-muted)"
+                  }}
                 >
                   {label}
                 </span>
@@ -168,24 +204,28 @@ export default function CanteenFormModal({ isOpen, onClose }) {
           })}
         </div>
 
-        <h1 className="text-2xl font-bold text-center text-green-700 mb-2">
-          CANTEEN INSPECTION FORM
-        </h1>
-        <p className="text-sm text-gray-500 text-center mb-6">
-          CONFIDENTIAL COMPLIANCE DOCUMENT
-        </p>
-
-        <h2 className="text-xl font-semibold mb-4">
-          SECTION {currentSection + 1}: {sections[currentSection]}
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-6"
+          style={{ color: "var(--accent)" }}>
+          Section {currentSection + 1} of {sections.length} — {sections[currentSection]}
         </h2>
 
         {/* Section Content */}
         {currentSection === 0 && (
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <input placeholder="Inspector Name" className="border p-2 rounded" />
-            <input type="date" className="border p-2 rounded" />
-            <input placeholder="Canteen Location" className="border p-2 rounded" />
-            <input placeholder="Supervisor Name" className="border p-2 rounded" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {[
+              { placeholder: "Inspector Name", type: "text" },
+              { placeholder: "Inspection Date", type: "date" },
+              { placeholder: "Canteen Location", type: "text" },
+              { placeholder: "Supervisor Name", type: "text" },
+            ].map(({ placeholder, type }, i) => (
+              <input
+                key={i}
+                type={type}
+                placeholder={placeholder}
+                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+              />
+            ))}
           </div>
         )}
 
@@ -257,57 +297,45 @@ export default function CanteenFormModal({ isOpen, onClose }) {
             <AccordianItem value="issues" trigger="Issues & Action Plan">
               <div className="space-y-2">
                 <button
-                  onClick={() =>
-                    setIssues([
-                      ...issues,
-                      { issue: "", action: "", person: "", date: "" }
-                    ])
-                  }
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => setIssues([...issues, { issue: "", action: "", person: "", date: "" }])}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white mb-3"
+                  style={{ background: "var(--accent)" }}
                 >
                   + Add Issue
                 </button>
 
-                {/*Issue Rows*/}
-                {issues.map((issues, idx) => (
-                  <div key={idx} className="grid grid-cols-5 gap-4 items-center">
-                    <input
-                      placeholder="Issue"
-                      value={issues.issue}
-                      onChange={(e) =>
-                        updateIssue(idx, "issue", e.target.value)
-                      }
-                      className="border p-2 rounded"
-                    />
-                    <input
-                      placeholder="Corrective Action"
-                      value={issues.action}
-                      onChange={(e) =>
-                        updateIssue(idx, "action", e.target.value)
-                      }
-                      className="border p-2 rounded"
-                    />
-                    <input
-                      placeholder="Person"
-                      value={issues.person}
-                      onChange={(e) =>
-                        updateIssue(idx, "person", e.target.value)
-                      }
-                      className="border p-2 rounded"
-                    />
-                    <input
-                      type="date"
-                      value={issues.date}
-                      onChange={(e) =>
-                        updateIssue(idx, "date", e.target.value)
-                      }
-                      className="border p-2 rounded"
-                    />
+                {issues.map((iss, idx) => (
+                  <div key={idx} className="rounded-xl p-4 mb-3"
+                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { field: "issue", placeholder: "Issue description" },
+                        { field: "action", placeholder: "Corrective Action" },
+                        { field: "person", placeholder: "Responsible Person" },
+                      ].map(({ field, placeholder }) => (
+                        <input
+                          key={field}
+                          placeholder={placeholder}
+                          value={iss[field]}
+                          onChange={(e) => updateIssue(idx, field, e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                          style={{ background: "var(--bg-surface)", color: "var(--text)", border: "1px solid var(--border)" }}
+                        />
+                      ))}
+                      <input
+                        type="date"
+                        value={iss.date}
+                        onChange={(e) => updateIssue(idx, "date", e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                        style={{ background: "var(--bg-surface)", color: "var(--text)", border: "1px solid var(--border)" }}
+                      />
+                    </div>
                     <button
                       onClick={() => deleteIssue(idx)}
-                      className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                      className="mt-2 px-3 py-1 rounded-lg text-xs font-medium text-white"
+                      style={{ background: "var(--danger)" }}
                     >
-                      Delete
+                      Remove
                     </button>
                   </div>
                 ))}
@@ -319,116 +347,106 @@ export default function CanteenFormModal({ isOpen, onClose }) {
 
 
         {currentSection === 3 && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-    {/* Left: Inspection Summary */}
-    <div className="bg-white p-6 rounded-lg shadow-sm border">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Inspection Summary</h2>
-      <div className="space-y-3">
-        {[
-          { label: "Kitchen Area", status: "checked" },
-          { label: "Serving Area", status: "checked" },
-          { label: "Eating Area", status: "checked" },
-          { label: "Personnel Procedures", status: "checked" },
-         { label: "Issues Identified", status: "missing" },
-        ].map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded border">
-            {item.status === "checked" ? (
-              <span className="text-green-600 text-xl">✓</span>
-            ) : (
-              <span className="text-orange-500 text-xl">⚠️</span>
-            )}
-            <span className="text-sm text-gray-700">{item.label}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left: Inspection Summary */}
+            <div className="rounded-xl p-5" style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+              <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Inspection Summary</h3>
+              <div className="space-y-2">
+                {[
+                  { label: "Kitchen Area", status: "checked" },
+                  { label: "Serving Area", status: "checked" },
+                  { label: "Eating Area", status: "checked" },
+                  { label: "Personnel Procedures", status: "checked" },
+                  { label: "Issues Identified", status: "missing" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+                    <span style={{ color: item.status === "checked" ? "var(--success)" : "var(--warning)", fontSize: 16 }}>
+                      {item.status === "checked" ? "✓" : "⚠"}
+                    </span>
+                    <span className="text-sm" style={{ color: "var(--text)" }}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Sign-Off Form */}
+            <div className="rounded-xl p-5 space-y-4" style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+              <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Sign-Off</h3>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Inspector Name</label>
+                <div className="px-3 py-2.5 rounded-lg text-sm" style={{ background: "var(--bg)", color: "var(--accent)", border: "1px solid var(--border)" }}>
+                  Paul Amegah
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Date</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                  style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Canteen Committee Chair</label>
+                <div className="px-3 py-2.5 rounded-lg text-sm" style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}>Paul</div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Signature Upload</label>
+                <div className="flex flex-col items-center gap-2 px-4 py-5 rounded-lg"
+                  style={{ background: "var(--bg)", border: "2px dashed var(--border)" }}>
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+                    style={{ color: "var(--accent)" }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 12l8-8 8 8M12 4v12" />
+                  </svg>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>Drag and drop or</span>
+                  <button className="px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+                    style={{ background: "var(--accent)" }}>Browse File</button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Note</label>
+                <textarea
+                  name="actionTaken"
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
+                  style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+                />
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
-
-    {/* Right: Sign-Off Form */}
-    <div className="bg-gray-50 p-6 rounded-lg shadow-sm border space-y-6">
-      {/* Inspectors */}
-      <div>
-        <div className="flex gap-2 flex-wrap">
-         
-        </div>
-      </div>
-
-      {/* Signature */}
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">Name</label>
-        <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
-          Paul Amegah
-        </div>
-      </div>
-
-      {/* Date */}
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
-        <input
-          type="date"
-          className="border rounded px-4 py-2 text-gray-700 shadow-sm w-full"
-        />
-      </div>
-
-      {/* Committee Chair */}
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">Canteen Committee Chair</label>
-        <div className="border rounded px-4 py-2 text-gray-700 bg-white shadow-sm">Paul</div>
-      </div>
-
-      {/* Chair Signature Upload */}
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">Signature</label>
-        <div className="border rounded px-4 py-2 text-blue-600 italic shadow-sm">
-          <svg className="w-8 h-8 text-blue-400 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 12l8-8 8 8M12 4v12" />
-          </svg>
-          <span>Drag and drop your file or</span>
-          <button className="mt-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Browse File</button>
-        </div>
-      </div>
-
-      {/* Chair Date */}
-      <div>
-          <span className="text-gray-700">Note</span>
-
-        <textarea name="actionTaken" 
-         className="mt-1 block w-full border border-gray-300 rounded-md p-2"  />
-       
-      </div>
-    </div>
-  </div>
-)}
+        )}
 
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-between mt-8 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
           <button
             onClick={prevSection}
             disabled={currentSection === 0}
-            className={`px-4 py-2 rounded ${
+            className="px-5 py-2.5 rounded-full text-sm font-medium transition-opacity"
+            style={
               currentSection === 0
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+                ? { background: "var(--bg-raised)", color: "var(--text-muted)", opacity: 0.5, cursor: "not-allowed", border: "1px solid var(--border)" }
+                : { background: "var(--bg-raised)", color: "var(--text)", border: "1px solid var(--border)" }
+            }
           >
-            Previous
+            ← Previous
           </button>
 
           <button
-            onClick={
-              currentSection === sections.length - 1
-                ? handleSubmit
-                : nextSection
-            }
-            className={`px-4 py-2 rounded ${
-              currentSection === sections.length - 1
-                ? "bg-purple-600 text-white hover:bg-purple-700"
-                : "bg-green-600 text-white hover:bg-green-700"
-            }`}
+            onClick={currentSection === sections.length - 1 ? handleSubmit : nextSection}
+            className="px-5 py-2.5 rounded-full text-sm font-medium text-white"
+            style={{ background: currentSection === sections.length - 1 ? "var(--success)" : "var(--accent)" }}
           >
-            {currentSection === sections.length - 1 ? "Submit" : "Next"}
+            {currentSection === sections.length - 1 ? "Submit Form" : "Next →"}
           </button>
         </div>
+        </div>{/* end p-6 */}
       </div>
     </div>
   );
