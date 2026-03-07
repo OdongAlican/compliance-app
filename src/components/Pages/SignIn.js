@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import { FaEnvelope, FaLock, FaUser } from 'react-icons/fa';
@@ -42,7 +41,7 @@ export default function SignIn() {
         </div>
         {/* Form */}
         <form className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {['First Name', 'Last Name'].map((lbl) => (
               <div key={lbl}>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{lbl}</label>

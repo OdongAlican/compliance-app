@@ -25,7 +25,7 @@ import axios from "axios";
 // 1. ENVIRONMENT
 // ---------------------------------------------------------------------------
 const BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api";
+    process.env.REACT_APP_API_BASE_URL || "http://localhost:3000/api";
 const TIMEOUT = Number(process.env.REACT_APP_API_TIMEOUT) || 30_000; // 30 s
 const REFRESH_ENDPOINT =
     process.env.REACT_APP_REFRESH_ENDPOINT || "/auth/token/refresh/";
