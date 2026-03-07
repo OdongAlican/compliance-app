@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function IncidentExecute({ reportId, onClose }) {
   // Dummy data for demonstration — replace with actual fetch logic if needed
   const report = {
