@@ -1,60 +1,73 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { TokenService, forceLogout } from '../services';
-import api from '../services';
+/**
+ * AuthContext.js
+ *
+ * Thin React context wrapper over the Redux auth slice.
+ * Components consume auth via useAuth() → all reads come from Redux store.
+ *
+ * Exposed API (unchanged — all consumers continue to work):
+ *   isAuthenticated  boolean
+ *   user             object | null
+ *   role             string | null
+ *   permissions      Set<string>
+ *   hasPermission(key) boolean
+ *   login(email, password) → Promise  (dispatches loginThunk)
+ *   logout()                           (dispatches logoutThunk)
+ */
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  loginThunk,
+  logoutThunk,
+  hydrateAuth,
+  selectUser,
+  selectIsAuthenticated,
+  selectRole,
+  selectPermissionKeys,
+} from '../store/slices/authSlice';
 
 const AuthContext = createContext(null);
 
-/**
- * AuthProvider — wraps the entire app.
- *
- * Provides:
- *   isAuthenticated  boolean
- *   user             object | null
- *   role             string | null  ('Admin' | 'Auditor' | 'Supervisor' | 'Staff' | …)
- *   login(email, password) → Promise
- *   logout()
- */
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(() => TokenService.getUser());
+  const dispatch = useAppDispatch();
 
-    const isAuthenticated = Boolean(TokenService.getAccessToken() && user);
-    const role = user?.role ?? null;
+  // Restore session from storage on first mount
+  useEffect(() => { dispatch(hydrateAuth()); }, [dispatch]);
 
-    /** Call the login endpoint, persist tokens, update state. */
-    const login = useCallback(async (email, password) => {
-        const data = await api.post('/auth/login/', { email, password });
-        // data expected: { access, refresh, user, expires_at? }
-        TokenService.saveAuthResponse(data);
-        setUser(data.user);
-        return data;
-    }, []);
+  // Read auth state from Redux store
+  const user            = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const role            = useAppSelector(selectRole);
+  const permissionKeys  = useAppSelector(selectPermissionKeys);
 
-    /** Calls server logout endpoint (best-effort), then clears session. */
-    const logout = useCallback(async () => {
-        try {
-            await api.post('/auth/logout/', {
-                refresh: TokenService.getRefreshToken(),
-            });
-        } catch {
-            // swallow — still clear locally
-        } finally {
-            TokenService.clearAll();
-            setUser(null);
-            forceLogout('You have been signed out.');
-        }
-    }, []);
+  // Derive memoised Set<string> — cheap since keys array is stable
+  const permissions = useMemo(() => new Set(permissionKeys), [permissionKeys]);
 
-    const value = useMemo(
-        () => ({ isAuthenticated, user, role, login, logout }),
-        [isAuthenticated, user, role, login, logout]
-    );
+  const hasPermission = useCallback((key) => permissions.has(key), [permissions]);
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  /** Dispatches loginThunk; throws if credentials are invalid. */
+  const login = useCallback(
+    async (email, password) => {
+      const result = await dispatch(loginThunk({ email, password }));
+      if (loginThunk.rejected.match(result)) throw new Error(result.payload);
+      return result.payload;
+    },
+    [dispatch]
+  );
+
+  /** Dispatches logoutThunk (client-side only, no API call). */
+  const logout = useCallback(() => { dispatch(logoutThunk()); }, [dispatch]);
+
+  const value = useMemo(
+    () => ({ isAuthenticated, user, role, permissions, hasPermission, login, logout }),
+    [isAuthenticated, user, role, permissions, hasPermission, login, logout]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** Internal hook — used only by useAuth.js */
+/** Internal hook — used only by hooks/useAuth.js */
 export function useAuthContext() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error('useAuthContext must be used inside <AuthProvider>');
-    return ctx;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuthContext must be used inside <AuthProvider>');
+  return ctx;
 }
