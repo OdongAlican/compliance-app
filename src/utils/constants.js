@@ -108,4 +108,36 @@ export const ROUTES = {
   HEALTH_SAFETY:   '/health-and-safety',
   // App – Users
   USER_MGMT:       '/user-management',
+  ROLES:           '/roles',
+};
+
+// ---------------------------------------------------------------------------
+// PERMISSIONS — all known permission keys returned by the API
+// Use hasPermission(PERMISSIONS.USERS_VIEW) for consistent checks.
+// ---------------------------------------------------------------------------
+export const PERMISSIONS = {
+  // Users
+  USERS_VIEW:    'users.view',
+  USERS_CREATE:  'users.create',
+  USERS_UPDATE:  'users.update',
+  USERS_DELETE:  'users.delete',
+  // Roles
+  ROLES_VIEW:    'roles.view',
+  ROLES_CREATE:  'roles.create',
+  ROLES_UPDATE:  'roles.update',
+  ROLES_DELETE:  'roles.delete',
+  // Permissions
+  PERMS_VIEW:    'permissions.view',
+  PERMS_CREATE:  'permissions.create',
+  PERMS_UPDATE:  'permissions.update',
+  // Professions
+  PROFS_VIEW:    'professions.view',
+  PROFS_CREATE:  'professions.create',
+  PROFS_UPDATE:  'professions.update',
+  PROFS_DELETE:  'professions.delete',
+  // Inspections (example — extend as backend grows)
+  INSPECTIONS_VIEW:   'inspections.view',
+  INSPECTIONS_CREATE: 'inspections.create',
+  INSPECTIONS_UPDATE: 'inspections.update',
+  INSPECTIONS_DELETE: 'inspections.delete',
 };
