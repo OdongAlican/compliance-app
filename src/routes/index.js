@@ -30,8 +30,9 @@ import InspectionForm         from '../components/Dashboard/InspectionDashboard'
 import HealthAndSafetyForm    from '../components/Dashboard/HealthAndSafety';
 import IncidentInvestigationForm from '../components/Dashboard/IncidentManagement';
 
-// ── Users ─────────────────────────────────────────────────────────────────
+// ── Users & Admin ─────────────────────────────────────────────────────
 import UserManagement from '../components/Users/UserManagement';
+import RolesPage      from '../pages/admin/RolesPage';
 
 // ── Hazard & Risk ─────────────────────────────────────────────────────────
 import HazardRiskInterface from '../components/HazardRiskManagement/HazardRiskInterface';
@@ -93,6 +94,8 @@ export default function AppRoutes() {
       <Route path="/health-and-safety" element={<Layout><HealthAndSafetyForm /></Layout>} />
       <Route path="/capa"            element={<Layout><Capa /></Layout>} />
       <Route path="/user-management" element={<Layout><UserManagement /></Layout>} />
+      <Route path="/roles"           element={<Layout><RolesPage /></Layout>} />
+      <Route path="/roles"           element={<Layout><RolesPage /></Layout>} />
 
       {/* ── Protected — Hazard & Risk ── */}
       <Route path="/hazard/report"         element={<Layout><HazardRiskInterface /></Layout>} />
