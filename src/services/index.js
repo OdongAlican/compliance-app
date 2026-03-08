@@ -81,10 +81,12 @@ export const TokenService = {
 
     /**
      * Persist full auth response from the server.
-     * Expected shape: { access, refresh, user?, expires_at? }
+     * API shape: { token, user }  (JWT is stateless — no refresh token)
      */
-    saveAuthResponse: ({ access, refresh, user, expires_at }) => {
-        if (access) TokenService.setAccessToken(access);
+    saveAuthResponse: ({ token, user, access, refresh, expires_at }) => {
+        // support both { token } (Rails API) and { access, refresh } (DRF style)
+        const accessToken = token || access;
+        if (accessToken) TokenService.setAccessToken(accessToken);
         if (refresh) TokenService.setRefreshToken(refresh);
         if (user) TokenService.setUser(user);
         if (expires_at) TokenService.setExpiresAt(expires_at);
