@@ -1,13 +1,45 @@
-import api from './index';
-
 /**
- * Auth service — wraps all /auth/* endpoints.
- * Use TokenService from services/index.js to persist returned tokens.
+ * auth.service.js — Rails API auth contract (stateless JWT).
+ *
+ * Not implemented by backend (do NOT call):
+ *   refresh token, logout endpoint, /me, forgot/reset password, self-signup.
+ *
+ * Token expiry: 24 h — JWT exp claim checked client-side.
  */
+import api, { TokenService } from './index';
 
-/** POST /auth/login/ */
-export const login = (email, password) =>
-  api.post('/auth/login/', { email, password });
+const AuthService = {
+  /**
+   * POST /auth/login
+   * Body: { email, password }
+   * Returns: { token, user { id, email, firstname, lastname, role { permissions[] } } }
+   */
+  login: async (email, password) => {
+    const data = await api.post('/auth/login', { email, password });
+    TokenService.saveAuthResponse(data);
+    return data;
+  },
+
+  /** Client-side only — clears sessionStorage, no API call. */
+  logout: () => {
+    TokenService.clearAll();
+  },
+
+  getCurrentUser: () => TokenService.getUser(),
+
+  isAuthenticated: () => {
+    const token = TokenService.getAccessToken();
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp > Math.floor(Date.now() / 1000);
+    } catch {
+      return Boolean(token);
+    }
+  },
+};
+
+export default AuthService;
 
 /** POST /auth/logout/ */
 export const logout = (refreshToken) =>
