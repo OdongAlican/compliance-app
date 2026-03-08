@@ -22,7 +22,7 @@ const NAV_SECTIONS = [
   {
     label: 'Menu',
     items: [
-      { to: '/', icon: FaHome, label: 'Home' },
+      { to: '/dashboard', icon: FaHome, label: 'Home' },
       { to: '/inspection', icon: FaClipboard, label: 'Inspection' },
       { to: '/hazard/report', icon: FaExclamationTriangle, label: 'Hazard & Risk' },
       { to: '/incident-management', icon: FaBell, label: 'Incidents' },
