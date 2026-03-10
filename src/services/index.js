@@ -149,7 +149,7 @@ const instance = axios.create({
     },
     // Send cookies with cross-origin requests (required if using
     // HttpOnly cookie-based refresh tokens alongside header-based access tokens)
-    withCredentials: true, // CSRF protection if refresh token is in HttpOnly cookie
+    // withCredentials: true, // CSRF protection if refresh token is in HttpOnly cookie
 });
 
 // ---------------------------------------------------------------------------
