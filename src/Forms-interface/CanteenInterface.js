@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import {
   EllipsisVerticalIcon,
@@ -136,18 +137,43 @@ function Pagination({ meta, onPage }) {
 /* ── ActionMenu ────────────────────────────────────────────────────────── */
 function ActionMenu({ actions }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  /* Close on outside click — but NOT when clicking inside the portal menu */
   useEffect(() => {
+    if (!open) return;
     const h = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      const inBtn = btnRef.current && btnRef.current.contains(e.target);
+      const inMenu = menuRef.current && menuRef.current.contains(e.target);
+      if (!inBtn && !inMenu) setOpen(false);
     };
-    if (open) document.addEventListener("mousedown", h);
+    document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
+
+  /* Close on scroll so position doesn't go stale */
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    window.addEventListener("scroll", h, true);
+    return () => window.removeEventListener("scroll", h, true);
+  }, [open]);
+
+  function handleToggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
-    <div className="relative inline-block" ref={ref}>
+    <div className="inline-block">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={btnRef}
+        onClick={handleToggle}
         className="p-1.5 rounded-lg transition-colors"
         style={{
           color: "var(--text-muted)",
@@ -156,8 +182,17 @@ function ActionMenu({ actions }) {
       >
         <EllipsisVerticalIcon className="h-5 w-5" />
       </button>
-      {open && (
-        <div className="ui-menu absolute right-0 mt-1 w-56 z-30">
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="ui-menu w-56"
+          style={{
+            position: "fixed",
+            top: pos.top,
+            right: pos.right,
+            zIndex: 10001,
+          }}
+        >
           {actions.map((a, i) =>
             a.divider ? (
               <div
@@ -170,15 +205,16 @@ function ActionMenu({ actions }) {
                 className="ui-menu-item text-left w-full"
                 style={{ color: a.danger ? "var(--danger)" : a.color ?? "var(--text)" }}
                 onClick={() => {
-                  a.onClick();
                   setOpen(false);
+                  a.onClick();
                 }}
               >
                 {a.label}
               </button>
             )
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -187,14 +223,15 @@ function ActionMenu({ actions }) {
 /* ── ModalShell ────────────────────────────────────────────────────────── */
 function ModalShell({ isOpen, onClose, title, width = "max-w-lg", children }) {
   if (!isOpen) return null;
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.55)" }}
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)", zIndex: 9999 }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className={"ui-card w-full " + width + " flex flex-col"}
-        style={{ padding: 0, maxHeight: "90vh", overflow: "hidden" }}
+        style={{ padding: 0, maxHeight: "90vh", overflow: "hidden", zIndex: 10000, position: "relative" }}
       >
         <div
           className="flex items-center justify-between px-6 py-4 flex-shrink-0"
@@ -213,7 +250,8 @@ function ModalShell({ isOpen, onClose, title, width = "max-w-lg", children }) {
         </div>
         <div className="overflow-y-auto flex-1">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -434,8 +472,8 @@ function StepIndicator({ currentStep, completedSteps }) {
                     isCompleted
                       ? { background: "#3fb950", color: "#fff" }
                       : isActive
-                      ? { background: "var(--accent)", color: "#fff" }
-                      : {
+                        ? { background: "var(--accent)", color: "#fff" }
+                        : {
                           background: "var(--bg-raised)",
                           color: "var(--text-muted)",
                           border: "2px solid var(--border)",
@@ -454,8 +492,8 @@ function StepIndicator({ currentStep, completedSteps }) {
                     color: isCompleted
                       ? "#3fb950"
                       : isActive
-                      ? "var(--accent)"
-                      : "var(--text-muted)",
+                        ? "var(--accent)"
+                        : "var(--text-muted)",
                   }}
                 >
                   {label}
@@ -1296,15 +1334,15 @@ function DetailDrawer({ isOpen, onClose, setup }) {
     { label: "Note", value: setup.note || "—" },
   ];
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex justify-end"
-      style={{ background: "rgba(0,0,0,0.45)" }}
+      className="fixed inset-0 flex justify-end"
+      style={{ background: "rgba(0,0,0,0.45)", zIndex: 9999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="h-full w-full max-w-lg overflow-y-auto shadow-2xl flex flex-col"
-        style={{ background: "var(--bg-surface)", borderLeft: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-surface)", borderLeft: "1px solid var(--border)", position: "relative", zIndex: 10000 }}
       >
         {/* Header */}
         <div
@@ -1459,7 +1497,8 @@ function DetailDrawer({ isOpen, onClose, setup }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -1764,7 +1803,7 @@ export default function CanteenInterface() {
       </div>
 
       {/* TABLE */}
-      <div className="ui-card overflow-hidden">
+      <div className="ui-card">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
