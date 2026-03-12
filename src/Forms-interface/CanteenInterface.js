@@ -12,6 +12,8 @@ import {
   ArrowPathIcon,
   PlusIcon,
   CheckBadgeIcon,
+  ExclamationTriangleIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -1016,47 +1018,39 @@ function SetupFormModal({ isOpen, onClose, setup, catalogItems }) {
 }
 
 /* ── ReassignModal ─────────────────────────────────────────────────────── */
-function ReassignModal({ isOpen, onClose, mode, setupId, users }) {
+function ReassignModal({ isOpen, onClose, mode, setupId }) {
   const dispatch = useAppDispatch();
   const actionLoading = useAppSelector(selectCanteenActionLoading);
-  const [userId, setUserId] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
   const [err, setErr] = useState("");
+
   useEffect(() => {
     if (isOpen) {
-      setUserId("");
+      setSelectedUser(null);
       setErr("");
     }
   }, [isOpen]);
 
-  const filtered = users.filter((u) => {
-    const role = (u.role?.name || u.role || "").toLowerCase();
-    return mode === "supervisor"
-      ? role.includes("supervisor")
-      : role.includes("safety");
-  });
-  const list = filtered.length ? filtered : users;
+  const isSupervisor = mode === "supervisor";
+  const roleFilter = isSupervisor ? "supervisor" : "safety_officer";
+  const label = isSupervisor ? "Supervisor" : "Safety Officer";
+
+  const roleName = (u) =>
+    u?.role?.name
+      ? u.role.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : label;
 
   async function handleSave() {
-    if (!userId) { setErr("Please select a user."); return; }
-    const action =
-      mode === "supervisor"
-        ? dispatch(
-          reassignCanteenSupervisor({ id: setupId, supervisorId: Number(userId) })
-        )
-        : dispatch(
-          reassignCanteenSafetyOfficer({
-            id: setupId,
-            safetyOfficerId: Number(userId),
-          })
-        );
+    if (!selectedUser) { setErr("Please select a user."); return; }
+    const action = isSupervisor
+      ? dispatch(reassignCanteenSupervisor({ id: setupId, supervisorId: Number(selectedUser.id) }))
+      : dispatch(reassignCanteenSafetyOfficer({ id: setupId, safetyOfficerId: Number(selectedUser.id) }));
     const result = await action;
     if (
       reassignCanteenSupervisor.fulfilled.match(result) ||
       reassignCanteenSafetyOfficer.fulfilled.match(result)
     ) {
-      toast.success(
-        (mode === "supervisor" ? "Supervisor" : "Safety officer") + " reassigned."
-      );
+      toast.success(label + " reassigned.");
       onClose();
     } else {
       toast.error(result.payload || "Reassignment failed.");
@@ -1067,34 +1061,81 @@ function ReassignModal({ isOpen, onClose, mode, setupId, users }) {
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === "supervisor" ? "Reassign Supervisor" : "Reassign Safety Officer"}
-      width="max-w-sm"
+      title={isSupervisor ? "Reassign Supervisor" : "Reassign Safety Officer"}
+      width="max-w-md"
     >
-      <div className="p-6 flex flex-col gap-4">
-        <Field
-          label={mode === "supervisor" ? "New Supervisor" : "New Safety Officer"}
-          required
-          error={err}
+      <div className="p-6 flex flex-col gap-5">
+        {/* Info banner */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: "color-mix(in srgb,var(--accent) 8%,transparent)",
+            border: "1px solid color-mix(in srgb,var(--accent) 25%,transparent)",
+          }}
         >
-          <select
-            value={userId}
-            onChange={(e) => { setUserId(e.target.value); setErr(""); }}
-            className="ui-input text-sm"
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "var(--accent)", color: "#fff" }}
           >
-            <option value="">— Select user —</option>
-            {list.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.firstname} {u.lastname}
-              </option>
-            ))}
-          </select>
+            <UserIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+              {isSupervisor ? "Reassign Supervisor" : "Reassign Safety Officer"}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Search by name to find and select a new {isSupervisor ? "supervisor" : "safety officer"} for this inspection.
+            </p>
+          </div>
+        </div>
+
+        {/* Autocomplete */}
+        <Field label={"New " + label} required error={err}>
+          <UserAutocomplete
+            roleFilter={roleFilter}
+            value={selectedUser}
+            onChange={(u) => { setSelectedUser(u); setErr(""); }}
+            placeholder={"Search " + (isSupervisor ? "supervisors" : "safety officers") + "…"}
+            error={err}
+          />
         </Field>
-        <div className="flex justify-end gap-3">
+
+        {/* Selection confirmation card */}
+        {selectedUser && (
+          <div
+            className="flex items-center gap-3 p-4 rounded-xl"
+            style={{
+              background: "color-mix(in srgb,#3fb950 8%,transparent)",
+              border: "1px solid color-mix(in srgb,#3fb950 30%,transparent)",
+            }}
+          >
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{ background: "#3fb950", color: "#fff" }}
+            >
+              {selectedUser.firstname?.[0]}{selectedUser.lastname?.[0]}
+            </div>
+            <div>
+              <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                {selectedUser.firstname} {selectedUser.lastname}
+              </p>
+              <p className="text-xs" style={{ color: "#3fb950" }}>
+                ✓ Selected · {roleName(selectedUser)}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div
+          className="flex justify-end gap-3 pt-2"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
           <button
             type="button"
             onClick={onClose}
             disabled={actionLoading}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium"
+            className="px-4 py-2 rounded-lg text-sm font-medium"
             style={{
               background: "var(--bg-raised)",
               color: "var(--text-muted)",
@@ -1106,11 +1147,12 @@ function ReassignModal({ isOpen, onClose, mode, setupId, users }) {
           <button
             type="button"
             onClick={handleSave}
-            disabled={actionLoading || !userId}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
+            disabled={actionLoading || !selectedUser}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
-            {actionLoading && <Spinner size={4} />} Reassign
+            {actionLoading && <Spinner size={4} />}
+            Confirm Reassignment
           </button>
         </div>
       </div>
@@ -1123,17 +1165,68 @@ function DeleteConfirmModal({ isOpen, onClose, setup, loading, onConfirm }) {
   return (
     <ModalShell isOpen={isOpen} onClose={onClose} title="Delete Inspection" width="max-w-sm">
       <div className="p-6 flex flex-col gap-4">
-        <p className="text-sm" style={{ color: "var(--text)" }}>
-          Are you sure you want to delete{" "}
-          <strong style={{ color: "var(--danger)" }}>{setup?.name}</strong>? This action
-          cannot be undone.
-        </p>
-        <div className="flex justify-end gap-3">
+        {/* Warning banner */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: "color-mix(in srgb,var(--danger) 8%,transparent)",
+            border: "1px solid color-mix(in srgb,var(--danger) 25%,transparent)",
+          }}
+        >
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "var(--danger)", color: "#fff" }}
+          >
+            <ExclamationTriangleIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+              This action cannot be undone
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              The inspection record and all associated data will be permanently removed.
+            </p>
+          </div>
+        </div>
+
+        {/* Inspection details card */}
+        {setup && (
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+          >
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Inspection to delete
+            </p>
+            <p className="text-sm font-bold" style={{ color: "var(--danger)" }}>
+              {setup.name}
+            </p>
+            {setup.location && (
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                {setup.location}
+              </p>
+            )}
+            {setup.date && (
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                {setup.date}{setup.time ? " · " + setup.time : ""}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div
+          className="flex justify-end gap-3 pt-1"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium"
+            className="px-4 py-2 rounded-lg text-sm font-medium"
             style={{
               background: "var(--bg-raised)",
               color: "var(--text-muted)",
@@ -1146,10 +1239,11 @@ function DeleteConfirmModal({ isOpen, onClose, setup, loading, onConfirm }) {
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
             style={{ background: "var(--danger)", color: "#fff" }}
           >
-            {loading && <Spinner size={4} />} Delete
+            {loading && <Spinner size={4} />}
+            Delete Inspection
           </button>
         </div>
       </div>
@@ -1315,24 +1409,20 @@ function DetailDrawer({ isOpen, onClose, setup }) {
 
   if (!isOpen || !setup) return null;
 
-  const infoRows = [
-    { label: "Location", value: setup.location },
-    { label: "Date", value: setup.date },
-    { label: "Time", value: setup.time },
-    {
-      label: "Safety Officer",
-      value: setup.safety_officer
-        ? setup.safety_officer.firstname + " " + setup.safety_officer.lastname
-        : setup.safetyofficer ?? "—",
-    },
-    {
-      label: "Supervisor",
-      value: setup.supervisor
-        ? setup.supervisor.firstname + " " + setup.supervisor.lastname
-        : "—",
-    },
-    { label: "Note", value: setup.note || "—" },
-  ];
+  const status = setup.status ?? "Pending";
+  const sStyle = STATUS_STYLE[status] ?? { background: "var(--bg-raised)", color: "var(--text-muted)" };
+
+  const so = setup.safety_officer;
+  const soName = so ? so.firstname + " " + so.lastname : setup.safetyofficer ?? null;
+  const soInitials = so
+    ? (so.firstname?.[0] ?? "") + (so.lastname?.[0] ?? "")
+    : soName ? soName[0] : "?";
+
+  const sup = setup.supervisor;
+  const supName = sup ? sup.firstname + " " + sup.lastname : null;
+  const supInitials = sup
+    ? (sup.firstname?.[0] ?? "") + (sup.lastname?.[0] ?? "")
+    : supName ? supName[0] : "?";
 
   return createPortal(
     <div
@@ -1346,55 +1436,130 @@ function DetailDrawer({ isOpen, onClose, setup }) {
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+          className="flex items-start justify-between px-6 py-5 flex-shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <div>
-            <h2 className="font-bold text-sm" style={{ color: "var(--text)" }}>
-              {setup.name}
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              Canteen Inspection Detail
-            </p>
+          <div className="flex items-start gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "color-mix(in srgb,var(--accent) 15%,transparent)" }}
+            >
+              <ClipboardDocumentCheckIcon className="w-5 h-5" style={{ color: "var(--accent)" }} />
+            </div>
+            <div>
+              <h2 className="font-bold text-base leading-tight" style={{ color: "var(--text)" }}>
+                {setup.name}
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Canteen Inspection · #{setup.id}
+              </p>
+              <span
+                className="inline-block mt-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={sStyle}
+              >
+                {status}
+              </span>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:opacity-70"
+            className="p-1.5 rounded-lg hover:opacity-70 flex-shrink-0"
             style={{ color: "var(--text-muted)" }}
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
-        {/* Info grid */}
-        <div
-          className="px-6 py-5 grid grid-cols-2 gap-4"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
-          {infoRows.map(({ label, value }) => (
-            <div key={label} className={label === "Note" ? "col-span-2" : ""}>
-              <p
-                className="text-[11px] font-semibold mb-0.5"
-                style={{ color: "var(--text-muted)" }}
+
+        {/* Inspection details */}
+        <div className="px-6 py-5" style={{ borderBottom: "1px solid var(--border)" }}>
+          <p
+            className="text-[11px] font-bold uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Inspection Details
+          </p>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <ReviewRow label="Location" value={setup.location} />
+            <ReviewRow label="Date" value={setup.date} />
+            <ReviewRow label="Time" value={setup.time} />
+            {setup.note && (
+              <div className="col-span-2">
+                <ReviewRow label="Note" value={setup.note} />
+              </div>
+            )}
+          </div>
+
+          {/* Personnel cards */}
+          <p
+            className="text-[11px] font-bold uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Assigned Personnel
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div
+              className="p-3 rounded-xl flex items-center gap-3"
+              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: "color-mix(in srgb,var(--accent) 20%,transparent)", color: "var(--accent)" }}
               >
-                {label}
-              </p>
-              <p className="text-sm" style={{ color: "var(--text)" }}>
-                {value ?? "—"}
-              </p>
+                {soInitials}
+              </div>
+              <div className="min-w-0">
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Safety Officer
+                </p>
+                <p className="text-xs font-semibold truncate" style={{ color: "var(--text)" }}>
+                  {soName ?? "—"}
+                </p>
+              </div>
             </div>
-          ))}
+            <div
+              className="p-3 rounded-xl flex items-center gap-3"
+              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: "color-mix(in srgb,#3fb950 15%,transparent)", color: "#3fb950" }}
+              >
+                {supInitials}
+              </div>
+              <div className="min-w-0">
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Supervisor
+                </p>
+                <p className="text-xs font-semibold truncate" style={{ color: "var(--text)" }}>
+                  {supName ?? "—"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        {/* Executions */}
+
+        {/* Execution log */}
         <div className="flex-1 px-6 py-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm" style={{ color: "var(--text)" }}>
-              Executions
-            </h3>
+            <div>
+              <h3 className="font-bold text-sm" style={{ color: "var(--text)" }}>
+                Execution Log
+              </h3>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                {performs.length} execution{performs.length !== 1 ? "s" : ""} recorded
+              </p>
+            </div>
             <button
               onClick={load}
               title="Refresh"
-              className="p-1 rounded hover:opacity-70"
-              style={{ color: "var(--text-muted)" }}
+              className="p-1.5 rounded-lg hover:opacity-70"
+              style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
             >
               <ArrowPathIcon className="h-4 w-4" />
             </button>
@@ -1404,19 +1569,32 @@ function DetailDrawer({ isOpen, onClose, setup }) {
               <Spinner />
             </div>
           ) : error ? (
-            <p
-              className="text-sm text-center py-6"
-              style={{ color: "var(--danger)" }}
+            <div
+              className="p-4 rounded-xl text-sm text-center"
+              style={{
+                background: "color-mix(in srgb,var(--danger) 8%,transparent)",
+                border: "1px solid color-mix(in srgb,var(--danger) 20%,transparent)",
+                color: "var(--danger)",
+              }}
             >
               {error}
-            </p>
+            </div>
           ) : performs.length === 0 ? (
-            <p
-              className="text-sm text-center py-6"
-              style={{ color: "var(--text-muted)" }}
+            <div
+              className="p-6 rounded-xl text-center"
+              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
             >
-              No executions yet.
-            </p>
+              <CalendarDaysIcon
+                className="h-8 w-8 mx-auto mb-2"
+                style={{ color: "var(--text-muted)", opacity: 0.5 }}
+              />
+              <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+                No executions yet
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Use "Start Inspection" to record a new execution.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               {performs.map((p) => {
@@ -1427,68 +1605,59 @@ function DetailDrawer({ isOpen, onClose, setup }) {
                     className="rounded-xl p-4"
                     style={{
                       background: "var(--bg-raised)",
-                      border: "1px solid var(--border)",
+                      border: signed
+                        ? "1px solid color-mix(in srgb,#3fb950 30%,transparent)"
+                        : "1px solid var(--border)",
                     }}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p
-                          className="text-sm font-semibold"
-                          style={{ color: "var(--text)" }}
-                        >
-                          Execution #{p.id}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {p.date} at {p.time}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                            style={
+                              signed
+                                ? { background: "color-mix(in srgb,#3fb950 15%,transparent)", color: "#3fb950" }
+                                : { background: "color-mix(in srgb,#d29922 15%,transparent)", color: "#d29922" }
+                            }
+                          >
+                            {signed ? "✓ Signed Off" : "Pending Sign-Off"}
+                          </span>
+                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            #{p.id}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                          {p.date}{" "}
+                          <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>at</span>{" "}
+                          {p.time}
                         </p>
                         {p.note && (
-                          <p
-                            className="text-xs mt-1"
-                            style={{ color: "var(--text-muted)" }}
-                          >
+                          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                             {p.note}
                           </p>
                         )}
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span
-                          className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                          style={
-                            signed
-                              ? {
-                                background:
-                                  "color-mix(in srgb,#3fb950 15%,transparent)",
-                                color: "#3fb950",
-                              }
-                              : {
-                                background:
-                                  "color-mix(in srgb,#d29922 15%,transparent)",
-                                color: "#d29922",
-                              }
-                          }
-                        >
-                          {signed ? "✓ Signed Off" : "Pending"}
-                        </span>
-                        {!signed && (
-                          <button
-                            onClick={() => handleSignOff(p.id)}
-                            disabled={signing === p.id}
-                            className="flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg"
-                            style={{
-                              background:
-                                "color-mix(in srgb,#3fb950 15%,transparent)",
-                              color: "#3fb950",
-                            }}
-                          >
-                            {signing === p.id ? (
-                              <Spinner size={3} />
-                            ) : (
-                              <CheckBadgeIcon className="h-3 w-3" />
-                            )}
-                            Sign Off
-                          </button>
+                        {signed && p.signed_off_at && (
+                          <p className="text-[10px] mt-1" style={{ color: "#3fb950" }}>
+                            Signed off on {new Date(p.signed_off_at).toLocaleDateString()}
+                          </p>
                         )}
                       </div>
+                      {!signed && (
+                        <button
+                          onClick={() => handleSignOff(p.id)}
+                          disabled={signing === p.id}
+                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0"
+                          style={{
+                            background: "color-mix(in srgb,#3fb950 15%,transparent)",
+                            color: "#3fb950",
+                            border: "1px solid color-mix(in srgb,#3fb950 30%,transparent)",
+                          }}
+                        >
+                          {signing === p.id ? <Spinner size={3} /> : <CheckBadgeIcon className="h-3.5 w-3.5" />}
+                          Sign Off
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
