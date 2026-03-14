@@ -31,6 +31,16 @@ export const deleteInspection = (id) =>
 export const updateInspectionStatus = (id, status) =>
   api.patch(`/inspections/${id}/status/`, { status });
 
+// ── Checklist templates ──────────────────────────────────────────────────────
+
+/**
+ * GET /inspections/:id/checklist_templates
+ * Returns checklist template sections with nested checklist_item_templates
+ * for the given inspection type. Used to render the perform checklist UI.
+ */
+export const getInspectionChecklistTemplates = (id) =>
+  api.get(`/inspections/${id}/checklist_templates`);
+
 // ── Checklist items ──────────────────────────────────────────────────────────
 
 /** GET /inspections/:id/checklist/ */
