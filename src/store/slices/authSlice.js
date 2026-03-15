@@ -52,6 +52,7 @@ const authSlice = createSlice({
     isAuthenticated: false,
     loading: false,
     error: null,
+    isHydrating: true,  // true until hydrateAuth completes on first mount
   },
   reducers: {
     // Allows setting error manually (e.g. from a component)
@@ -89,11 +90,18 @@ const authSlice = createSlice({
 
     // ── hydrateAuth ──
     builder
+      .addCase(hydrateAuth.pending, (state) => {
+        state.isHydrating = true;
+      })
       .addCase(hydrateAuth.fulfilled, (state, action) => {
         if (action.payload) {
           state.user            = action.payload;
           state.isAuthenticated = true;
         }
+        state.isHydrating = false;
+      })
+      .addCase(hydrateAuth.rejected, (state) => {
+        state.isHydrating = false;
       });
   },
 });
@@ -105,6 +113,7 @@ export const selectUser            = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthLoading     = (state) => state.auth.loading;
 export const selectAuthError       = (state) => state.auth.error;
+export const selectIsHydrating     = (state) => state.auth.isHydrating;
 export const selectRole            = (state) => state.auth.user?.role?.name ?? null;
 
 /**

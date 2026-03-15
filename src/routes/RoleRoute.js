@@ -15,7 +15,10 @@ import { ROUTES } from '../utils/constants';
  *   </Route>
  */
 export default function RoleRoute({ allowedRoles = [] }) {
-    const { isAuthenticated, role } = useAuth();
+    const { isAuthenticated, role, isHydrating } = useAuth();
+
+    // Don't redirect while session is being restored from storage
+    if (isHydrating) return null;
 
     if (!isAuthenticated) {
         return <Navigate to={ROUTES.LOGIN} replace />;

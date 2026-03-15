@@ -6,6 +6,7 @@ import { ROUTES } from '../utils/constants';
 /**
  * PrivateRoute — redirects unauthenticated users to /login.
  * Preserves the attempted URL so the user is sent back after login.
+ * Waits for auth hydration to complete before making a redirect decision.
  *
  * Usage in routes/index.js:
  *   <Route element={<PrivateRoute />}>
@@ -13,8 +14,11 @@ import { ROUTES } from '../utils/constants';
  *   </Route>
  */
 export default function PrivateRoute() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isHydrating } = useAuth();
     const location = useLocation();
+
+    // Don't redirect while session is being restored from storage
+    if (isHydrating) return null;
 
     if (!isAuthenticated) {
         return (

@@ -23,6 +23,7 @@ import {
   selectIsAuthenticated,
   selectRole,
   selectPermissionKeys,
+  selectIsHydrating,
 } from '../store/slices/authSlice';
 
 const AuthContext = createContext(null);
@@ -38,6 +39,7 @@ export function AuthProvider({ children }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const role            = useAppSelector(selectRole);
   const permissionKeys  = useAppSelector(selectPermissionKeys);
+  const isHydrating     = useAppSelector(selectIsHydrating);
 
   // Derive memoised Set<string> — cheap since keys array is stable
   const permissions = useMemo(() => new Set(permissionKeys), [permissionKeys]);
@@ -58,11 +60,15 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => { dispatch(logoutThunk()); }, [dispatch]);
 
   const value = useMemo(
-    () => ({ isAuthenticated, user, role, permissions, hasPermission, login, logout }),
-    [isAuthenticated, user, role, permissions, hasPermission, login, logout]
+    () => ({ isAuthenticated, user, role, permissions, hasPermission, login, logout, isHydrating }),
+    [isAuthenticated, user, role, permissions, hasPermission, login, logout, isHydrating]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {isHydrating ? null : children}
+    </AuthContext.Provider>
+  );
 }
 
 /** Internal hook — used only by hooks/useAuth.js */
