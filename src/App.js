@@ -1,390 +1,48 @@
-// ...existing code...
 import './index.css';
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Provider } from 'react-redux';
 import { ThemeProvider } from './context/ThemeContext';
-import HazardReportExecute from './components/Execute/HazardReportExecute';
-import { Layout } from './components/Layout';
-import { Home } from './components/Home/Home';
-import IncidentInvestigationForm from './components/Dashboard/IncidentManagement';
-import { Contacts } from './components/Pages/Contacts';
-import { Products } from './components/Pages/Products';
-import { Solutions } from './components/Pages/Solutions';
-import SignIn from './components/Pages/SignIn';
-import { PublicLayout } from './components/PublicLayout';
-import InspectionForm from './components/Dashboard/InspectionDashboard';
-import HealthAndSafetyForm from './components/Dashboard/HealthAndSafety';
-import LogIn from './components/Pages/LogIn';
-import Capa from './components/Dashboard/Capa';
-// Forms & Interfaces
-import VehicleInspectionDashboard from './Forms-interface/vehicle-interface';
-import CanteenInterface from './Forms-interface/CanteenInterface';
-import FuelInterface from './Forms-interface/FuelInterface';
-import ToolInterface from './Forms-interface/Tool-interface';
-import PPEInterface from './Forms-interface/PPE-interface';
-import ScienceLabInterface from './Forms-interface/Sciencelab-interface';
-import SwimmingPoolInterface from './Forms-interface/Swimming-interface';
-import HazardRiskInterface from './components/HazardRiskManagement/HazardRiskInterface';
-import HazardInterface from './components/HazardRiskManagement/Hazard/HazardInterface';
-import RiskInterface from './components/HazardRiskManagement/RiskAssessment/RiskInterface';
-import IncidentNotifyInterface from './Forms-interface/IncidentNotifyInterface';
-import WitnessStateInterface from './Forms-interface/WitnessStateInterface';
-import IncidentInvestigationInterface from './Forms-interface/IncidentInvestigationInterface';
-import IncidentNotificationDelete from './components/Execute/Delete';
-import Dashboard from './components/Dashboard';
-import { Sidebar } from './components/Sidebar';
-import ChecklistInterface from './Forms-interface/ChecklistInterface';
-import WorkPlaceInterface from './Forms-interface/WorkPlaceInterface';
-import EmergencyInterface from './Forms-interface/EmergencyInterface';
-import CapaInterface from './Forms-interface/CapaInterface';
-import RecentAuditInterface from './Forms-interface/RecentAuditInterface';
-import PPECompInterface from './Forms-interface/PPECompInterface';
-import ManagementInterface from './Forms-interface/ManagementInterface';
-import UserManagement from './components/Users/UserManagement';
+import { AuthProvider } from './context/AuthContext';
+import store from './store';
+import AppRoutes from './routes';
+import { Toaster } from 'react-hot-toast';
 
 
 
 
 
-
-
-function HazardReportExecuteWrapper() {
-  const { id } = useParams();
-  return <HazardReportExecute reportId={id} />;
-}
 
 
 export default function App() {
-  const [sidebarToggle, setSidebarToggle] = useState(false);
-
   return (
+    <Provider store={store}>
     <ThemeProvider>
-    <Router>
-      <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)', transition: 'background .3s, color .3s' }}>
-        <Routes>
-        {/* Public home */}
-        <Route
-          path="/"
-          element={
-            <PublicLayout>
-              <Home />
-            </PublicLayout>
-          }
-        />
-
-        {/* Simple dashboard shell (no content inside yet) */}
-        <Route
-          path="/dashboard"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <Dashboard />
-              </Layout>
-            
-          }
-        />
-
-       {/* <Route
-          path="/sidebar"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <Sidebar />
-              </Layout>
-            
-          }
-        />*/}
-
-           
-
-        {/* Hazard routes */}
-       <Route
-          path="/sidebar"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <Sidebar />
-            </Layout>
-          }
-        />
-
-
-        <Route
-          path="/capa"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <Capa />
-            </Layout>
-          }
-        />
-
-          <Route
-          path="/user-management"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <UserManagement/>
-            </Layout>
-          }
-        />
-
-
-
-
-
-        <Route
-          path="/hazard/report"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <HazardRiskInterface />
-
-            </Layout>
-          }
-        />
-      
-
-               <Route
-          path="/dashboard/hazardform"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <HazardInterface />
-            </Layout>
-          }
-        />
-
-
-
-             <Route
-          path="/form/risk"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <RiskInterface />
-            </Layout>
-          }
-        />
-
-        {/* Health & Safety / Risk management */}
-      
-
-        {/* Other pages */}
-        <Route
-          path="/incident-management"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <IncidentInvestigationForm />
-            </Layout>
-          }
-        />
-
-                <Route
-          path="/dashboard/incidentform"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <IncidentNotifyInterface />
-            </Layout>
-          }
-        />
-
-         <Route
-          path="/form/witness"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <WitnessStateInterface />
-            </Layout>
-          }
-        />
-
-                 <Route
-          path="/form/description"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <IncidentInvestigationInterface />
-            </Layout>
-          }
-        />
-
-
-        <Route
-          path="/inspection"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <InspectionForm />
-            </Layout>
-          }
-        />
-                <Route
-          path="/health-and-safety"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <HealthAndSafetyForm />
-            </Layout>
-          }
-        />
-
-
-        <Route
-  path="/hazard/report/:id"
-  element={
-    <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-      <HazardReportExecuteWrapper />
-    </Layout>
-  }
-/>
-        <Route
-  path="/dashboard/incidentform/:id"
-  element={
-    <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-      <IncidentNotificationDelete/>
-    </Layout>
-  }
-/>
-
-
-
-
-
-        <Route path="/products" element={<PublicLayout><Products /></PublicLayout>} />
-        <Route path="/solutions" element={<PublicLayout><Solutions /></PublicLayout>} />
-        <Route path="/contacts" element={<PublicLayout><Contacts /></PublicLayout>} />
-        <Route path="/signin" element={<PublicLayout><SignIn /></PublicLayout>} />
-        <Route path="/login" element={<PublicLayout><LogIn /></PublicLayout>} />
-
-        {/* Form interfaces (use Layout where appropriate) */}
-        <Route
-          path="/form/tool"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <ToolInterface />
-            </Layout>
-          }
-        />
-        <Route
-          path="/form/canteen"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <CanteenInterface />
-            </Layout>
-          }
-        />
-        <Route
-          path="/form/fuel"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <FuelInterface />
-            </Layout>
-          }
-        />
-        <Route
-          path="/form/ppe"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <PPEInterface />
-            </Layout>
-          }
-        />
-        <Route
-          path="/form/vehicle"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <VehicleInspectionDashboard />
-            </Layout>
-          }
-        />
-        <Route
-          path="/form/science-laboratory"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <ScienceLabInterface />
-            </Layout>
-          }
-        />
-        <Route
-          path="/form/swimming-pool"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <SwimmingPoolInterface />
-            </Layout>
-          }
-        />
-
-        {/* Auditors */}
-        <Route
-          path="/form/checklist"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <ChecklistInterface/>
-            </Layout>
-          }
-        />
-
-                <Route
-          path="/form/workplace"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <WorkPlaceInterface/>
-            </Layout>
-          }
-        />
-           <Route
-          path="/form/emergency"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <EmergencyInterface/>
-            </Layout>
-          }
-        />
-
-             <Route
-          path="/form/capa"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <CapaInterface/>
-            </Layout>
-          }
-        />
-
-
-
-
-              <Route
-          path="/form/audit"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <RecentAuditInterface/>
-            </Layout>
-          }
-        />
-
-         <Route
-          path="/form/ppe-com"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <PPECompInterface/>
-            </Layout>
-          }
-        />
-
-                 <Route
-          path="/form/management"
-          element={
-            <Layout sidebarToggle={sidebarToggle} setSidebarToggle={setSidebarToggle}>
-              <ManagementInterface/>
-            </Layout>
-          }
-        />
-
-
-      
-
-        {/* Direct interface routes (developer/debug) */}
-        <Route path="/forms-interface/vehicle-interface" element={<VehicleInspectionDashboard />} />
-        <Route path="/forms-interface/canteen-interface" element={<CanteenInterface />} />
-        <Route path="/forms-interface/fuel-interface" element={<FuelInterface />} />
-        <Route path="/forms-interface/tool-interface" element={<ToolInterface />} />
-        <Route path="/forms-interface/ppe-interface" element={<PPEInterface />} />
-        <Route path="/forms-interface/sciencelab-interface" element={<ScienceLabInterface />} />
-        <Route path="/forms-interface/swimmingpool-interface" element={<SwimmingPoolInterface />} />
-
-      </Routes>
-      </div>
-    </Router>
+      <AuthProvider>
+        <Router>
+          <div
+            className="min-h-screen"
+            style={{ background: 'var(--bg)', color: 'var(--text)', transition: 'background .3s, color .3s' }}
+          >
+            <AppRoutes />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                  fontSize: '13px',
+                },
+                success: { iconTheme: { primary: '#3fb950', secondary: '#fff' } },
+                error:   { iconTheme: { primary: '#f85149', secondary: '#fff' } },
+              }}
+            />
+          </div>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
+    </Provider>
   );
 }
-// ...existing code...
