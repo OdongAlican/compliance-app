@@ -12,12 +12,14 @@ import toast from "react-hot-toast";
 import { CanteenPerformService } from "../../services/canteen.service";
 import { Spinner, ReviewRow } from "./shared";
 import { STATUS_STYLE } from "./constants";
+import ExecutionDetailModal from "./ExecutionDetailModal";
 
 export default function DetailDrawer({ isOpen, onClose, setup }) {
   const [performs, setPerforms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [signing, setSigning] = useState(null);
+  const [detailPerform, setDetailPerform] = useState(null);
 
   const load = useCallback(async () => {
     if (!setup) return;
@@ -68,7 +70,7 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
     ? (sup.firstname?.[0] ?? "") + (sup.lastname?.[0] ?? "")
     : supName ? supName[0] : "?";
 
-  return createPortal(
+  const drawer = createPortal(
     <div
       className="fixed inset-0 flex justify-end"
       style={{ background: "rgba(0,0,0,0.45)", zIndex: 9999 }}
@@ -254,7 +256,10 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
                         : "1px solid var(--border)",
                     }}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div
+                    className="flex items-start justify-between gap-3 cursor-pointer"
+                    onClick={() => setDetailPerform(p)}
+                  >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span
@@ -289,7 +294,7 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
                       </div>
                       {!signed && (
                         <button
-                          onClick={() => handleSignOff(p.id)}
+                          onClick={(e) => { e.stopPropagation(); handleSignOff(p.id); }}
                           disabled={signing === p.id}
                           className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0"
                           style={{
@@ -312,5 +317,17 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
       </div>
     </div>,
     document.body
+  );
+
+  return (
+    <>
+      {drawer}
+      <ExecutionDetailModal
+        isOpen={Boolean(detailPerform)}
+        onClose={() => setDetailPerform(null)}
+        perform={detailPerform}
+        setup={setup}
+      />
+    </>
   );
 }
