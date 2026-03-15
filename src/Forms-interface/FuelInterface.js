@@ -635,7 +635,7 @@ export default function FuelInterface() {
         s.supervisor     ? s.supervisor.firstname    +" "+s.supervisor.lastname     : "",
       ]),
     ];
-    const csv  = rows.map(r => r.map(c => `"${c??""}`+'"').join(",")).join("\n");
+    const csv  = rows.map(r => r.map(c => `"${c??""}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url  = URL.createObjectURL(blob);
     const a    = Object.assign(document.createElement("a"), { href: url, download: "fuel-inspections.csv" });
