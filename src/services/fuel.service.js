@@ -23,14 +23,14 @@ export const FuelSetupService = {
 
   reassignSupervisor: (id, supervisorId) =>
     api
-      .put(`/fuel_tank_inspections/${id}/reassign_supervisor`, {
+      .post(`/fuel_tank_inspections/${id}/reassign_supervisor`, {
         supervisor_id: supervisorId,
       })
       .then((r) => r.data),
 
   reassignSafetyOfficer: (id, safetyOfficerId) =>
     api
-      .put(`/fuel_tank_inspections/${id}/reassign_safety_officer`, {
+      .post(`/fuel_tank_inspections/${id}/reassign_safety_officer`, {
         safety_officer_id: safetyOfficerId,
       })
       .then((r) => r.data),
@@ -40,16 +40,12 @@ export const FuelSetupService = {
 export const FuelPerformService = {
   list: (setupId, params = {}) =>
     api
-      .get(`/fuel_tank_inspections/${setupId}/perform_fuel_tank_inspections`, {
-        params,
-      })
+      .get(`/fuel_tank_inspections/${setupId}/performs`, { params })
       .then((r) => r.data),
 
   create: (setupId, data) =>
     api
-      .post(`/fuel_tank_inspections/${setupId}/perform_fuel_tank_inspections`, {
-        perform: data,
-      })
+      .post(`/fuel_tank_inspections/${setupId}/performs`, data)
       .then((r) => r.data),
 
   get: (id, params = {}) =>
@@ -67,41 +63,14 @@ export const FuelPerformService = {
 
   signOff: (id, note) =>
     api
-      .put(`/perform_fuel_tank_inspections/${id}/sign_off`, { note })
-      .then((r) => r.data),
-};
-
-/* ── Fuel Inspection Checklists ──────────────────────────────────────── */
-export const FuelChecklistService = {
-  list: (performId) =>
-    api
-      .get(`/perform_fuel_tank_inspections/${performId}/checklists`)
-      .then((r) => r.data),
-
-  attach: (performId, templateIds) =>
-    api
-      .post(`/perform_fuel_tank_inspections/${performId}/checklists`, {
-        checklist_template_ids: templateIds,
+      .post(`/perform_fuel_tank_inspections/${id}/sign_off`, {
+        sign_off: { note },
       })
-      .then((r) => r.data),
-
-  remove: (performId, checklistId) =>
-    api
-      .delete(
-        `/perform_fuel_tank_inspections/${performId}/checklists/${checklistId}`
-      )
       .then((r) => r.data),
 };
 
 /* ── Fuel Checklist Items ────────────────────────────────────────────── */
 export const FuelChecklistItemService = {
-  list: (performId, checklistId) =>
-    api
-      .get(
-        `/perform_fuel_tank_inspections/${performId}/checklists/${checklistId}/items`
-      )
-      .then((r) => r.data),
-
   upsert: (performId, checklistId, items) =>
     api
       .post(
@@ -146,66 +115,55 @@ export const FuelIssueService = {
       .delete(`/perform_fuel_tank_inspections/${performId}/issues/${issueId}`)
       .then((r) => r.data),
 
-  updateCorrectiveAction: (performId, issueId, data) =>
+  updateCorrectiveAction: (performId, issueId, correctiveAction) =>
     api
-      .put(
-        `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/corrective_action`,
-        data
+      .patch(
+        `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/update_corrective_action`,
+        { corrective_action: correctiveAction }
       )
       .then((r) => r.data),
 
   updatePriorityDueDate: (performId, issueId, data) =>
     api
-      .put(
-        `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/priority_due_date`,
+      .patch(
+        `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/update_priority_due_date`,
         data
       )
       .then((r) => r.data),
 
-  repairCompletion: (performId, issueId, data) =>
-    api
-      .put(
+  repairCompletion: (performId, issueId, data, files = []) => {
+    if (files.length === 0) {
+      return api
+        .post(
+          `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/repair_completion`,
+          data
+        )
+        .then((r) => r.data);
+    }
+    const fd = new FormData();
+    Object.entries(data).forEach(([k, v]) => fd.append(k, v));
+    files.forEach((f) => fd.append("attachments[]", f));
+    return api
+      .post(
         `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/repair_completion`,
-        data
+        fd
       )
-      .then((r) => r.data),
+      .then((r) => r.data);
+  },
 
   assignContractor: (performId, issueId, contractorId) =>
     api
-      .put(
+      .patch(
         `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/assign_contractor`,
         { contractor_id: contractorId }
       )
       .then((r) => r.data),
 
-  setRepairStatus: (performId, issueId, status) =>
+  setRepairStatus: (performId, issueId, status, rejectReason) =>
     api
-      .put(
-        `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/repair_status`,
-        { status }
-      )
-      .then((r) => r.data),
-};
-
-/* ── Fuel Attachments ────────────────────────────────────────────────── */
-export const FuelAttachmentService = {
-  list: (performId) =>
-    api
-      .get(`/perform_fuel_tank_inspections/${performId}/attachments`)
-      .then((r) => r.data),
-
-  upload: (performId, files) => {
-    const fd = new FormData();
-    files.forEach((f) => fd.append("attachments[]", f));
-    return api
-      .post(`/perform_fuel_tank_inspections/${performId}/attachments`, fd)
-      .then((r) => r.data);
-  },
-
-  remove: (performId, attachmentId) =>
-    api
-      .delete(
-        `/perform_fuel_tank_inspections/${performId}/attachments/${attachmentId}`
+      .patch(
+        `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/set_repair_status`,
+        { status, ...(rejectReason ? { reject_reason: rejectReason } : {}) }
       )
       .then((r) => r.data),
 };
