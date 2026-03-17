@@ -719,12 +719,12 @@ function ChecklistSection({ performId }) {
         try {
             const res = await FuelPerformService.get(performId, { include: "checklists" });
             const data = res.data ?? res;
-            const pcs = data.performed_checklists ?? [];
+            const pcs = data.performed_fuel_checklists ?? [];
             setChecklists(pcs);
             const init = {};
             pcs.forEach((pc) => {
                 init[pc.id] = {};
-                (pc.performed_checklist_items ?? []).forEach((pci) => {
+                (pc.performed_fuel_checklist_items ?? []).forEach((pci) => {
                     init[pc.id][pci.checklist_item_template_id] = {
                         status: pci.status ?? "satisfactory",
                         comment: pci.comment ?? "",
@@ -793,7 +793,7 @@ function ChecklistSection({ performId }) {
     }
 
     const _allItems = checklists.flatMap((pc) =>
-        (pc.performed_checklist_items ?? []).map((i) => ({
+        (pc.performed_fuel_checklist_items ?? []).map((i) => ({
             pcId: pc.id,
             templateId: i.checklist_item_template_id,
             savedStatus: i.status,
@@ -834,7 +834,7 @@ function ChecklistSection({ performId }) {
 
             {checklists.map((pc) => {
                 const tmpl = pc.checklist_template ?? {};
-                const performedItems = pc.performed_checklist_items ?? [];
+                const performedItems = pc.performed_fuel_checklist_items ?? [];
                 const isExpanded = expanded[pc.id] ?? false;
                 const pcResults = localResults[pc.id] ?? {};
 

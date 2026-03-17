@@ -49,9 +49,7 @@ export const FuelPerformService = {
       .then((r) => r.data),
 
   get: (id, params = {}) =>
-    api
-      .get(`/perform_fuel_tank_inspections/${id}`, { params })
-      .then((r) => r.data),
+    api.get(`/perform_fuel_tank_inspections/${id}`, { params }),
 
   update: (id, data) =>
     api

@@ -1,6 +1,7 @@
 /* ── Fuel — StartInspectionModal ───────────────────────────────────── */
 import { useState, useEffect } from "react";
 import {
+  ClipboardDocumentCheckIcon,
   ExclamationTriangleIcon,
   PlusIcon,
   XMarkIcon,
@@ -173,6 +174,31 @@ export default function StartInspectionModal({ isOpen, onClose, setup }) {
   function renderDetailsTab() {
     return (
       <div className="flex flex-col gap-4">
+        {/* Info banner */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: "color-mix(in srgb,var(--accent) 8%,transparent)",
+            border: "1px solid color-mix(in srgb,var(--accent) 25%,transparent)",
+          }}
+        >
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "var(--accent)", color: "#fff" }}
+          >
+            <ClipboardDocumentCheckIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+              Recording a new execution
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Set the date and time, complete each checklist section using the tabs, then
+              log any issues before submitting.
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="Date" required error={errors.date}>
             <input
@@ -233,20 +259,59 @@ export default function StartInspectionModal({ isOpen, onClose, setup }) {
   }
 
   function renderChecklistTab(template) {
+    const items = template.checklist_item_templates || [];
+    const templateResults = results[template.id] || {};
+    const needsCount = Object.values(templateResults).filter(
+      (r) => r.value === "needs_attention"
+    ).length;
+
     return (
-      <div className="flex flex-col gap-4">
-        {(template.checklist_item_templates || []).map((item) => {
-          const r = results[template.id]?.[item.id] ?? { value: "satisfactory", comment: "" };
+      <div className="flex flex-col gap-3">
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+              {template.name}
+            </p>
+            {template.description && (
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                {template.description}
+              </p>
+            )}
+          </div>
+          {needsCount > 0 && (
+            <span
+              className="text-[11px] font-bold px-2.5 py-0.5 rounded-full flex-shrink-0"
+              style={{
+                background: "color-mix(in srgb,#d29922 15%,transparent)",
+                color: "#d29922",
+              }}
+            >
+              {needsCount} need{needsCount !== 1 ? "s" : ""} attention
+            </span>
+          )}
+        </div>
+
+        {items.map((item) => {
+          const r = templateResults[item.id] || { value: "satisfactory", comment: "" };
           return (
             <div
               key={item.id}
-              className="p-4 rounded-xl flex flex-col gap-3"
-              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+              className="p-4 rounded-xl flex flex-col gap-2.5"
+              style={{
+                background: "var(--bg-raised)",
+                border:
+                  r.value === "satisfactory"
+                    ? "1px solid color-mix(in srgb,#3fb950 20%,transparent)"
+                    : r.value === "needs_attention"
+                    ? "1px solid color-mix(in srgb,#d29922 25%,transparent)"
+                    : "1px solid var(--border)",
+              }}
             >
-              <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                {item.name ?? item.description}
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                {item.name ?? item.label ?? item.description}
               </p>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 {CHECKLIST_STATUS_OPTIONS.map((opt) => {
                   const active = r.value === opt.value;
                   return (
@@ -389,7 +454,8 @@ export default function StartInspectionModal({ isOpen, onClose, setup }) {
     const roleLabel = currentRole
       ? currentRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
       : "";
-    const userFullName = [currentUser?.firstname, currentUser?.lastname].filter(Boolean).join(" ") || "—";
+    const userFullName =
+      [currentUser?.firstname, currentUser?.lastname].filter(Boolean).join(" ") || "—";
 
     let totalSat = 0, totalNA = 0, totalNApp = 0;
     templates.forEach((t) => {
@@ -407,71 +473,233 @@ export default function StartInspectionModal({ isOpen, onClose, setup }) {
 
     return (
       <div className="flex flex-col gap-5">
-        {/* Execution meta */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-            Execution Details
+        {/* Performer card */}
+        <div
+          className="p-4 rounded-xl"
+          style={{
+            background: "color-mix(in srgb,var(--accent) 6%,transparent)",
+            border: "1px solid color-mix(in srgb,var(--accent) 20%,transparent)",
+          }}
+        >
+          <p
+            className="text-[11px] font-bold uppercase tracking-wider mb-3"
+            style={{ color: "var(--accent)" }}
+          >
+            Performed By
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg" style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-              <p className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>Date & Time</p>
-              <p className="text-sm font-medium mt-0.5" style={{ color: "var(--text)" }}>{form.date} at {form.time}</p>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{ background: "var(--accent)", color: "#fff" }}
+            >
+              {currentUser?.firstname?.[0]}{currentUser?.lastname?.[0]}
             </div>
-            <div className="p-3 rounded-lg" style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-              <p className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>Recorded By</p>
-              <p className="text-sm font-medium mt-0.5" style={{ color: "var(--text)" }}>{userFullName}</p>
-              {roleLabel && <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{roleLabel}</p>}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                {userFullName}
+              </p>
+              {currentUser?.email && (
+                <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
+                  {currentUser.email}
+                </p>
+              )}
+              {roleLabel && (
+                <span
+                  className="text-[11px] font-bold px-2 py-0.5 rounded-full inline-block mt-1"
+                  style={{
+                    background: "color-mix(in srgb,var(--accent) 12%,transparent)",
+                    color: "var(--accent)",
+                  }}
+                >
+                  {roleLabel}
+                </span>
+              )}
+            </div>
+          </div>
+          <div
+            className="grid grid-cols-2 gap-3 mt-3 pt-3"
+            style={{ borderTop: "1px solid color-mix(in srgb,var(--accent) 15%,transparent)" }}
+          >
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Date</p>
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{form.date || "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Time</p>
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{form.time || "—"}</p>
             </div>
           </div>
         </div>
 
-        {/* Checklist summary */}
+        {/* Overall scorecard */}
+        <div className="grid grid-cols-3 gap-3">
+          <div
+            className="p-3 rounded-xl text-center"
+            style={{
+              background: "color-mix(in srgb,#3fb950 10%,transparent)",
+              border: "1px solid color-mix(in srgb,#3fb950 25%,transparent)",
+            }}
+          >
+            <p className="text-2xl font-bold" style={{ color: "#3fb950" }}>{totalSat}</p>
+            <p className="text-[11px] font-semibold mt-0.5" style={{ color: "#3fb950" }}>Satisfactory</p>
+          </div>
+          <div
+            className="p-3 rounded-xl text-center"
+            style={{
+              background: "color-mix(in srgb,#d29922 10%,transparent)",
+              border: "1px solid color-mix(in srgb,#d29922 25%,transparent)",
+            }}
+          >
+            <p className="text-2xl font-bold" style={{ color: "#d29922" }}>{totalNA}</p>
+            <p className="text-[11px] font-semibold mt-0.5" style={{ color: "#d29922" }}>Needs Attention</p>
+          </div>
+          <div
+            className="p-3 rounded-xl text-center"
+            style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+          >
+            <p className="text-2xl font-bold" style={{ color: "var(--text-muted)" }}>{totalNApp}</p>
+            <p className="text-[11px] font-semibold mt-0.5" style={{ color: "var(--text-muted)" }}>N/A</p>
+          </div>
+        </div>
+
+        {/* Per-template breakdown */}
         {templates.length > 0 && (
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-              Checklist Summary
+            <p
+              className="text-[11px] font-bold uppercase tracking-wider mb-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Checklist Breakdown
             </p>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Satisfactory", count: totalSat, color: "#3fb950" },
-                { label: "Needs Attention", count: totalNA, color: "#d29922" },
-                { label: "N/A", count: totalNApp, color: "var(--text-muted)" },
-              ].map(({ label, count, color }) => (
+            <div className="flex flex-col gap-2">
+              {templates.map((t) => {
+                const items = t.checklist_item_templates || [];
+                const tmplRes = results[t.id] || {};
+                const sat = items.filter(
+                  (i) => (tmplRes[i.id]?.value ?? "satisfactory") === "satisfactory"
+                ).length;
+                const attention = items.filter(
+                  (i) => tmplRes[i.id]?.value === "needs_attention"
+                );
+                const napp = items.filter(
+                  (i) => tmplRes[i.id]?.value === "not_applicable"
+                ).length;
+                return (
+                  <div
+                    key={t.id}
+                    className="p-3 rounded-xl"
+                    style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>
+                        {t.name}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                          style={{
+                            background: "color-mix(in srgb,#3fb950 12%,transparent)",
+                            color: "#3fb950",
+                          }}
+                        >
+                          ✓ {sat}
+                        </span>
+                        {attention.length > 0 && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{
+                              background: "color-mix(in srgb,#d29922 12%,transparent)",
+                              color: "#d29922",
+                            }}
+                          >
+                            ⚠ {attention.length}
+                          </span>
+                        )}
+                        {napp > 0 && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{
+                              background: "var(--bg)",
+                              color: "var(--text-muted)",
+                              border: "1px solid var(--border)",
+                            }}
+                          >
+                            N/A {napp}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {attention.length > 0 && (
+                      <div className="flex flex-col gap-1 mt-1.5">
+                        {attention.map((item) => (
+                          <div key={item.id} className="flex items-start gap-1.5">
+                            <ExclamationTriangleIcon
+                              className="h-3 w-3 flex-shrink-0 mt-0.5"
+                              style={{ color: "#d29922" }}
+                            />
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                              {item.name ?? item.label ?? item.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Issues summary */}
+        {filledIssues.length > 0 && (
+          <div>
+            <p
+              className="text-[11px] font-bold uppercase tracking-wider mb-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Issues Logged ({filledIssues.length})
+            </p>
+            <div className="flex flex-col gap-2">
+              {filledIssues.map((iss, idx) => (
                 <div
-                  key={label}
-                  className="p-3 rounded-lg text-center"
-                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+                  key={idx}
+                  className="p-3 rounded-xl flex items-start gap-2"
+                  style={{
+                    background: "color-mix(in srgb,var(--danger) 6%,transparent)",
+                    border: "1px solid color-mix(in srgb,var(--danger) 15%,transparent)",
+                  }}
                 >
-                  <p className="text-xl font-bold" style={{ color }}>{count}</p>
-                  <p className="text-[11px] font-medium mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+                  <ExclamationTriangleIcon
+                    className="h-3.5 w-3.5 flex-shrink-0 mt-0.5"
+                    style={{ color: "var(--danger)" }}
+                  />
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>
+                      {iss.title}
+                    </p>
+                    {iss.description && (
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        {iss.description}
+                      </p>
+                    )}
+                    {iss.file && (
+                      <p className="text-[11px] mt-0.5" style={{ color: "var(--accent)" }}>
+                        📎 {iss.file.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Issues summary */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-            Issues ({filledIssues.length})
+        {filledIssues.length === 0 && (
+          <p className="text-xs text-center py-2" style={{ color: "var(--text-muted)" }}>
+            No issues logged for this inspection.
           </p>
-          {filledIssues.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>No issues logged.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {filledIssues.map((iss, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded-lg"
-                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
-                >
-                  <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{iss.title}</p>
-                  {iss.description && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{iss.description}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     );
   }
