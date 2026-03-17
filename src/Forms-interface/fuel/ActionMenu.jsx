@@ -54,38 +54,26 @@ export default function ActionMenu({ actions }) {
         createPortal(
           <div
             ref={menuRef}
-            className="fixed rounded-xl shadow-2xl py-1 overflow-hidden"
-            style={{
-              top: pos.top,
-              right: pos.right,
-              minWidth: "180px",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border)",
-              zIndex: 99999,
-            }}
+            className="ui-menu w-56"
+            style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 10001 }}
           >
-            {actions.map((action, i) => {
-              if (action.divider) {
-                return (
-                  <div
-                    key={i}
-                    style={{ height: "1px", background: "var(--border)", margin: "4px 0" }}
-                  />
-                );
-              }
-              return (
+            {actions.map((a, i) =>
+              a.divider ? (
+                <div
+                  key={i}
+                  style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
+                />
+              ) : (
                 <button
                   key={i}
-                  onClick={() => { action.onClick(); setOpen(false); }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors"
-                  style={{ color: action.danger ? "var(--danger)" : action.color ?? "var(--text)" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-raised)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  className="ui-menu-item text-left w-full"
+                  style={{ color: a.danger ? "var(--danger)" : a.color ?? "var(--text)" }}
+                  onClick={() => { setOpen(false); a.onClick(); }}
                 >
-                  {action.label}
+                  {a.label}
                 </button>
-              );
-            })}
+              )
+            )}
           </div>,
           document.body
         )}
