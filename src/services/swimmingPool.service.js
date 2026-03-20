@@ -64,10 +64,48 @@ export const SwimmingPoolPerformService = {
 
   /**
    * POST /swimming_pool_inspections/:setupId/performs
-   * Body: { perform: { date, time, note } }
+   * Supports combined payload: perform + checklist_template + inspectionIssues.
+   * Automatically uses multipart/form-data when any issue carries a File attachment,
+   * otherwise sends a plain JSON body.
+   *
+   * @param {number} setupId
+   * @param {{ perform: object, checklist_template?: array, inspectionIssues?: array }} payload
    */
-  create: (setupId, data) =>
-    api.post(`${BASE}/${setupId}/performs`, { perform: data }),
+  create: (setupId, { perform = {}, checklist_template = [], inspectionIssues = [] } = {}) => {
+    const hasFiles = inspectionIssues.some((i) => i.file instanceof File);
+
+    if (!hasFiles) {
+      const body = { perform };
+      if (checklist_template.length) body.checklist_template = checklist_template;
+      if (inspectionIssues.length) {
+        body.inspectionIssues = inspectionIssues.map(({ file: _f, ...rest }) => rest);
+      }
+      return api.post(`${BASE}/${setupId}/performs`, body);
+    }
+
+    // Multipart — required when at least one issue has a file
+    const form = new FormData();
+    Object.entries(perform).forEach(([k, v]) => {
+      if (v != null && v !== '') form.append(`perform[${k}]`, v);
+    });
+    checklist_template.forEach((tmpl, ti) => {
+      form.append(`checklist_template[${ti}][id]`, tmpl.id);
+      (tmpl.checklistItems || []).forEach((item, ii) => {
+        form.append(`checklist_template[${ti}][checklistItems][${ii}][id]`, item.id);
+        form.append(`checklist_template[${ti}][checklistItems][${ii}][value]`, item.value);
+        if (item.comment) form.append(`checklist_template[${ti}][checklistItems][${ii}][comment]`, item.comment);
+      });
+    });
+    inspectionIssues.forEach((issue, i) => {
+      if (issue.title) form.append(`inspectionIssues[${i}][title]`, issue.title);
+      if (issue.description) form.append(`inspectionIssues[${i}][description]`, issue.description);
+      if (issue.correctiveAction) form.append(`inspectionIssues[${i}][correctiveAction]`, issue.correctiveAction);
+      if (issue.file instanceof File) form.append(`inspectionIssues[${i}][file]`, issue.file);
+    });
+    return api.post(`${BASE}/${setupId}/performs`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 
   /** GET /perform_swimming_pool_inspections/:id */
   get: (id, params = {}) => api.get(`${PERFORM}/${id}`, { params }),
