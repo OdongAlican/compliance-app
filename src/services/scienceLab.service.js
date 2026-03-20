@@ -15,7 +15,49 @@ export const ScienceLabSetupService = {
 
 export const ScienceLabPerformService = {
   list:    (setupId, params = {}) => api.get(`${BASE}/${setupId}/performs`, { params }),
-  create:  (setupId, data)        => api.post(`${BASE}/${setupId}/performs`, { perform: data }),
+
+  /**
+   * POST /science_lab_inspections/:setupId/performs
+   * Supports combined payload: perform + checklist_template + inspectionIssues.
+   * Automatically uses multipart/form-data when any issue carries a File attachment,
+   * otherwise sends a plain JSON body.
+   */
+  create: (setupId, { perform = {}, checklist_template = [], inspectionIssues = [] } = {}) => {
+    const hasFiles = inspectionIssues.some((i) => i.file instanceof File);
+
+    if (!hasFiles) {
+      const body = { perform };
+      if (checklist_template.length) body.checklist_template = checklist_template;
+      if (inspectionIssues.length) {
+        body.inspectionIssues = inspectionIssues.map(({ file: _f, ...rest }) => rest);
+      }
+      return api.post(`${BASE}/${setupId}/performs`, body);
+    }
+
+    // Multipart — required when at least one issue has a file
+    const form = new FormData();
+    Object.entries(perform).forEach(([k, v]) => {
+      if (v != null && v !== '') form.append(`perform[${k}]`, v);
+    });
+    checklist_template.forEach((tmpl, ti) => {
+      form.append(`checklist_template[${ti}][id]`, tmpl.id);
+      (tmpl.checklistItems || []).forEach((item, ii) => {
+        form.append(`checklist_template[${ti}][checklistItems][${ii}][id]`, item.id);
+        form.append(`checklist_template[${ti}][checklistItems][${ii}][value]`, item.value);
+        if (item.comment) form.append(`checklist_template[${ti}][checklistItems][${ii}][comment]`, item.comment);
+      });
+    });
+    inspectionIssues.forEach((issue, i) => {
+      if (issue.title) form.append(`inspectionIssues[${i}][title]`, issue.title);
+      if (issue.description) form.append(`inspectionIssues[${i}][description]`, issue.description);
+      if (issue.correctiveAction) form.append(`inspectionIssues[${i}][correctiveAction]`, issue.correctiveAction);
+      if (issue.file instanceof File) form.append(`inspectionIssues[${i}][file]`, issue.file);
+    });
+    return api.post(`${BASE}/${setupId}/performs`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
   get:     (id, params = {})      => api.get(`${PERFORM}/${id}`, { params }),
   update:  (id, data)             => api.put(`${PERFORM}/${id}`, { perform: data }),
   remove:  (id)                   => api.delete(`${PERFORM}/${id}`),
