@@ -15,7 +15,7 @@ export const ToolSetupService = {
 
 export const ToolPerformService = {
   list:    (setupId, params = {}) => api.get(`${BASE}/${setupId}/performs`, { params }),
-  create:  (setupId, data)        => api.post(`${BASE}/${setupId}/performs`, { perform: data }),
+  create:  (setupId, data)        => api.post(`${BASE}/${setupId}/performs`, data),
   get:     (id, params = {})      => api.get(`${PERFORM}/${id}`, { params }),
   update:  (id, data)             => api.put(`${PERFORM}/${id}`, { perform: data }),
   remove:  (id)                   => api.delete(`${PERFORM}/${id}`),
