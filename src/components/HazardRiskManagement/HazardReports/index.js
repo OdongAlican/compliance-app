@@ -24,6 +24,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
   FunnelIcon,
+  CheckBadgeIcon,
 } from '@heroicons/react/24/outline';
 import { EllipsisVerticalIcon } from '@heroicons/react/20/solid';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
@@ -214,7 +215,7 @@ function DeleteConfirmModal({ open, name, onConfirm, onCancel, loading }) {
 
 // ── Hazard Report Create/Edit Modal ────────────────────────────────────────
 
-const STEPS = ['Basic Info', 'Assign People', 'Review'];
+const STEPS = ['Basic Info', 'Safety Officers', 'Supervisors', 'Review'];
 
 const EMPTY_FORM = {
   location: '',
@@ -227,15 +228,15 @@ const EMPTY_PEOPLE = { safety_officers: [], supervisors: [] };
 
 function ReviewRow({ label, value }) {
   return (
-    <div className="flex gap-3">
-      <span
-        className="text-xs font-medium w-28 flex-shrink-0"
-        style={{ color: 'var(--text-muted)' }}
-      >
+    <div
+      className="flex flex-col gap-0.5 p-3 rounded-lg"
+      style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+    >
+      <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
         {label}
       </span>
-      <span className="text-xs flex-1" style={{ color: 'var(--text)' }}>
-        {value}
+      <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+        {value || '—'}
       </span>
     </div>
   );
@@ -277,6 +278,8 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
     if (s === 1) {
       if (!people.safety_officers.length)
         errs.safety_officers = 'At least one safety officer is required';
+    }
+    if (s === 2) {
       if (!people.supervisors.length)
         errs.supervisors = 'At least one supervisor is required';
     }
@@ -288,13 +291,17 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
   function back() { setStep((s) => s - 1); }
 
   function submit() {
-    // Re-validate people step before submit
+    // Re-validate people steps before submit
     const errs = {};
     if (!people.safety_officers.length)
       errs.safety_officers = 'At least one safety officer is required';
     if (!people.supervisors.length)
       errs.supervisors = 'At least one supervisor is required';
-    if (Object.keys(errs).length) { setErrors(errs); setStep(1); return; }
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      setStep(errs.safety_officers ? 1 : 2);
+      return;
+    }
 
     const payload = {
       ...form,
@@ -425,46 +432,304 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 1: Assign People ── */}
+        {/* ── Step 1: Safety Officers ── */}
         {step === 1 && (
-          <div className="space-y-5">
-            <UserMultiSelect
-              label="Safety Officers"
-              roleFilter="safety_officer"
-              value={people.safety_officers}
-              onChange={(v) => setPeople({ ...people, safety_officers: v })}
-              error={errors.safety_officers}
-            />
-            <UserMultiSelect
-              label="Supervisors"
-              roleFilter="supervisor"
-              value={people.supervisors}
-              onChange={(v) => setPeople({ ...people, supervisors: v })}
-              error={errors.supervisors}
-            />
+          <div className="flex flex-col gap-5">
+            {/* Canteen-style info banner */}
+            <div
+              className="flex items-start gap-3 p-4 rounded-xl"
+              style={{
+                background: 'color-mix(in srgb,var(--accent) 8%,transparent)',
+                border: '1px solid color-mix(in srgb,var(--accent) 25%,transparent)',
+              }}
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                style={{ background: 'var(--accent)', color: '#fff' }}
+              >
+                2
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                  Assign Safety Officers
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Search by name — select one or more safety officers for this report.
+                </p>
+              </div>
+            </div>
+
+            {/* Field wrapper + search */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                Safety Officers <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <UserMultiSelect
+                roleFilter="safety_officer"
+                value={people.safety_officers}
+                onChange={(v) => setPeople({ ...people, safety_officers: v })}
+                error={errors.safety_officers}
+                showChips={false}
+              />
+              {errors.safety_officers && (
+                <p className="text-[11px]" style={{ color: 'var(--danger)' }}>
+                  {errors.safety_officers}
+                </p>
+              )}
+            </div>
+
+            {/* Green confirmation cards */}
+            {people.safety_officers.map((u) => (
+              <div
+                key={u.id}
+                className="flex items-center gap-3 p-4 rounded-xl"
+                style={{
+                  background: 'color-mix(in srgb,#3fb950 8%,transparent)',
+                  border: '1px solid color-mix(in srgb,#3fb950 30%,transparent)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: '#3fb950', color: '#fff' }}
+                >
+                  {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                  {(u.lastname ?? '')[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                    {displayName(u)}
+                  </p>
+                  <p className="text-xs" style={{ color: '#3fb950' }}>
+                    ✓ Assigned &middot; Safety Officer
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPeople({
+                      ...people,
+                      safety_officers: people.safety_officers.filter((x) => x.id !== u.id),
+                    })
+                  }
+                  className="p-1 rounded hover:opacity-70 flex-shrink-0"
+                  style={{ color: 'var(--text-muted)' }}
+                  title="Remove"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* ── Step 2: Review ── */}
+        {/* ── Step 2: Supervisors ── */}
         {step === 2 && (
-          <div className="space-y-3">
+          <div className="flex flex-col gap-5">
+            {/* Canteen-style info banner */}
             <div
-              className="rounded-xl p-4 space-y-2.5"
-              style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              className="flex items-start gap-3 p-4 rounded-xl"
+              style={{
+                background: 'color-mix(in srgb,var(--accent) 8%,transparent)',
+                border: '1px solid color-mix(in srgb,var(--accent) 25%,transparent)',
+              }}
             >
-              <ReviewRow label="Location"       value={form.location} />
-              <ReviewRow label="Hazard Type"    value={form.hazard_type} />
-              <ReviewRow label="Report Date"    value={form.report_date || 'Auto-set by server'} />
-              <ReviewRow label="Notes"          value={form.other || '—'} />
-              <ReviewRow
-                label="Safety Officers"
-                value={people.safety_officers.map(displayName).join(', ') || '—'}
-              />
-              <ReviewRow
-                label="Supervisors"
-                value={people.supervisors.map(displayName).join(', ') || '—'}
-              />
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                style={{ background: 'var(--accent)', color: '#fff' }}
+              >
+                3
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                  Assign Supervisors
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Search by name — select one or more supervisors for this report.
+                </p>
+              </div>
             </div>
+
+            {/* Field wrapper + search */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                Supervisors <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <UserMultiSelect
+                roleFilter="supervisor"
+                value={people.supervisors}
+                onChange={(v) => setPeople({ ...people, supervisors: v })}
+                error={errors.supervisors}
+                showChips={false}
+              />
+              {errors.supervisors && (
+                <p className="text-[11px]" style={{ color: 'var(--danger)' }}>
+                  {errors.supervisors}
+                </p>
+              )}
+            </div>
+
+            {/* Green confirmation cards */}
+            {people.supervisors.map((u) => (
+              <div
+                key={u.id}
+                className="flex items-center gap-3 p-4 rounded-xl"
+                style={{
+                  background: 'color-mix(in srgb,#3fb950 8%,transparent)',
+                  border: '1px solid color-mix(in srgb,#3fb950 30%,transparent)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: '#3fb950', color: '#fff' }}
+                >
+                  {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                  {(u.lastname ?? '')[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                    {displayName(u)}
+                  </p>
+                  <p className="text-xs" style={{ color: '#3fb950' }}>
+                    ✓ Assigned &middot; Supervisor
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPeople({
+                      ...people,
+                      supervisors: people.supervisors.filter((x) => x.id !== u.id),
+                    })
+                  }
+                  className="p-1 rounded hover:opacity-70 flex-shrink-0"
+                  style={{ color: 'var(--text-muted)' }}
+                  title="Remove"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Step 3: Review ── */}
+        {step === 3 && (
+          <div className="space-y-4">
+            {/* All-steps-complete banner */}
+            <div
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold"
+              style={{
+                background: 'color-mix(in srgb,#3fb950 10%,transparent)',
+                color: '#3fb950',
+                border: '1px solid color-mix(in srgb,#3fb950 25%,transparent)',
+              }}
+            >
+              <CheckBadgeIcon className="h-4 w-4 flex-shrink-0" />
+              All steps complete — please review before submitting.
+            </div>
+
+            {/* Report Details section */}
+            <div className="space-y-2">
+              <p
+                className="text-xs font-bold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Report Details
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <ReviewRow label="Location" value={form.location} />
+                </div>
+                <ReviewRow label="Hazard Type" value={form.hazard_type} />
+                <ReviewRow label="Report Date" value={form.report_date || 'Auto-set by server'} />
+                <div className="col-span-2">
+                  <ReviewRow label="Additional Notes" value={form.other} />
+                </div>
+              </div>
+            </div>
+
+            {/* Assignees section */}
+            <div className="space-y-2">
+              <p
+                className="text-xs font-bold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Assignees
+              </p>
+
+              {people.safety_officers.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>Safety Officers</p>
+                  <div className="flex flex-wrap gap-2">
+                    {people.safety_officers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center gap-3 p-3 rounded-lg flex-1"
+                        style={{
+                          background: 'var(--bg-raised)',
+                          border: '1px solid var(--border)',
+                          minWidth: 180,
+                        }}
+                      >
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{
+                            background: 'color-mix(in srgb,var(--accent) 20%,transparent)',
+                            color: 'var(--accent)',
+                          }}
+                        >
+                          {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                          {(u.lastname ?? '')[0]?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>Safety Officer</p>
+                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {people.supervisors.length > 0 && (
+                <div className="space-y-1.5 mt-2">
+                  <p className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>Supervisors</p>
+                  <div className="flex flex-wrap gap-2">
+                    {people.supervisors.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center gap-3 p-3 rounded-lg flex-1"
+                        style={{
+                          background: 'var(--bg-raised)',
+                          border: '1px solid var(--border)',
+                          minWidth: 180,
+                        }}
+                      >
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{
+                            background: 'color-mix(in srgb,#d97706 20%,transparent)',
+                            color: '#d97706',
+                          }}
+                        >
+                          {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                          {(u.lastname ?? '')[0]?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>Supervisor</p>
+                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {people.safety_officers.length === 0 && people.supervisors.length === 0 && (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No assignees selected.</p>
+              )}
+            </div>
+
             {saveError && (
               <p className="text-sm text-center" style={{ color: 'var(--danger)' }}>
                 {saveError}
