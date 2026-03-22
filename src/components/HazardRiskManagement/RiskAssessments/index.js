@@ -63,11 +63,26 @@ function NameList({ arr }) {
 
 function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+
+  function handleOpen() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
     <div className="relative inline-block text-left">
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleOpen}
         className="p-1 rounded hover:opacity-75"
         style={{ color: 'var(--text-muted)' }}
         aria-haspopup="menu"
@@ -77,7 +92,11 @@ function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="ui-menu absolute right-0 mt-1 z-50" role="menu">
+          <div
+            className="ui-menu fixed z-50"
+            style={{ top: coords.top, right: coords.right }}
+            role="menu"
+          >
             <button
               type="button" role="menuitem" className="ui-menu-item"
               onClick={() => { onView(); setOpen(false); }}
@@ -208,11 +227,16 @@ const EMPTY_PEOPLE = { safety_officers: [], supervisors: [] };
 
 function ReviewRow({ label, value }) {
   return (
-    <div className="flex gap-3">
-      <span className="text-xs font-medium w-28 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+    <div
+      className="flex flex-col gap-0.5 p-3 rounded-lg"
+      style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+    >
+      <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
         {label}
       </span>
-      <span className="text-xs flex-1" style={{ color: 'var(--text)' }}>{value}</span>
+      <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+        {value || '—'}
+      </span>
     </div>
   );
 }
@@ -603,14 +627,10 @@ function RiskAssessmentModal({ open, assessment, onClose, onSave, saving, saveEr
                 Assessment Details
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <ReviewRow label="Activity" value={form.activity} />
-                </div>
+                <ReviewRow label="Activity" value={form.activity} />
                 <ReviewRow label="Location" value={form.location} />
                 <ReviewRow label="Date" value={form.date || 'Auto-set by server'} />
-                <div className="col-span-2">
-                  <ReviewRow label="Notes" value={form.note || '—'} />
-                </div>
+                <ReviewRow label="Notes" value={form.note || '—'} />
               </div>
             </div>
 
