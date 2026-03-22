@@ -48,6 +48,8 @@ import IncidentNotifyInterface        from '../Forms-interface/IncidentNotifyInt
 import WitnessStateInterface          from '../Forms-interface/WitnessStateInterface';
 import IncidentInvestigationInterface from '../Forms-interface/IncidentInvestigationInterface';
 import IncidentNotificationDelete     from '../components/Execute/Delete';
+import IncidentNotificationsPage      from '../components/Incidents/IncidentNotifications';
+import StartInvestigationsPage        from '../components/Incidents/StartInvestigations';
 
 // ── Inspections ───────────────────────────────────────────────────────────
 import VehicleInspectionDashboard from '../Forms-interface/vehicle-interface';
@@ -111,6 +113,8 @@ export default function AppRoutes() {
 
       {/* ── Protected — Incidents ── */}
       <Route path="/incident-management"       element={<Layout><IncidentInvestigationForm /></Layout>} />
+      <Route path="/incident/notifications"    element={<Layout><IncidentNotificationsPage /></Layout>} />
+      <Route path="/incident/investigations"   element={<Layout><StartInvestigationsPage /></Layout>} />
       <Route path="/dashboard/incidentform"    element={<Layout><IncidentNotifyInterface /></Layout>} />
       <Route path="/form/witness"              element={<Layout><WitnessStateInterface /></Layout>} />
       <Route path="/form/description"          element={<Layout><IncidentInvestigationInterface /></Layout>} />
