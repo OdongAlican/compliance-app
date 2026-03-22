@@ -67,11 +67,23 @@ function NameList({ arr }) {
 
 function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+
+  function handleOpen() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
     <div className="relative inline-block text-left">
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleOpen}
         className="p-1 rounded hover:opacity-75"
         style={{ color: 'var(--text-muted)' }}
         aria-haspopup="menu"
@@ -81,7 +93,11 @@ function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="ui-menu absolute right-0 mt-1 z-50" role="menu">
+          <div
+            className="ui-menu fixed z-50"
+            style={{ top: coords.top, right: coords.right }}
+            role="menu"
+          >
             <button
               type="button" role="menuitem" className="ui-menu-item"
               onClick={() => { onView(); setOpen(false); }}
