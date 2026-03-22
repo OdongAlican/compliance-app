@@ -24,6 +24,7 @@ export default function UserMultiSelect({
   label,
   error,
   disabled = false,
+  showChips = true,
 }) {
   const [options, setOptions]   = useState([]);
   const [query, setQuery]       = useState('');
@@ -78,7 +79,7 @@ export default function UserMultiSelect({
       )}
 
       {/* Selected chips */}
-      {value.length > 0 && (
+      {showChips && value.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {value.map((u) => (
             <span
