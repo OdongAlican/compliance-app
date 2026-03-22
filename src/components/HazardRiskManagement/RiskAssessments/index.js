@@ -760,103 +760,154 @@ function RiskAssessmentModal({ open, assessment, onClose, onSave, saving, saveEr
 function DetailDrawer({ assessment, onClose, onEdit, canEdit }) {
   if (!assessment) return null;
 
+  const officerCount    = assessment.safety_officers?.length  ?? 0;
+  const supervisorCount = assessment.supervisors?.length      ?? 0;
+  const entryCount      = assessment.risk_assessment_entries?.length ?? 0;
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div
-        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-md"
+        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-lg"
         style={{ background: 'var(--bg)', borderLeft: '1px solid var(--border)' }}
       >
-        {/* Header */}
+        {/* ── Hero header ── */}
         <div
-          className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
-          style={{ borderBottom: '1px solid var(--border)' }}
+          className="flex-shrink-0 px-6 py-5"
+          style={{
+            background: 'linear-gradient(135deg,rgba(217,119,6,0.10) 0%,rgba(217,119,6,0.03) 100%)',
+            borderBottom: '1px solid var(--border)',
+          }}
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(217,119,6,.12)' }}
-          >
-            <ShieldExclamationIcon className="h-5 w-5" style={{ color: '#d97706' }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
-              Risk Assessment #{assessment.id}
-            </h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {assessment.activity}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {canEdit && (
-              <button
-                type="button" onClick={() => onEdit(assessment)}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
-                style={{ background: 'color-mix(in srgb,var(--accent) 12%,transparent)', color: 'var(--accent)' }}
-              >
-                Edit
-              </button>
-            )}
-            <button
-              type="button" onClick={onClose}
-              className="p-1.5 rounded-lg hover:opacity-75"
-              style={{ color: 'var(--text-muted)' }}
+          <div className="flex items-start gap-4">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(217,119,6,0.15)', border: '1px solid rgba(217,119,6,0.25)' }}
             >
-              <XMarkIcon className="h-4 w-4" />
-            </button>
+              <ShieldExclamationIcon className="h-6 w-6" style={{ color: '#d97706' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#d97706', opacity: 0.7 }}>
+                Assessment #{assessment.id}
+              </p>
+              <h3 className="text-base font-bold leading-tight truncate" style={{ color: 'var(--text)' }}>
+                {assessment.activity}
+              </h3>
+              <p className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                {assessment.location}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {canEdit && (
+                <button
+                  type="button" onClick={() => onEdit(assessment)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
+                  style={{ background: 'color-mix(in srgb,var(--accent) 12%,transparent)', color: 'var(--accent)' }}
+                >
+                  Edit
+                </button>
+              )}
+              <button
+                type="button" onClick={onClose}
+                className="p-1.5 rounded-lg hover:opacity-75"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          {/* Stats bar */}
+          <div className="flex items-center gap-2 mt-4">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'color-mix(in srgb,var(--accent) 10%,transparent)', border: '1px solid color-mix(in srgb,var(--accent) 20%,transparent)' }}
+            >
+              <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>{officerCount}</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--accent)', opacity: 0.8 }}>Officers</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)' }}
+            >
+              <span className="text-sm font-bold" style={{ color: '#d97706' }}>{supervisorCount}</span>
+              <span className="text-[11px] font-medium" style={{ color: '#d97706', opacity: 0.8 }}>Supervisors</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.15)' }}
+            >
+              <span className="text-sm font-bold" style={{ color: '#3b82f6' }}>{entryCount}</span>
+              <span className="text-[11px] font-medium" style={{ color: '#3b82f6', opacity: 0.8 }}>Entries</span>
+            </div>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Basic Details */}
+        {/* ── Drawer body ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* Assessment Details — card grid */}
           <section>
-            <h4
-              className="text-xs font-semibold uppercase tracking-wide mb-3"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Assessment Details
             </h4>
-            <div className="space-y-2.5">
-              {[
-                ['Activity', assessment.activity],
-                ['Location', assessment.location],
-                ['Date',     formatDate(assessment.date)],
-                ['Notes',    assessment.note || '—'],
-              ].map(([k, v]) => (
-                <div key={k} className="flex gap-3">
-                  <span
-                    className="text-xs font-medium w-24 flex-shrink-0"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {k}
-                  </span>
-                  <span className="text-xs flex-1" style={{ color: 'var(--text)' }}>{v}</span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div
+                className="col-span-2 p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Activity</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{assessment.activity || '—'}</p>
+              </div>
+              <div
+                className="p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Location</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{assessment.location || '—'}</p>
+              </div>
+              <div
+                className="p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Date</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{formatDate(assessment.date) || '—'}</p>
+              </div>
+              {assessment.note && (
+                <div
+                  className="col-span-2 p-3 rounded-xl"
+                  style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Notes</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{assessment.note}</p>
                 </div>
-              ))}
+              )}
             </div>
           </section>
 
           {/* Safety Officers */}
           <section>
-            <h4
-              className="text-xs font-semibold uppercase tracking-wide mb-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Safety Officers
             </h4>
             {assessment.safety_officers?.length ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2">
                 {assessment.safety_officers.map((u) => (
-                  <span
+                  <div
                     key={u.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    style={{
-                      background: 'color-mix(in srgb,var(--accent) 12%,transparent)',
-                      color: 'var(--accent)',
-                    }}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
                   >
-                    {displayName(u)}
-                  </span>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'color-mix(in srgb,var(--accent) 15%,transparent)', color: 'var(--accent)' }}
+                    >
+                      {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                      {(u.lastname ?? '')[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                      <p className="text-[11px] font-medium" style={{ color: 'var(--accent)' }}>Safety Officer</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -866,22 +917,29 @@ function DetailDrawer({ assessment, onClose, onEdit, canEdit }) {
 
           {/* Supervisors */}
           <section>
-            <h4
-              className="text-xs font-semibold uppercase tracking-wide mb-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Supervisors
             </h4>
             {assessment.supervisors?.length ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2">
                 {assessment.supervisors.map((u) => (
-                  <span
+                  <div
                     key={u.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    style={{ background: 'rgba(217,119,6,.12)', color: '#d97706' }}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
                   >
-                    {displayName(u)}
-                  </span>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'rgba(217,119,6,0.15)', color: '#d97706' }}
+                    >
+                      {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                      {(u.lastname ?? '')[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                      <p className="text-[11px] font-medium" style={{ color: '#d97706' }}>Supervisor</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -890,20 +948,16 @@ function DetailDrawer({ assessment, onClose, onEdit, canEdit }) {
           </section>
 
           {/* Entries count */}
-          {assessment.risk_assessment_entries !== undefined && (
-            <section>
-              <h4
-                className="text-xs font-semibold uppercase tracking-wide mb-2"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                Assessment Entries
-              </h4>
-              <p className="text-sm" style={{ color: 'var(--text)' }}>
-                {assessment.risk_assessment_entries?.length ?? 0} entr
-                {(assessment.risk_assessment_entries?.length ?? 0) !== 1 ? 'ies' : 'y'} defined.
-              </p>
-            </section>
-          )}
+          <section>
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+              Assessment Entries
+            </h4>
+            <div className="p-3 rounded-xl" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {entryCount} entr{entryCount !== 1 ? 'ies' : 'y'} defined.
+              </span>
+            </div>
+          </section>
         </div>
       </div>
     </>
