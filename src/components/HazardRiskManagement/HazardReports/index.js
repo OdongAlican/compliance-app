@@ -912,118 +912,183 @@ function InjuredPeopleManager({ reportId }) {
 
   return (
     <div className="space-y-3">
+
+      {/* Section header */}
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          Injured People
-        </h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+            Injured People
+          </h4>
+          {people.length > 0 && (
+            <span
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold"
+              style={{ background: 'rgba(220,38,38,0.15)', color: '#dc2626' }}
+            >
+              {people.length}
+            </span>
+          )}
+        </div>
         {!formState && (
           <button
             type="button"
             onClick={() => { setFormState({ ...EMPTY_INJURY }); setFieldErrs({}); }}
-            className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg"
-            style={{ background: 'color-mix(in srgb,var(--accent) 12%,transparent)', color: 'var(--accent)' }}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.2)' }}
           >
-            <PlusIcon className="h-3.5 w-3.5" /> Add
+            <PlusIcon className="h-3.5 w-3.5" /> Add Person
           </button>
         )}
       </div>
 
-      {loading && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading…</p>}
+      {loading && (
+        <div className="flex items-center gap-2 py-3">
+          <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading records…</p>
+        </div>
+      )}
 
       {/* Add / Edit inline form */}
       {formState && (
         <div
-          className="rounded-xl p-3 space-y-3"
-          style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+          className="rounded-xl overflow-hidden"
+          style={{ border: '1px solid color-mix(in srgb,#dc2626 30%,transparent)' }}
         >
-          {INJURY_FIELDS.map(({ key, label, required, placeholder }) => (
-            <div key={key}>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
-                {label}
-                {required && <span style={{ color: 'var(--danger)' }}> *</span>}
-              </label>
-              <input
-                className="ui-input w-full text-sm"
-                value={formState[key] ?? ''}
-                onChange={(e) => setFormState({ ...formState, [key]: e.target.value })}
-                placeholder={placeholder}
-              />
-              {fieldErrs[key] && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>
-                  {fieldErrs[key]}
-                </p>
-              )}
+          {/* Form header */}
+          <div
+            className="flex items-center gap-2 px-4 py-3"
+            style={{ background: 'rgba(220,38,38,0.08)', borderBottom: '1px solid color-mix(in srgb,#dc2626 20%,transparent)' }}
+          >
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: '#dc2626', color: '#fff' }}
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
             </div>
-          ))}
-          <div className="flex gap-2 justify-end pt-1">
-            <button
-              type="button" onClick={() => setFormState(null)} disabled={saving}
-              className="text-xs px-3 py-1.5 rounded-lg hover:opacity-75"
-              style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button" onClick={saveInjury} disabled={saving}
-              className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white hover:opacity-90"
-              style={{ background: 'var(--accent)' }}
-            >
-              {saving ? 'Saving…' : formState.id ? 'Update' : 'Add'}
-            </button>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              {formState.id ? 'Edit Injured Person' : 'Add Injured Person'}
+            </p>
+          </div>
+          {/* Form fields */}
+          <div className="p-4 space-y-3" style={{ background: 'var(--bg-raised)' }}>
+            {INJURY_FIELDS.map(({ key, label, required, placeholder }) => (
+              <div key={key}>
+                <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>
+                  {label}{required && <span style={{ color: '#dc2626' }}> *</span>}
+                </label>
+                <input
+                  className="ui-input w-full text-sm"
+                  value={formState[key] ?? ''}
+                  onChange={(e) => setFormState({ ...formState, [key]: e.target.value })}
+                  placeholder={placeholder}
+                />
+                {fieldErrs[key] && (
+                  <p className="text-[11px] mt-0.5" style={{ color: '#dc2626' }}>{fieldErrs[key]}</p>
+                )}
+              </div>
+            ))}
+            <div className="flex gap-2 justify-end pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+              <button
+                type="button" onClick={() => setFormState(null)} disabled={saving}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium hover:opacity-75"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg)' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button" onClick={saveInjury} disabled={saving}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                style={{ background: '#dc2626' }}
+              >
+                {saving ? 'Saving…' : formState.id ? 'Update' : 'Add Person'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Existing injured people list */}
+      {/* Empty state */}
       {!loading && people.length === 0 && !formState && (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          No injured people recorded for this report.
-        </p>
+        <div
+          className="flex flex-col items-center gap-2 py-6 rounded-xl"
+          style={{ background: 'var(--bg-raised)', border: '1px dashed var(--border)' }}
+        >
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(220,38,38,0.1)' }}
+          >
+            <ExclamationTriangleIcon className="h-5 w-5" style={{ color: '#dc2626', opacity: 0.5 }} />
+          </div>
+          <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>No injured people recorded</p>
+        </div>
       )}
 
+      {/* Injured people cards */}
       {people.map((p) => (
         <div
           key={p.id}
-          className="flex items-start gap-3 py-2.5"
-          style={{ borderBottom: '1px solid var(--border)' }}
+          className="rounded-xl overflow-hidden"
+          style={{ border: '1px solid var(--border)' }}
         >
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-              {p.name}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {p.injury_type}
-            </p>
-            {p.injury_description && (
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {p.injury_description}
-              </p>
-            )}
-            {p.action_taken && (
-              <p className="text-xs mt-0.5 italic" style={{ color: 'var(--text-muted)' }}>
-                Action: {p.action_taken}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-0.5 flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => { setFormState({ ...p }); setFieldErrs({}); }}
-              className="p-1.5 rounded hover:opacity-75"
-              style={{ color: 'var(--accent)' }}
-              title="Edit"
+          <div className="flex items-start gap-3 p-4" style={{ background: 'var(--bg-raised)' }}>
+            {/* Avatar */}
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}
             >
-              <PencilSquareIcon className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => removeInjury(p.id)}
-              className="p-1.5 rounded hover:opacity-75"
-              style={{ color: 'var(--danger)' }}
-              title="Remove"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
+              {p.name?.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold leading-tight" style={{ color: 'var(--text)' }}>{p.name}</p>
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1"
+                    style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}
+                  >
+                    {p.injury_type}
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => { setFormState({ ...p }); setFieldErrs({}); }}
+                    className="p-1.5 rounded-lg hover:opacity-75"
+                    style={{ color: 'var(--accent)' }}
+                    title="Edit"
+                  >
+                    <PencilSquareIcon className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeInjury(p.id)}
+                    className="p-1.5 rounded-lg hover:opacity-75"
+                    style={{ color: 'var(--danger)' }}
+                    title="Remove"
+                  >
+                    <TrashIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              {(p.injury_description || p.action_taken) && (
+                <div
+                  className="mt-3 pt-3 space-y-2"
+                  style={{ borderTop: '1px solid var(--border)' }}
+                >
+                  {p.injury_description && (
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>Description</p>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text)' }}>{p.injury_description}</p>
+                    </div>
+                  )}
+                  {p.action_taken && (
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>Action Taken</p>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text)' }}>{p.action_taken}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ))}
@@ -1036,138 +1101,192 @@ function InjuredPeopleManager({ reportId }) {
 function DetailDrawer({ report, onClose, onEdit, canEdit }) {
   if (!report) return null;
 
+  const officerCount    = report.safety_officers?.length  ?? 0;
+  const supervisorCount = report.supervisors?.length      ?? 0;
+  const injuredCount    = report.injured_people?.length   ?? 0;
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div
-        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-md"
+        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-lg"
         style={{ background: 'var(--bg)', borderLeft: '1px solid var(--border)' }}
       >
-        {/* Drawer header */}
+        {/* ── Hero header ── */}
         <div
-          className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
-          style={{ borderBottom: '1px solid var(--border)' }}
+          className="flex-shrink-0 px-6 py-5"
+          style={{
+            background: 'linear-gradient(135deg,rgba(220,38,38,0.1) 0%,rgba(220,38,38,0.03) 100%)',
+            borderBottom: '1px solid var(--border)',
+          }}
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(220,38,38,.12)' }}
-          >
-            <ExclamationTriangleIcon className="h-5 w-5" style={{ color: '#dc2626' }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
-              Hazard Report #{report.id}
-            </h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {report.hazard_type}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {canEdit && (
-              <button
-                type="button" onClick={() => onEdit(report)}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
-                style={{ background: 'color-mix(in srgb,var(--accent) 12%,transparent)', color: 'var(--accent)' }}
-              >
-                Edit
-              </button>
-            )}
-            <button
-              type="button" onClick={onClose}
-              className="p-1.5 rounded-lg hover:opacity-75"
-              style={{ color: 'var(--text-muted)' }}
+          <div className="flex items-start gap-4">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.25)' }}
             >
-              <XMarkIcon className="h-4 w-4" />
-            </button>
+              <ExclamationTriangleIcon className="h-6 w-6" style={{ color: '#dc2626' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#dc2626', opacity: 0.7 }}>
+                Report #{report.id}
+              </p>
+              <h3 className="text-base font-bold leading-tight truncate" style={{ color: 'var(--text)' }}>
+                {report.hazard_type}
+              </h3>
+              <p className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                {report.location}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {canEdit && (
+                <button
+                  type="button" onClick={() => onEdit(report)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
+                  style={{ background: 'color-mix(in srgb,var(--accent) 12%,transparent)', color: 'var(--accent)' }}
+                >
+                  Edit
+                </button>
+              )}
+              <button
+                type="button" onClick={onClose}
+                className="p-1.5 rounded-lg hover:opacity-75"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Stats bar */}
+          <div className="flex items-center gap-2 mt-4">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'color-mix(in srgb,var(--accent) 10%,transparent)', border: '1px solid color-mix(in srgb,var(--accent) 20%,transparent)' }}
+            >
+              <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>{officerCount}</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--accent)', opacity: 0.8 }}>Officers</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)' }}
+            >
+              <span className="text-sm font-bold" style={{ color: '#d97706' }}>{supervisorCount}</span>
+              <span className="text-[11px] font-medium" style={{ color: '#d97706', opacity: 0.8 }}>Supervisors</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)' }}
+            >
+              <span className="text-sm font-bold" style={{ color: '#dc2626' }}>{injuredCount}</span>
+              <span className="text-[11px] font-medium" style={{ color: '#dc2626', opacity: 0.8 }}>Injured</span>
+            </div>
           </div>
         </div>
 
-        {/* Drawer body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Basic info section */}
+        {/* ── Drawer body ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+          {/* Report Details — card grid */}
           <section>
-            <h4
-              className="text-xs font-semibold uppercase tracking-wide mb-3"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Report Details
             </h4>
-            <div className="space-y-2.5">
-              {[
-                ['Location',    report.location],
-                ['Hazard Type', report.hazard_type],
-                ['Date',        formatDate(report.report_date)],
-                ['Notes',       report.other || '—'],
-              ].map(([k, v]) => (
-                <div key={k} className="flex gap-3">
-                  <span
-                    className="text-xs font-medium w-24 flex-shrink-0"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {k}
-                  </span>
-                  <span className="text-xs flex-1" style={{ color: 'var(--text)' }}>
-                    {v}
-                  </span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div
+                className="col-span-2 p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Location</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{report.location || '—'}</p>
+              </div>
+              <div
+                className="p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Hazard Type</p>
+                <p className="text-sm font-semibold" style={{ color: '#dc2626' }}>{report.hazard_type || '—'}</p>
+              </div>
+              <div
+                className="p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Report Date</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{formatDate(report.report_date) || '—'}</p>
+              </div>
+              {report.other && (
+                <div
+                  className="col-span-2 p-3 rounded-xl"
+                  style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Notes</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{report.other}</p>
                 </div>
-              ))}
+              )}
             </div>
           </section>
 
           {/* Safety Officers */}
           <section>
-            <h4
-              className="text-xs font-semibold uppercase tracking-wide mb-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Safety Officers
             </h4>
             {report.safety_officers?.length ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2">
                 {report.safety_officers.map((u) => (
-                  <span
+                  <div
                     key={u.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    style={{
-                      background: 'color-mix(in srgb,var(--accent) 12%,transparent)',
-                      color: 'var(--accent)',
-                    }}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
                   >
-                    {displayName(u)}
-                  </span>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'color-mix(in srgb,var(--accent) 15%,transparent)', color: 'var(--accent)' }}
+                    >
+                      {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                      {(u.lastname ?? '')[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                      <p className="text-[11px] font-medium" style={{ color: 'var(--accent)' }}>Safety Officer</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                None assigned.
-              </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None assigned.</p>
             )}
           </section>
 
           {/* Supervisors */}
           <section>
-            <h4
-              className="text-xs font-semibold uppercase tracking-wide mb-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Supervisors
             </h4>
             {report.supervisors?.length ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2">
                 {report.supervisors.map((u) => (
-                  <span
+                  <div
                     key={u.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    style={{ background: 'rgba(217,119,6,.12)', color: '#d97706' }}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
                   >
-                    {displayName(u)}
-                  </span>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'rgba(217,119,6,0.15)', color: '#d97706' }}
+                    >
+                      {(u.firstname ?? u.email ?? '#')[0]?.toUpperCase()}
+                      {(u.lastname ?? '')[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                      <p className="text-[11px] font-medium" style={{ color: '#d97706' }}>Supervisor</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                None assigned.
-              </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None assigned.</p>
             )}
           </section>
 
