@@ -9,14 +9,15 @@ export const fetchFuelSetups = createAsyncThunk(
     try {
       const { filters } = getState().fuel;
       const params = {};
-      if (filters.page)          params.page            = filters.page;
-      if (filters.per_page)      params.per_page         = filters.per_page;
-      if (filters.name)          params.name             = filters.name;
-      if (filters.location)      params.location         = filters.location;
-      if (filters.date_from)     params.date_from        = filters.date_from;
-      if (filters.date_to)       params.date_to          = filters.date_to;
+      if (filters.page)              params.page              = filters.page;
+      if (filters.per_page)          params.per_page          = filters.per_page;
+      if (filters.tank_id_number)    params.tank_id_number    = filters.tank_id_number;
+      if (filters.tank_location)     params.tank_location     = filters.tank_location;
+      if (filters.fuel_type)         params.fuel_type         = filters.fuel_type;
+      if (filters.date_from)         params.date_from         = filters.date_from;
+      if (filters.date_to)           params.date_to           = filters.date_to;
       if (filters.safety_officer_id) params.safety_officer_id = filters.safety_officer_id;
-      if (filters.supervisor_id) params.supervisor_id    = filters.supervisor_id;
+      if (filters.supervisor_id)     params.supervisor_id     = filters.supervisor_id;
       return await FuelSetupService.list(params);
     } catch (err) {
       return rejectWithValue(
@@ -115,8 +116,9 @@ const initialState = {
   filters: {
     page:              1,
     per_page:          10,
-    name:              "",
-    location:          "",
+    tank_id_number:    "",
+    tank_location:     "",
+    fuel_type:         "",
     date_from:         "",
     date_to:           "",
     safety_officer_id: "",
@@ -128,17 +130,16 @@ const fuelSlice = createSlice({
   name: "fuel",
   initialState,
   reducers: {
-    setFuelPage:       (s, a) => { s.filters.page = a.payload; },
-    setFuelName:       (s, a) => { s.filters.name = a.payload; s.filters.page = 1; },
-    setFuelLocation:   (s, a) => { s.filters.location = a.payload; s.filters.page = 1; },
-    setFuelDateFrom:   (s, a) => { s.filters.date_from = a.payload; s.filters.page = 1; },
-    setFuelDateTo:     (s, a) => { s.filters.date_to = a.payload; s.filters.page = 1; },
-    setFuelSOFilter:   (s, a) => { s.filters.safety_officer_id = a.payload; s.filters.page = 1; },
-    setFuelSupFilter:  (s, a) => { s.filters.supervisor_id = a.payload; s.filters.page = 1; },
-    clearFuelFilters:  (s) => {
-      s.filters = { ...initialState.filters };
-    },
-    clearFuelError:    (s) => { s.setupsError = null; },
+    setFuelPage:          (s, a) => { s.filters.page = a.payload; },
+    setFuelTankId:        (s, a) => { s.filters.tank_id_number = a.payload; s.filters.page = 1; },
+    setFuelTankLocation:  (s, a) => { s.filters.tank_location = a.payload; s.filters.page = 1; },
+    setFuelFuelType:      (s, a) => { s.filters.fuel_type = a.payload; s.filters.page = 1; },
+    setFuelDateFrom:      (s, a) => { s.filters.date_from = a.payload; s.filters.page = 1; },
+    setFuelDateTo:        (s, a) => { s.filters.date_to = a.payload; s.filters.page = 1; },
+    setFuelSOFilter:      (s, a) => { s.filters.safety_officer_id = a.payload; s.filters.page = 1; },
+    setFuelSupFilter:     (s, a) => { s.filters.supervisor_id = a.payload; s.filters.page = 1; },
+    clearFuelFilters:     (s) => { s.filters = { ...initialState.filters }; },
+    clearFuelError:       (s) => { s.setupsError = null; },
     clearFuelActionError: (s) => { s.actionError = null; },
   },
   extraReducers: (builder) => {
@@ -233,7 +234,8 @@ const fuelSlice = createSlice({
 });
 
 export const {
-  setFuelPage, setFuelName, setFuelLocation, setFuelDateFrom, setFuelDateTo,
+  setFuelPage, setFuelTankId, setFuelTankLocation, setFuelFuelType,
+  setFuelDateFrom, setFuelDateTo,
   setFuelSOFilter, setFuelSupFilter, clearFuelFilters, clearFuelError, clearFuelActionError,
 } = fuelSlice.actions;
 

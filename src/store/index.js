@@ -19,6 +19,11 @@ import toolReducer        from './slices/toolSlice';
 import swimmingPoolReducer from './slices/swimmingPoolSlice';
 import vehicleReducer     from './slices/vehicleSlice';
 import scienceLabReducer  from './slices/scienceLabSlice';
+import hazardReportsReducer          from './slices/hazardReportSlice';
+import riskAssessmentsReducer        from './slices/riskAssessmentSlice';
+import performedRiskAssessmentsReducer from './slices/performedRiskAssessmentSlice';
+import incidentNotificationsReducer  from './slices/incidentNotificationSlice';
+import startInvestigationsReducer    from './slices/startInvestigationSlice';
 
 const store = configureStore({
   reducer: {
@@ -32,6 +37,11 @@ const store = configureStore({
     swimmingPool: swimmingPoolReducer,
     vehicle:      vehicleReducer,
     scienceLab:   scienceLabReducer,
+    hazardReports:            hazardReportsReducer,
+    riskAssessments:          riskAssessmentsReducer,
+    performedRiskAssessments: performedRiskAssessmentsReducer,
+    incidentNotifications:    incidentNotificationsReducer,
+    startInvestigations:      startInvestigationsReducer,
   },
   // Redux Toolkit adds redux-thunk and (in development) the Immer proxy by default.
   // The devTools flag is automatically false in production builds.

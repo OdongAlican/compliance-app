@@ -65,10 +65,41 @@ export const VehiclePerformService = {
 
   /**
    * POST /vehicle_inspections/:setupId/performs
-   * Body: { perform: { date, time, note } }
+   * Supports combined payload: perform + checklist_template + inspectionIssues.
+   * Automatically uses multipart/form-data when any issue carries a File attachment,
+   * otherwise sends a plain JSON body.
    */
-  create: (setupId, data) =>
-    api.post(`${BASE}/${setupId}/performs`, { perform: data }),
+  create: (setupId, { perform = {}, checklist_template = [], inspectionIssues = [] } = {}) => {
+    const hasFiles = inspectionIssues.some((i) => i.file instanceof File);
+
+    if (!hasFiles) {
+      const body = { perform };
+      if (checklist_template.length) body.checklist_template = checklist_template;
+      if (inspectionIssues.length) {
+        body.inspectionIssues = inspectionIssues.map(({ file: _f, ...rest }) => rest);
+      }
+      return api.post(`${BASE}/${setupId}/performs`, body);
+    }
+
+    // multipart path — at least one issue has a file
+    const fd = new FormData();
+    Object.entries(perform).forEach(([k, v]) => { if (v != null) fd.append(`perform[${k}]`, v); });
+    checklist_template.forEach((tmpl, ti) => {
+      fd.append(`checklist_template[${ti}][id]`, tmpl.id);
+      (tmpl.checklistItems || []).forEach((item, ii) => {
+        fd.append(`checklist_template[${ti}][checklistItems][${ii}][id]`, item.id);
+        fd.append(`checklist_template[${ti}][checklistItems][${ii}][value]`, item.value ?? 'satisfactory');
+        if (item.comment) fd.append(`checklist_template[${ti}][checklistItems][${ii}][comment]`, item.comment);
+      });
+    });
+    inspectionIssues.forEach((iss, idx) => {
+      if (iss.title) fd.append(`inspectionIssues[${idx}][title]`, iss.title);
+      if (iss.description) fd.append(`inspectionIssues[${idx}][description]`, iss.description);
+      if (iss.correctiveAction) fd.append(`inspectionIssues[${idx}][correctiveAction]`, iss.correctiveAction);
+      if (iss.file instanceof File) fd.append(`inspectionIssues[${idx}][file]`, iss.file);
+    });
+    return api.post(`${BASE}/${setupId}/performs`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
 
   /** GET /perform_vehicle_inspections/:id */
   get: (id, params = {}) => api.get(`${PERFORM}/${id}`, { params }),

@@ -39,12 +39,17 @@ import HazardRiskInterface from '../components/HazardRiskManagement/HazardRiskIn
 import HazardInterface     from '../components/HazardRiskManagement/Hazard/HazardInterface';
 import RiskInterface       from '../components/HazardRiskManagement/RiskAssessment/RiskInterface';
 import HazardReportExecute from '../components/Execute/HazardReportExecute';
+import HazardReportsPage            from '../components/HazardRiskManagement/HazardReports';
+import RiskAssessmentsPage          from '../components/HazardRiskManagement/RiskAssessments';
+import PerformedRiskAssessmentsPage from '../components/HazardRiskManagement/PerformedRiskAssessments';
 
 // ── Incidents ─────────────────────────────────────────────────────────────
 import IncidentNotifyInterface        from '../Forms-interface/IncidentNotifyInterface';
 import WitnessStateInterface          from '../Forms-interface/WitnessStateInterface';
 import IncidentInvestigationInterface from '../Forms-interface/IncidentInvestigationInterface';
 import IncidentNotificationDelete     from '../components/Execute/Delete';
+import IncidentNotificationsPage      from '../components/Incidents/IncidentNotifications';
+import StartInvestigationsPage        from '../components/Incidents/StartInvestigations';
 
 // ── Inspections ───────────────────────────────────────────────────────────
 import VehicleInspectionDashboard from '../Forms-interface/vehicle-interface';
@@ -98,6 +103,9 @@ export default function AppRoutes() {
       <Route path="/roles"           element={<Layout><RolesPage /></Layout>} />
 
       {/* ── Protected — Hazard & Risk ── */}
+      <Route path="/hazard/reports"                    element={<Layout><HazardReportsPage /></Layout>} />
+      <Route path="/hazard/risk-assessments"          element={<Layout><RiskAssessmentsPage /></Layout>} />
+      <Route path="/hazard/performed-risk-assessments" element={<Layout><PerformedRiskAssessmentsPage /></Layout>} />
       <Route path="/hazard/report"         element={<Layout><HazardRiskInterface /></Layout>} />
       <Route path="/dashboard/hazardform"  element={<Layout><HazardInterface /></Layout>} />
       <Route path="/form/risk"             element={<Layout><RiskInterface /></Layout>} />
@@ -105,6 +113,8 @@ export default function AppRoutes() {
 
       {/* ── Protected — Incidents ── */}
       <Route path="/incident-management"       element={<Layout><IncidentInvestigationForm /></Layout>} />
+      <Route path="/incident/notifications"    element={<Layout><IncidentNotificationsPage /></Layout>} />
+      <Route path="/incident/investigations"   element={<Layout><StartInvestigationsPage /></Layout>} />
       <Route path="/dashboard/incidentform"    element={<Layout><IncidentNotifyInterface /></Layout>} />
       <Route path="/form/witness"              element={<Layout><WitnessStateInterface /></Layout>} />
       <Route path="/form/description"          element={<Layout><IncidentInvestigationInterface /></Layout>} />

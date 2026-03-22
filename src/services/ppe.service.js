@@ -63,10 +63,11 @@ export const PpePerformService = {
 
   /**
    * POST /ppe_inspections/:setupId/performs
-   * Body: { perform: { date, time, note } }
+   * data is the complete combined payload:
+   *   { perform: {...}, checklist_template: [...], inspectionIssues: [...] }
    */
   create: (setupId, data) =>
-    api.post(`${BASE}/${setupId}/performs`, { perform: data }),
+    api.post(`${BASE}/${setupId}/performs`, data),
 
   /** GET /perform_ppe_inspections/:id */
   get: (id, params = {}) => api.get(`${PERFORM}/${id}`, { params }),
