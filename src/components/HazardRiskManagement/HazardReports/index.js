@@ -188,7 +188,7 @@ function Pagination({ meta, page, onPage }) {
 
 // ── Delete Confirm Modal ───────────────────────────────────────────────────
 
-function DeleteConfirmModal({ open, name, onConfirm, onCancel, loading }) {
+function DeleteConfirmModal({ open, report, onConfirm, onCancel, loading }) {
   if (!open) return null;
   return (
     <div
@@ -196,21 +196,70 @@ function DeleteConfirmModal({ open, name, onConfirm, onCancel, loading }) {
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
       <div className="ui-card max-w-sm w-full p-6 space-y-4">
-        <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-          Delete Hazard Report
-        </h3>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Are you sure you want to delete{' '}
-          <strong style={{ color: 'var(--text)' }}>{name}</strong>? This cannot
-          be undone.
-        </p>
-        <div className="flex justify-end gap-2 pt-1">
+
+        {/* Warning banner */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: 'color-mix(in srgb,var(--danger) 8%,transparent)',
+            border: '1px solid color-mix(in srgb,var(--danger) 25%,transparent)',
+          }}
+        >
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--danger)', color: '#fff' }}
+          >
+            <ExclamationTriangleIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              This action cannot be undone
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              The hazard report and all associated data will be permanently removed.
+            </p>
+          </div>
+        </div>
+
+        {/* Report details card */}
+        {report && (
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+          >
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Report to delete
+            </p>
+            <p className="text-sm font-bold" style={{ color: 'var(--danger)' }}>
+              Report #{report.id} &mdash; {report.hazard_type}
+            </p>
+            {report.location && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {report.location}
+              </p>
+            )}
+            {report.report_date && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {formatDate(report.report_date)}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div
+          className="flex justify-end gap-3 pt-1"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
-            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
+            style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
           >
             Cancel
           </button>
@@ -218,10 +267,10 @@ function DeleteConfirmModal({ open, name, onConfirm, onCancel, loading }) {
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             style={{ background: 'var(--danger)' }}
           >
-            {loading ? 'Deleting…' : 'Delete'}
+            {loading ? 'Deleting…' : 'Delete Report'}
           </button>
         </div>
       </div>
@@ -1414,7 +1463,7 @@ export default function HazardReportsPage() {
       />
       <DeleteConfirmModal
         open={!!deleteTarget}
-        name={deleteTarget ? `Report #${deleteTarget.id} — ${deleteTarget.hazard_type}` : ''}
+        report={deleteTarget}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
         loading={deleting}
