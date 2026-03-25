@@ -1,95 +1,82 @@
+/* ── PPE Inspection — ActionMenu ──────────────────────────────────────── */
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import {
-  EllipsisVerticalIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  PlayIcon,
-  EyeIcon,
-} from "@heroicons/react/24/outline";
+import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 
-export default function ActionMenu({ setup, onEdit, onDelete, onReassign, onStart, onView }) {
+export default function ActionMenu({ actions }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
-    function handler(e) {
-      setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const h = (e) => {
+      const inBtn = btnRef.current && btnRef.current.contains(e.target);
+      const inMenu = menuRef.current && menuRef.current.contains(e.target);
+      if (!inBtn && !inMenu) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  function handleToggle(e) {
-    e.stopPropagation();
-    const rect = btnRef.current?.getBoundingClientRect();
-    if (rect) {
-      setPos({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.right + window.scrollX - 176,
-      });
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    window.addEventListener("scroll", h, true);
+    return () => window.removeEventListener("scroll", h, true);
+  }, [open]);
+
+  function handleToggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
     }
-    setOpen((v) => !v);
+    setOpen((o) => !o);
   }
 
-  const items = [
-    { label: "View Details", icon: EyeIcon, action: onView, show: !!onView },
-    { label: "Start Inspection", icon: PlayIcon, action: onStart, show: !!onStart },
-    { label: "Edit Setup", icon: PencilSquareIcon, action: onEdit, show: !!onEdit },
-    { label: "Reassign", icon: ArrowPathIcon, action: onReassign, show: !!onReassign },
-    { label: "Delete", icon: TrashIcon, action: onDelete, show: !!onDelete, danger: true },
-  ].filter((i) => i.show);
-
   return (
-    <>
+    <div className="inline-block">
       <button
         ref={btnRef}
-        type="button"
-        onMouseDown={handleToggle}
-        className="p-1.5 rounded-lg hover:opacity-70 flex-shrink-0"
-        style={{ color: "var(--text-muted)", lineHeight: 0 }}
-        aria-label="Actions"
+        onClick={handleToggle}
+        className="p-1.5 rounded-lg transition-colors"
+        style={{
+          background: open ? "var(--bg-raised)" : "transparent",
+          color: "var(--text-muted)",
+          border: "1px solid " + (open ? "var(--border)" : "transparent"),
+        }}
       >
-        <EllipsisVerticalIcon className="h-4 w-4" />
+        <EllipsisVerticalIcon className="h-5 w-5" />
       </button>
 
       {open &&
         createPortal(
           <div
-            onMouseDown={(e) => e.stopPropagation()}
-            className="fixed z-[9999] w-44 rounded-xl shadow-xl overflow-hidden"
-            style={{
-              top: pos.top + "px",
-              left: pos.left + "px",
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-            }}
+            ref={menuRef}
+            className="ui-menu w-56"
+            style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 10001 }}
           >
-            {items.map(({ label, icon: Icon, action, danger }) => (
-              <button
-                key={label}
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm hover:opacity-80 transition-opacity"
-                style={{
-                  color: danger ? "var(--danger)" : "var(--text)",
-                  background: "transparent",
-                }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  setOpen(false);
-                  action?.(setup);
-                }}
-              >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                {label}
-              </button>
-            ))}
+            {actions.map((a, i) =>
+              a.divider ? (
+                <div
+                  key={i}
+                  style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
+                />
+              ) : (
+                <button
+                  key={i}
+                  className="ui-menu-item text-left w-full"
+                  style={{ color: a.danger ? "var(--danger)" : a.color ?? "var(--text)" }}
+                  onClick={() => { setOpen(false); a.onClick(); }}
+                >
+                  {a.label}
+                </button>
+              )
+            )}
           </div>,
           document.body
         )}
-    </>
+    </div>
   );
 }

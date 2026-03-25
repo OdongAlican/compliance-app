@@ -295,7 +295,7 @@ export default function VehicleInspectionDashboard() {
       </div>
 
       {/* TABLE */}
-      <div className="ui-card">
+      <div className="ui-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -327,14 +327,22 @@ export default function VehicleInspectionDashboard() {
                   const status = setup.status ?? "Pending";
                   const sStyle = STATUS_STYLE[status] ?? { background: "var(--bg-raised)", color: "var(--text-muted)" };
                   const actions = [
-                    { label: "View Details", color: "var(--accent)", onClick: () => setDetailDrawer({ open: true, setup }) },
-                    { label: "Start Inspection", color: "#3fb950", onClick: () => setStartModal({ open: true, setup }) },
+                    {
+                      label: "View Details",
+                      color: "var(--accent)",
+                      onClick: () => setDetailDrawer({ open: true, setup })
+                    },
+                    {
+                      label: "Start Inspection",
+                      color: "#3fb950",
+                      onClick: () => setStartModal({ open: true, setup })
+                    },
                     ...(canUpdate
                       ? [
-                          { label: "Edit", onClick: () => setSetupModal({ open: true, setup }) },
-                          { label: "Reassign Safety Officer", onClick: () => setReassignModal({ open: true, mode: "safety_officer", setupId: setup.id }) },
-                          { label: "Reassign Supervisor", onClick: () => setReassignModal({ open: true, mode: "supervisor", setupId: setup.id }) },
-                        ]
+                        { label: "Edit", onClick: () => setSetupModal({ open: true, setup }) },
+                        { label: "Reassign Safety Officer", onClick: () => setReassignModal({ open: true, mode: "safety_officer", setupId: setup.id }) },
+                        { label: "Reassign Supervisor", onClick: () => setReassignModal({ open: true, mode: "supervisor", setupId: setup.id }) },
+                      ]
                       : []),
                     ...(canDelete
                       ? [{ divider: true }, { label: "Delete", danger: true, onClick: () => setDeleteTarget(setup) }]
