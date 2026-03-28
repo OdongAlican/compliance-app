@@ -36,6 +36,7 @@ import ReassignModal from "./sciencelab/ReassignModal";
 import DeleteConfirmModal from "./sciencelab/DeleteConfirmModal";
 import StartInspectionModal from "./sciencelab/StartInspectionModal";
 import DetailDrawer from "./sciencelab/DetailDrawer";
+import moment from "moment";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  TABLE COLUMNS                                                          */
@@ -406,13 +407,13 @@ export default function ScienceLabInterface() {
                         className="ui-td text-sm whitespace-nowrap"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {setup.date}
+                        {moment(setup.date).format("MMMM Do, YYYY")}
                       </td>
                       <td
                         className="ui-td text-sm whitespace-nowrap"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {setup.time}
+                        {moment(setup.time, "HH:mm:ss").format("hh:mm A")}
                       </td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>
                         {soName}

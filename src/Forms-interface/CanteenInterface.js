@@ -37,7 +37,7 @@ import ReassignModal from "./canteen/ReassignModal";
 import DeleteConfirmModal from "./canteen/DeleteConfirmModal";
 import StartInspectionModal from "./canteen/StartInspectionModal";
 import DetailDrawer from "./canteen/DetailDrawer";
-
+import moment from "moment";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  MAIN PAGE                                                              */
@@ -437,13 +437,13 @@ export default function CanteenInterface() {
                         className="ui-td text-sm whitespace-nowrap"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {setup.date}
+                        {moment(setup.date).format("MMMM Do, YYYY")}
                       </td>
                       <td
                         className="ui-td text-sm whitespace-nowrap"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {setup.time}
+                        {moment(setup.time, "HH:mm:ss").format("hh:mm A")}
                       </td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>
                         {soName}

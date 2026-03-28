@@ -35,6 +35,7 @@ import ReassignModal from "./vehicle/ReassignModal";
 import DeleteConfirmModal from "./vehicle/DeleteConfirmModal";
 import StartInspectionModal from "./vehicle/StartInspectionModal";
 import DetailDrawer from "./vehicle/DetailDrawer";
+import moment from "moment";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  MAIN PAGE                                                              */
@@ -362,8 +363,8 @@ export default function VehicleInspectionDashboard() {
                       </td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.model ?? "—"}</td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.odometer_reading ?? "—"}</td>
-                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.date ?? "—"}</td>
-                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.time ?? "—"}</td>
+                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{moment(setup.date).format("MMMM Do, YYYY") ?? "—"}</td>
+                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{moment(setup.time, "HH:mm").format("h:mm A") ?? "—"}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{soName}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{supName}</td>
                       <td className="ui-td">
