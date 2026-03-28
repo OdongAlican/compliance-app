@@ -22,6 +22,7 @@ import {
 } from "../../services/swimmingPool.service";
 import { CHECKLIST_STATUS_OPTIONS } from "./constants";
 import { Spinner } from "./shared";
+import moment from "moment";
 
 /* ── Local constants ──────────────────────────────────────────────────── */
 const PRIORITY_OPTIONS = ["low", "medium", "high"];
@@ -910,8 +911,8 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
 
   const subtitle =
     perform?.swimming_pool_inspection?.pool_location ?? setup?.pool_location ?? "";
-  const dateStr = perform?.date ?? "";
-  const timeStr = perform?.time ?? "";
+  const dateStr = moment(perform?.date).format("MMMM Do, YYYY") ?? "";
+  const timeStr = moment(perform?.time, "HH:mm").format("h:mm A") ?? "";
 
   useEffect(() => {
     if (isOpen) setActiveTab(0);

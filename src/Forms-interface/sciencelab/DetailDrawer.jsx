@@ -13,6 +13,7 @@ import { ScienceLabPerformService } from "../../services/scienceLab.service";
 import { Spinner, ReviewRow } from "./shared";
 import { STATUS_STYLE } from "./constants";
 import ExecutionDetailModal from "./ExecutionDetailModal";
+import moment from "moment";
 
 export default function DetailDrawer({ isOpen, onClose, setup }) {
   const [performs, setPerforms] = useState([]);
@@ -125,8 +126,8 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
             Inspection Details
           </p>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <ReviewRow label="Date" value={setup.date} />
-            <ReviewRow label="Time" value={setup.time} />
+            <ReviewRow label="Date" value={moment(setup.date).format("MMMM Do, YYYY")} />
+            <ReviewRow label="Time" value={moment(setup.time, "HH:mm").format("h:mm A")} />
             {setup.note && (
               <div className="col-span-2">
                 <ReviewRow label="Note" value={setup.note} />
@@ -276,9 +277,9 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
                           </span>
                         </div>
                         <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                          {p.date}{" "}
+                          {moment(p.date).format("MMMM Do, YYYY")}{" "}
                           <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>at</span>{" "}
-                          {p.time}
+                          {moment(p.time, "HH:mm").format("h:mm A")}
                         </p>
                         {p.note && (
                           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
@@ -287,7 +288,7 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
                         )}
                         {signed && p.signed_off_at && (
                           <p className="text-[10px] mt-1" style={{ color: "#3fb950" }}>
-                            Signed off on {new Date(p.signed_off_at).toLocaleDateString()}
+                            Signed off on {moment(p.signed_off_at).format("MMMM Do, YYYY")} at {moment(p.signed_off_at).format("h:mm A")}
                           </p>
                         )}
                       </div>
