@@ -27,6 +27,7 @@ import {
   REPAIR_STATUS_COLOR,
 } from "./constants";
 import { Spinner } from "./shared";
+import moment from "moment";
 
 /* ── ReadOnlyAttachmentList ──────────────────────────────────────────── */
 function ReadOnlyAttachmentList({ attachments = [], label }) {
@@ -1002,8 +1003,8 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
   const tabs = ["Checklists", "Issues"];
 
   const subtitle = perform?.vehicle_inspection?.vehicle_id ?? setup?.vehicle_id ?? "";
-  const dateStr = perform?.date ?? "";
-  const timeStr = perform?.time ?? "";
+  const dateStr = moment(perform?.date).format("MMMM Do, YYYY") ?? "";
+  const timeStr = moment(perform?.time, "HH:mm").format("h:mm A") ?? "";
 
   useEffect(() => {
     if (isOpen) setActiveTab(0);
