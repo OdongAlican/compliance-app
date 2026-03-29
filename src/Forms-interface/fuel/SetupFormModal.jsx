@@ -353,13 +353,11 @@ export default function SetupFormModal({ isOpen, setup, onClose }) {
             Inspection Details
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <ReviewRow label="Tank ID Number" value={form.tank_id_number} />
-            </div>
+            <ReviewRow label="Tank ID Number" value={form.tank_id_number} />
+            <ReviewRow label="Fuel Type" value={form.fuel_type} />
             <div className="col-span-2">
               <ReviewRow label="Tank Location" value={form.tank_location} />
             </div>
-            <ReviewRow label="Fuel Type" value={form.fuel_type} />
             <ReviewRow label="Date" value={moment(form.date).format("MMMM Do, YYYY")} />
             <ReviewRow label="Time" value={moment(form.time, "HH:mm").format("h:mm A")} />
             {form.note && (
