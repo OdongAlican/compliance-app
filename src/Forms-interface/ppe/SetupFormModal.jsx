@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import { ModalShell, Field, Spinner, StepIndicator, ReviewRow } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
+import moment from "moment";
 
 const EMPTY = { department: "", date: "", time: "", note: "" };
 
@@ -389,8 +390,8 @@ export default function SetupFormModal({ isOpen, setup, onClose }) {
             <div className="col-span-2">
               <ReviewRow label="Department" value={form.department} />
             </div>
-            <ReviewRow label="Date" value={form.date} />
-            <ReviewRow label="Time" value={form.time} />
+            <ReviewRow label="Date" value={moment(form.date).format("MMMM Do, YYYY")} />
+            <ReviewRow label="Time" value={moment(form.time, "HH:mm").format("h:mm A")} />
             {form.note && (
               <div className="col-span-2">
                 <ReviewRow label="Note" value={form.note} />
@@ -401,7 +402,7 @@ export default function SetupFormModal({ isOpen, setup, onClose }) {
           <p className="text-xs font-bold uppercase tracking-wider mt-2" style={{ color: "var(--text-muted)" }}>
             Assignees
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {[
               { label: "PPE User", user: ppeUser },
               { label: "Safety Officer", user: safetyOfficer },
