@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { ModalShell, Field, Spinner, StepIndicator, ReviewRow } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
 import { FUEL_TYPE_OPTIONS } from "./constants";
+import moment from "moment";
 
 const EMPTY = {
   tank_id_number: "",
@@ -359,8 +360,8 @@ export default function SetupFormModal({ isOpen, setup, onClose }) {
               <ReviewRow label="Tank Location" value={form.tank_location} />
             </div>
             <ReviewRow label="Fuel Type" value={form.fuel_type} />
-            <ReviewRow label="Date" value={form.date} />
-            <ReviewRow label="Time" value={form.time} />
+            <ReviewRow label="Date" value={moment(form.date).format("MMMM Do, YYYY")} />
+            <ReviewRow label="Time" value={moment(form.time, "HH:mm").format("h:mm A")} />
             {form.note && (
               <div className="col-span-2">
                 <ReviewRow label="Note" value={form.note} />
