@@ -27,6 +27,7 @@ import {
   REPAIR_STATUS_COLOR,
 } from "./constants";
 import { Spinner } from "./shared";
+import moment from "moment";
 
 /* ── ReadOnlyAttachmentList ──────────────────────────────────────────── */
 function ReadOnlyAttachmentList({ attachments = [], label }) {
@@ -849,8 +850,8 @@ function ChecklistSection({ performId, isActive }) {
                         l.status === "satisfactory"
                           ? "1px solid color-mix(in srgb,#3fb950 20%,transparent)"
                           : l.status === "needs_attention"
-                          ? "1px solid color-mix(in srgb,#d29922 25%,transparent)"
-                          : "1px solid var(--border)",
+                            ? "1px solid color-mix(in srgb,#d29922 25%,transparent)"
+                            : "1px solid var(--border)",
                     }}
                   >
                     <p className="text-xs font-medium mb-2" style={{ color: "var(--text)" }}>
@@ -868,16 +869,16 @@ function ChecklistSection({ performId, isActive }) {
                             style={
                               active
                                 ? {
-                                    background: opt.bg,
-                                    color: opt.color,
-                                    border: `1.5px solid ${opt.border}`,
-                                  }
+                                  background: opt.bg,
+                                  color: opt.color,
+                                  border: `1.5px solid ${opt.border}`,
+                                }
                                 : {
-                                    background: "transparent",
-                                    color: "var(--text-muted)",
-                                    border: "1px solid var(--border)",
-                                    opacity: 0.55,
-                                  }
+                                  background: "transparent",
+                                  color: "var(--text-muted)",
+                                  border: "1px solid var(--border)",
+                                  opacity: 0.55,
+                                }
                             }
                           >
                             {active && "✓ "}
@@ -1002,8 +1003,8 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
   const tabs = ["Checklists", "Issues"];
 
   const subtitle = perform?.vehicle_inspection?.vehicle_id ?? setup?.vehicle_id ?? "";
-  const dateStr = perform?.date ?? "";
-  const timeStr = perform?.time ?? "";
+  const dateStr = moment(perform?.date).format("MMMM Do, YYYY") ?? "";
+  const timeStr = moment(perform?.time, "HH:mm").format("h:mm A") ?? "";
 
   useEffect(() => {
     if (isOpen) setActiveTab(0);
@@ -1014,7 +1015,7 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
   return ReactDOM.createPortal(
     <div
       className="fixed inset-0 z-[900] flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.55)" }}
+      style={{ background: "rgba(0,0,0,0.55)", zIndex: 10100 }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

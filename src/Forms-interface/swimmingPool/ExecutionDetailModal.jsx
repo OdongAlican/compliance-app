@@ -22,6 +22,7 @@ import {
 } from "../../services/swimmingPool.service";
 import { CHECKLIST_STATUS_OPTIONS } from "./constants";
 import { Spinner } from "./shared";
+import moment from "moment";
 
 /* ── Local constants ──────────────────────────────────────────────────── */
 const PRIORITY_OPTIONS = ["low", "medium", "high"];
@@ -750,8 +751,8 @@ function ChecklistSection({ performId, isActive }) {
                         l.value === "satisfactory"
                           ? "1px solid color-mix(in srgb,#3fb950 20%,transparent)"
                           : l.value === "needs_attention"
-                          ? "1px solid color-mix(in srgb,#d29922 25%,transparent)"
-                          : "1px solid var(--border)",
+                            ? "1px solid color-mix(in srgb,#d29922 25%,transparent)"
+                            : "1px solid var(--border)",
                     }}
                   >
                     <p className="text-xs font-medium mb-2" style={{ color: "var(--text)" }}>
@@ -769,16 +770,16 @@ function ChecklistSection({ performId, isActive }) {
                             style={
                               active
                                 ? {
-                                    background: opt.bg,
-                                    color: opt.color,
-                                    border: `1.5px solid ${opt.border}`,
-                                  }
+                                  background: opt.bg,
+                                  color: opt.color,
+                                  border: `1.5px solid ${opt.border}`,
+                                }
                                 : {
-                                    background: "transparent",
-                                    color: "var(--text-muted)",
-                                    border: "1px solid var(--border)",
-                                    opacity: 0.55,
-                                  }
+                                  background: "transparent",
+                                  color: "var(--text-muted)",
+                                  border: "1px solid var(--border)",
+                                  opacity: 0.55,
+                                }
                             }
                           >
                             {active && "✓ "}
@@ -910,8 +911,8 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
 
   const subtitle =
     perform?.swimming_pool_inspection?.pool_location ?? setup?.pool_location ?? "";
-  const dateStr = perform?.date ?? "";
-  const timeStr = perform?.time ?? "";
+  const dateStr = moment(perform?.date).format("MMMM Do, YYYY") ?? "";
+  const timeStr = moment(perform?.time, "HH:mm").format("h:mm A") ?? "";
 
   useEffect(() => {
     if (isOpen) setActiveTab(0);
@@ -922,7 +923,7 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
   return ReactDOM.createPortal(
     <div
       className="fixed inset-0 z-[900] flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.55)" }}
+      style={{ background: "rgba(0,0,0,0.55)", zIndex: 10100 }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

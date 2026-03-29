@@ -12,6 +12,7 @@ import {
 import toast from "react-hot-toast";
 import { Field, Spinner, ModalShell, StepIndicator, ReviewRow } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
+import moment from "moment";
 
 export default function SetupFormModal({ isOpen, onClose, setup }) {
   const dispatch = useAppDispatch();
@@ -319,48 +320,97 @@ export default function SetupFormModal({ isOpen, onClose, setup }) {
       return (
         <div className="p-6 flex flex-col gap-4">
           <div
-            className="p-4 rounded-xl"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold mb-1"
             style={{
-              background: "color-mix(in srgb,#3fb950 8%,transparent)",
-              border: "1px solid color-mix(in srgb,#3fb950 30%,transparent)",
+              background: "color-mix(in srgb,#3fb950 10%,transparent)",
+              color: "#3fb950",
+              border: "1px solid color-mix(in srgb,#3fb950 25%,transparent)",
             }}
           >
-            <p className="text-sm font-semibold flex items-center gap-2" style={{ color: "#3fb950" }}>
-              <CheckBadgeIcon className="h-5 w-5" /> Review & Confirm
-            </p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              Please confirm all details below before saving.
-            </p>
+            <CheckBadgeIcon className="h-4 w-4" />
+            All steps complete — please review before submitting.
           </div>
-          <div
-            className="rounded-xl overflow-hidden divide-y"
-            style={{ border: "1px solid var(--border)", "--tw-divide-opacity": 1 }}
-          >
+
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            Vehicle Information
+          </p>
+          <div className="grid grid-cols-2 gap-3">
             <ReviewRow label="Vehicle ID" value={form.vehicle_id} />
             <ReviewRow label="Odometer Reading" value={form.odometer_reading} />
-            <ReviewRow label="Model" value={form.model} />
-            <ReviewRow label="Date" value={form.date} />
-            <ReviewRow label="Time" value={form.time} />
-            <ReviewRow label="Note" value={form.note || "—"} />
-            <ReviewRow
-              label="Safety Officer"
-              value={
-                safetyOfficer
-                  ? `${safetyOfficer.firstname} ${safetyOfficer.lastname}`
-                  : "—"
-              }
-            />
-            <ReviewRow
-              label="Supervisor"
-              value={
-                supervisor ? `${supervisor.firstname} ${supervisor.lastname}` : "—"
-              }
-            />
+            <div className="col-span-2">
+              <ReviewRow label="Model" value={form.model} />
+            </div>
+            <ReviewRow label="Date" value={moment(form.date).format("MMMM Do, YYYY")} />
+            <ReviewRow label="Time" value={moment(form.time, "HH:mm").format("h:mm A")} />
+            <div className="col-span-2">
+              <ReviewRow label="Note" value={form.note || "—"} />
+            </div>
+          </div>
+          <p className="text-xs font-bold uppercase tracking-wider mt-2" style={{ color: "var(--text-muted)" }}>
+            Assignees
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div
+              className="flex items-center gap-3 p-3 rounded-lg col-span-1"
+              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{
+                  background: "color-mix(in srgb,var(--accent) 20%,transparent)",
+                  color: "var(--accent)",
+                }}
+              >
+                {safetyOfficer?.firstname?.[0]}{safetyOfficer?.lastname?.[0]}
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>
+                  Safety Officer
+                </p>
+                <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                  {safetyOfficer?.firstname} {safetyOfficer?.lastname}
+                </p>
+                <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  {roleName(safetyOfficer)}
+                </p>
+              </div>
+            </div>
+            <div
+              className="flex items-center gap-3 p-3 rounded-lg col-span-1"
+              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{
+                  background: "color-mix(in srgb,var(--accent) 20%,transparent)",
+                  color: "var(--accent)",
+                }}
+              >
+                {supervisor?.firstname?.[0]}{supervisor?.lastname?.[0]}
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>
+                  Supervisor
+                </p>
+                <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                  {supervisor?.firstname} {supervisor?.lastname}
+                </p>
+                <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  {roleName(supervisor)}
+                </p>
+              </div>
+            </div>
           </div>
           {actionError && (
-            <p className="text-sm text-center" style={{ color: "var(--danger)" }}>
+            <div
+              className="text-xs px-3 py-2 rounded-lg"
+              style={{
+                background: "color-mix(in srgb,var(--danger) 12%,transparent)",
+                color: "var(--danger)",
+              }}
+            >
               {actionError}
-            </p>
+            </div>
           )}
         </div>
       );

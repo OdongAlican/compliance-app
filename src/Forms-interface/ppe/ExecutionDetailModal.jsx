@@ -32,14 +32,9 @@ import {
 } from "../../services/ppe.service";
 import { Spinner, Field } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
+import moment from "moment";
 
 /* ── tiny helpers ────────────────────────────────────────────────────── */
-
-function fmtTime(iso) {
-    if (!iso) return "";
-    try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
-    catch { return iso; }
-}
 
 const PRIORITY_OPTIONS = ["low", "medium", "high", "critical"];
 const PRIORITY_COLOR = {
@@ -1146,8 +1141,8 @@ export default function ExecutionDetailModal({ isOpen, onClose, perform, setup }
                         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                             {department || "PPE Inspection"}
                             {ppeUserName ? ` · ${ppeUserName}` : ""}
-                            {perform.date ? ` · ${perform.date}` : ""}
-                            {perform.time ? ` at ${fmtTime(perform.time)}` : ""}
+                            {perform.date ? ` · ${moment(perform.date).format("MMMM Do, YYYY")}` : ""}
+                            {perform.time ? ` at ${moment(perform.time, "HH:mm").format("h:mm A")}` : ""}
                         </p>
                         {perform.note && (
                             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>

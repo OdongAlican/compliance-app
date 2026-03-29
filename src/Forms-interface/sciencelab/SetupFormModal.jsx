@@ -12,6 +12,7 @@ import {
 import toast from "react-hot-toast";
 import { Field, Spinner, ModalShell, StepIndicator, ReviewRow } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
+import moment from "moment";
 
 export default function SetupFormModal({ isOpen, onClose, setup }) {
   const dispatch = useAppDispatch();
@@ -311,8 +312,8 @@ export default function SetupFormModal({ isOpen, onClose, setup }) {
             <div className="col-span-2">
               <ReviewRow label="Laboratory Name" value={form.laboratory_name} />
             </div>
-            <ReviewRow label="Date" value={form.date} />
-            <ReviewRow label="Time" value={form.time} />
+            <ReviewRow label="Date" value={moment(form.date).format("MMMM Do, YYYY")} />
+            <ReviewRow label="Time" value={moment(form.time, "HH:mm").format("h:mm A")} />
             {form.note && (
               <div className="col-span-2">
                 <ReviewRow label="Note" value={form.note} />

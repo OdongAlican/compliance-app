@@ -34,6 +34,7 @@ import ReassignModal from "./ppe/ReassignModal";
 import DeleteConfirmModal from "./ppe/DeleteConfirmModal";
 import StartInspectionModal from "./ppe/StartInspectionModal";
 import DetailDrawer from "./ppe/DetailDrawer";
+import moment from "moment";
 
 export default function PPEInterface() {
   const dispatch = useAppDispatch();
@@ -325,7 +326,7 @@ export default function PPEInterface() {
                         {ppeUserName}
                       </td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                        {setup.date}
+                        {moment(setup.date).format("MMMM Do, YYYY")}
                       </td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{soName}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{supName}</td>

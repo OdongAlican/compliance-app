@@ -34,6 +34,7 @@ import ReassignModal from "./tool/ReassignModal";
 import DeleteConfirmModal from "./tool/DeleteConfirmModal";
 import StartInspectionModal from "./tool/StartInspectionModal";
 import DetailDrawer from "./tool/DetailDrawer";
+import moment from "moment";
 
 export default function ToolInterface() {
   const dispatch = useAppDispatch();
@@ -315,7 +316,7 @@ export default function ToolInterface() {
                         {setup.location || "-"}
                       </td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                        {setup.date}
+                        {moment(setup.date).format("MMMM Do, YYYY")}
                       </td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{soName}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{supName}</td>

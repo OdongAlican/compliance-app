@@ -102,8 +102,8 @@ export function StepIndicator({ currentStep, completedSteps = [] }) {
                   background: isDone
                     ? "#3fb950"
                     : isActive
-                    ? "var(--accent)"
-                    : "var(--bg)",
+                      ? "var(--accent)"
+                      : "var(--bg)",
                   color: isDone || isActive ? "#fff" : "var(--text-muted)",
                   border: isDone || isActive ? "none" : "1px solid var(--border)",
                 }}
@@ -116,8 +116,8 @@ export function StepIndicator({ currentStep, completedSteps = [] }) {
                   color: isDone
                     ? "#3fb950"
                     : isActive
-                    ? "var(--accent)"
-                    : "var(--text-muted)",
+                      ? "var(--accent)"
+                      : "var(--text-muted)",
                 }}
               >
                 {label}
@@ -139,15 +139,15 @@ export function StepIndicator({ currentStep, completedSteps = [] }) {
 /* ── ReviewRow ───────────────────────────────────────────────────────── */
 export function ReviewRow({ label, value }) {
   return (
-    <div className="flex items-start justify-between py-2 gap-4">
-      <span className="text-xs font-medium flex-shrink-0" style={{ color: "var(--text-muted)" }}>
+    <div
+      className="flex flex-col gap-0.5 p-3 rounded-lg"
+      style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}
+    >
+      <span className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>
         {label}
       </span>
-      <span
-        className="text-xs text-right"
-        style={{ color: "var(--text)", wordBreak: "break-word" }}
-      >
-        {value || <span style={{ color: "var(--text-muted)" }}>—</span>}
+      <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
+        {value || "—"}
       </span>
     </div>
   );

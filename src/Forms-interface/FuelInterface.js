@@ -36,29 +36,30 @@ import ReassignModal from "./fuel/ReassignModal";
 import DeleteConfirmModal from "./fuel/DeleteConfirmModal";
 import StartInspectionModal from "./fuel/StartInspectionModal";
 import DetailDrawer from "./fuel/DetailDrawer";
+import moment from "moment";
 
 const COLS = ["#", "Tank ID", "Location", "Fuel Type", "Date", "Safety Officer", "Supervisor", "Status", ""];
 
 export default function FuelInterface() {
   const dispatch = useAppDispatch();
   const { hasPermission } = useAuth();
-  const setups  = useAppSelector(selectFuelSetups);
-  const meta    = useAppSelector(selectFuelMeta);
+  const setups = useAppSelector(selectFuelSetups);
+  const meta = useAppSelector(selectFuelMeta);
   const loading = useAppSelector(selectFuelLoading);
-  const error   = useAppSelector(selectFuelError);
+  const error = useAppSelector(selectFuelError);
   const filters = useAppSelector(selectFuelFilters);
 
   const canCreate = hasPermission("fuel_tank_inspections.create");
   const canUpdate = hasPermission("fuel_tank_inspections.update");
   const canDelete = hasPermission("fuel_tank_inspections.delete");
 
-  const [setupModal,    setSetupModal]    = useState({ open: false, setup: null });
+  const [setupModal, setSetupModal] = useState({ open: false, setup: null });
   const [reassignModal, setReassignModal] = useState({ open: false, mode: null, setupId: null });
-  const [deleteTarget,  setDeleteTarget]  = useState(null);
-  const [deleting,      setDeleting]      = useState(false);
-  const [startModal,    setStartModal]    = useState({ open: false, setup: null });
-  const [detailDrawer,  setDetailDrawer]  = useState({ open: false, setup: null });
-  const [searchInput,   setSearchInput]   = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [startModal, setStartModal] = useState({ open: false, setup: null });
+  const [detailDrawer, setDetailDrawer] = useState({ open: false, setup: null });
+  const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef(null);
 
   useEffect(() => {
@@ -99,10 +100,10 @@ export default function FuelInterface() {
         s.supervisor ? s.supervisor.firstname + " " + s.supervisor.lastname : "",
       ]),
     ];
-    const csv  = rows.map((r) => r.map((c) => `"${c ?? ""}"`).join(",")).join("\n");
+    const csv = rows.map((r) => r.map((c) => `"${c ?? ""}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement("a"), { href: url, download: "fuel-tank-inspections.csv" });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: url, download: "fuel-tank-inspections.csv" });
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("CSV exported.");
@@ -257,7 +258,7 @@ export default function FuelInterface() {
             ) : (
               <tbody>
                 {setups.map((setup) => {
-                  const soName  = setup.safety_officer
+                  const soName = setup.safety_officer
                     ? setup.safety_officer.firstname + " " + setup.safety_officer.lastname
                     : "-";
                   const supName = setup.supervisor
@@ -281,18 +282,18 @@ export default function FuelInterface() {
                     },
                     ...(canUpdate
                       ? [
-                          { label: "Edit", onClick: () => setSetupModal({ open: true, setup }) },
-                          {
-                            label: "Reassign Safety Officer",
-                            onClick: () =>
-                              setReassignModal({ open: true, mode: "safety_officer", setupId: setup.id }),
-                          },
-                          {
-                            label: "Reassign Supervisor",
-                            onClick: () =>
-                              setReassignModal({ open: true, mode: "supervisor", setupId: setup.id }),
-                          },
-                        ]
+                        { label: "Edit", onClick: () => setSetupModal({ open: true, setup }) },
+                        {
+                          label: "Reassign Safety Officer",
+                          onClick: () =>
+                            setReassignModal({ open: true, mode: "safety_officer", setupId: setup.id }),
+                        },
+                        {
+                          label: "Reassign Supervisor",
+                          onClick: () =>
+                            setReassignModal({ open: true, mode: "supervisor", setupId: setup.id }),
+                        },
+                      ]
                       : []),
                     ...(canDelete
                       ? [{ divider: true }, { label: "Delete", danger: true, onClick: () => setDeleteTarget(setup) }]
@@ -319,7 +320,7 @@ export default function FuelInterface() {
                         {setup.fuel_type || "-"}
                       </td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                        {setup.date}
+                        {moment(setup.date).format("MMMM Do, YYYY")}
                       </td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{soName}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{supName}</td>

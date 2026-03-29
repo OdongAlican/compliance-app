@@ -35,6 +35,7 @@ import ReassignModal from "./vehicle/ReassignModal";
 import DeleteConfirmModal from "./vehicle/DeleteConfirmModal";
 import StartInspectionModal from "./vehicle/StartInspectionModal";
 import DetailDrawer from "./vehicle/DetailDrawer";
+import moment from "moment";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  MAIN PAGE                                                              */
@@ -295,7 +296,7 @@ export default function VehicleInspectionDashboard() {
       </div>
 
       {/* TABLE */}
-      <div className="ui-card">
+      <div className="ui-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -327,14 +328,22 @@ export default function VehicleInspectionDashboard() {
                   const status = setup.status ?? "Pending";
                   const sStyle = STATUS_STYLE[status] ?? { background: "var(--bg-raised)", color: "var(--text-muted)" };
                   const actions = [
-                    { label: "View Details", color: "var(--accent)", onClick: () => setDetailDrawer({ open: true, setup }) },
-                    { label: "Start Inspection", color: "#3fb950", onClick: () => setStartModal({ open: true, setup }) },
+                    {
+                      label: "View Details",
+                      color: "var(--accent)",
+                      onClick: () => setDetailDrawer({ open: true, setup })
+                    },
+                    {
+                      label: "Start Inspection",
+                      color: "#3fb950",
+                      onClick: () => setStartModal({ open: true, setup })
+                    },
                     ...(canUpdate
                       ? [
-                          { label: "Edit", onClick: () => setSetupModal({ open: true, setup }) },
-                          { label: "Reassign Safety Officer", onClick: () => setReassignModal({ open: true, mode: "safety_officer", setupId: setup.id }) },
-                          { label: "Reassign Supervisor", onClick: () => setReassignModal({ open: true, mode: "supervisor", setupId: setup.id }) },
-                        ]
+                        { label: "Edit", onClick: () => setSetupModal({ open: true, setup }) },
+                        { label: "Reassign Safety Officer", onClick: () => setReassignModal({ open: true, mode: "safety_officer", setupId: setup.id }) },
+                        { label: "Reassign Supervisor", onClick: () => setReassignModal({ open: true, mode: "supervisor", setupId: setup.id }) },
+                      ]
                       : []),
                     ...(canDelete
                       ? [{ divider: true }, { label: "Delete", danger: true, onClick: () => setDeleteTarget(setup) }]
@@ -354,8 +363,8 @@ export default function VehicleInspectionDashboard() {
                       </td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.model ?? "—"}</td>
                       <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.odometer_reading ?? "—"}</td>
-                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.date ?? "—"}</td>
-                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{setup.time ?? "—"}</td>
+                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{moment(setup.date).format("MMMM Do, YYYY") ?? "—"}</td>
+                      <td className="ui-td text-sm whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{moment(setup.time, "HH:mm").format("h:mm A") ?? "—"}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{soName}</td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>{supName}</td>
                       <td className="ui-td">

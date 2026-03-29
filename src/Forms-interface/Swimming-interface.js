@@ -35,6 +35,7 @@ import ReassignModal from "./swimmingPool/ReassignModal";
 import DeleteConfirmModal from "./swimmingPool/DeleteConfirmModal";
 import StartInspectionModal from "./swimmingPool/StartInspectionModal";
 import DetailDrawer from "./swimmingPool/DetailDrawer";
+import moment from "moment";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  MAIN PAGE                                                              */
@@ -464,13 +465,13 @@ export default function SwimmingPoolInterface() {
                         className="ui-td text-sm whitespace-nowrap"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {setup.date}
+                        {moment(setup.date).format("MMMM Do, YYYY")}
                       </td>
                       <td
                         className="ui-td text-sm whitespace-nowrap"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {setup.time}
+                        {moment(setup.time, "HH:mm").format("h:mm A")}
                       </td>
                       <td className="ui-td text-sm" style={{ color: "var(--text)" }}>
                         {soName}
