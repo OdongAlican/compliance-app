@@ -292,12 +292,12 @@ function EntryForm({ entry, index, onChange, onRemove, error }) {
 
 function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
   const isEdit = !!pra;
-  const [step, setStep]       = useState(0);
-  const [raList, setRaList]   = useState([]);
+  const [step, setStep] = useState(0);
+  const [raList, setRaList] = useState([]);
   const [raLoading, setRaLoading] = useState(false);
-  const [form, setForm]       = useState({ risk_assessment_id: '', performed_date: '', note: '' });
+  const [form, setForm] = useState({ risk_assessment_id: '', performed_date: '', note: '' });
   const [entries, setEntries] = useState([{ ...EMPTY_ENTRY }]);
-  const [errors, setErrors]   = useState({});
+  const [errors, setErrors] = useState({});
   const [entryErrors, setEntryErrors] = useState([]);
 
   // Load risk assessments for dropdown and pre-populate when editing
@@ -310,11 +310,11 @@ function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
     if (isEdit) {
       setForm({
         risk_assessment_id: String(pra.risk_assessment_id ?? ''),
-        performed_date:     pra.performed_date ?? '',
-        note:               pra.note ?? '',
+        performed_date: pra.performed_date ?? '',
+        note: pra.note ?? '',
       });
       const existingEntries = (pra.performed_risk_assessment_entries ?? []).map((e) => ({
-        hazard_description:       e.hazard_description ?? '',
+        hazard_description: e.hazard_description ?? '',
         current_control_measures: e.current_control_measures ?? '',
       }));
       setEntries(existingEntries.length > 0 ? existingEntries : [{ ...EMPTY_ENTRY }]);
@@ -336,7 +336,7 @@ function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
   function validateStep0() {
     const errs = {};
     if (!form.risk_assessment_id) errs.risk_assessment_id = 'Please select a risk assessment';
-    if (!form.performed_date)     errs.performed_date     = 'Performed date is required';
+    if (!form.performed_date) errs.performed_date = 'Performed date is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -344,7 +344,7 @@ function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
   function validateStep1() {
     const errs = entries.map((e) => {
       const err = {};
-      if (!e.hazard_description?.trim())       err.hazard_description       = 'Required';
+      if (!e.hazard_description?.trim()) err.hazard_description = 'Required';
       if (!e.current_control_measures?.trim()) err.current_control_measures = 'Required';
       return err;
     });
@@ -377,7 +377,7 @@ function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
     if (!validateStep1()) { setStep(1); return; }
     const payload = {
       performed_date: form.performed_date,
-      entries:        entries.map(({ hazard_description, current_control_measures }) => ({
+      entries: entries.map(({ hazard_description, current_control_measures }) => ({
         hazard_description,
         current_control_measures,
       })),
@@ -637,12 +637,12 @@ function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
 // ── Execute Entry Modal ────────────────────────────────────────────────────
 
 function ExecuteEntryModal({ entry, open, onClose, onDone }) {
-  const [form, setForm]         = useState({ hazard_id: '', due_date: '', note: '' });
+  const [form, setForm] = useState({ hazard_id: '', due_date: '', note: '' });
   const [imageBefore, setImageBefore] = useState(null);
-  const [proofFile, setProofFile]     = useState(null);
-  const [hazardList, setHazardList]   = useState([]);
-  const [submitting, setSubmitting]   = useState(false);
-  const [errors, setErrors]           = useState({});
+  const [proofFile, setProofFile] = useState(null);
+  const [hazardList, setHazardList] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!open) return;
@@ -655,15 +655,15 @@ function ExecuteEntryModal({ entry, open, onClose, onDone }) {
         const list = Array.isArray(res) ? res : (res.data ?? []);
         setHazardList(list);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [open]);
 
   function validate() {
     const errs = {};
-    if (!form.hazard_id)   errs.hazard_id            = 'Hazard report is required';
-    if (!form.due_date)    errs.due_date              = 'Due date is required';
-    if (!imageBefore)      errs.image_before          = 'Image before is required';
-    if (!proofFile)        errs.proof_of_completion   = 'Proof of completion is required';
+    if (!form.hazard_id) errs.hazard_id = 'Hazard report is required';
+    if (!form.due_date) errs.due_date = 'Due date is required';
+    if (!imageBefore) errs.image_before = 'Image before is required';
+    if (!proofFile) errs.proof_of_completion = 'Proof of completion is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -830,11 +830,11 @@ function ExecuteEntryModal({ entry, open, onClose, onDone }) {
 
 function CorrectiveActionModal({ entry, open, onClose, onDone }) {
   const EMPTY_SCORE = { probability: '', consequence: '', result: '' };
-  const [form, setForm]         = useState({ description: '' });
+  const [form, setForm] = useState({ description: '' });
   const [inherent, setInherent] = useState({ ...EMPTY_SCORE });
   const [residual, setResidual] = useState({ ...EMPTY_SCORE });
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors]         = useState({});
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!open) return;
@@ -863,14 +863,14 @@ function CorrectiveActionModal({ entry, open, onClose, onDone }) {
         performed_risk_assessment_entry_id: entry.id,
         description: form.description,
         inherent_risk_score: {
-          probability:  Number(inherent.probability),
-          consequence:  Number(inherent.consequence),
-          result:       Number(inherent.result),
+          probability: Number(inherent.probability),
+          consequence: Number(inherent.consequence),
+          result: Number(inherent.result),
         },
         residual_risk_score: {
-          probability:  Number(residual.probability),
-          consequence:  Number(residual.consequence),
-          result:       Number(residual.result),
+          probability: Number(residual.probability),
+          consequence: Number(residual.consequence),
+          result: Number(residual.result),
         },
       });
       toast.success('Corrective action added.');
@@ -994,15 +994,15 @@ const PRIORITY_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
 
 function PriorityModal({ entry, open, onClose, onDone }) {
   const existing = entry?.priority ?? null;
-  const [form, setForm]         = useState({ priority_level: '', due_date: '' });
+  const [form, setForm] = useState({ priority_level: '', due_date: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors]         = useState({});
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!open) return;
     setForm({
       priority_level: existing?.priority_level ?? '',
-      due_date:       existing?.due_date ?? '',
+      due_date: existing?.due_date ?? '',
     });
     setErrors({});
   }, [open, existing]);
@@ -1010,7 +1010,7 @@ function PriorityModal({ entry, open, onClose, onDone }) {
   function validate() {
     const errs = {};
     if (!form.priority_level) errs.priority_level = 'Priority level is required';
-    if (!form.due_date)       errs.due_date       = 'Due date is required';
+    if (!form.due_date) errs.due_date = 'Due date is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -1138,9 +1138,9 @@ function PriorityModal({ entry, open, onClose, onDone }) {
 // ── Contractor Modal ───────────────────────────────────────────────────────
 
 function ContractorModal({ entry, open, onClose, onDone }) {
-  const [users, setUsers]       = useState([]);
+  const [users, setUsers] = useState([]);
   const [selected, setSelected] = useState([]);
-  const [query, setQuery]       = useState('');
+  const [query, setQuery] = useState('');
   const [fetching, setFetching] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const searchTimer = useRef(null);
@@ -1160,7 +1160,7 @@ function ContractorModal({ entry, open, onClose, onDone }) {
       const res = await UsersService.list(params);
       const list = Array.isArray(res) ? res : (res.data ?? []);
       setUsers(list);
-    } catch (_) {}
+    } catch (_) { }
     finally { setFetching(false); }
   }
 
@@ -1302,7 +1302,7 @@ function RiskScoreBadge({ score, label }) {
   if (!score) return null;
   const result = score.result ?? score.probability * score.consequence;
   let color = '#16a34a';    // low  (1–4)
-  if (result >= 5)  color = '#d97706'; // medium (5–9)
+  if (result >= 5) color = '#d97706'; // medium (5–9)
   if (result >= 10) color = '#dc2626'; // high   (10+)
 
   return (
@@ -1323,7 +1323,7 @@ function RiskScoreBadge({ score, label }) {
  * each entry in an accordion-style card.
  */
 function DetailDrawer({ pra, onClose }) {
-  const [detail,  setDetail]  = useState(null);
+  const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const fetchDetail = useCallback(() => {
@@ -1408,9 +1408,9 @@ function DetailDrawer({ pra, onClose }) {
                 <div className="space-y-2.5">
                   {[
                     ['Risk Assessment', d.risk_assessment?.activity ?? `#${d.risk_assessment_id}`],
-                    ['Location',        d.risk_assessment?.location],
-                    ['Performed Date',  formatDate(d.performed_date)],
-                    ['Notes',           d.note || '—'],
+                    ['Location', d.risk_assessment?.location],
+                    ['Performed Date', formatDate(d.performed_date)],
+                    ['Notes', d.note || '—'],
                   ].map(([k, v]) => v ? (
                     <div key={k} className="flex gap-3">
                       <span className="text-xs font-medium w-28 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
@@ -1452,10 +1452,10 @@ function DetailDrawer({ pra, onClose }) {
 }
 
 function EntryCard({ entry, index, onRefresh }) {
-  const [expanded, setExpanded]       = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [executeOpen, setExecuteOpen] = useState(false);
   const [correctiveOpen, setCorrectiveOpen] = useState(false);
-  const [priorityOpen, setPriorityOpen]     = useState(false);
+  const [priorityOpen, setPriorityOpen] = useState(false);
   const [contractorOpen, setContractorOpen] = useState(false);
 
   const isExecuted = !!entry.hazard_id;
@@ -1699,22 +1699,22 @@ export default function PerformedRiskAssessmentsPage() {
   const dispatch = useAppDispatch();
   const { hasPermission } = useAuth();
 
-  const items         = useAppSelector(selectPerformedRiskAssessments);
-  const meta          = useAppSelector(selectPerformedRiskAssessmentsMeta);
-  const loading       = useAppSelector(selectPerformedRiskAssessmentsLoading);
-  const error         = useAppSelector(selectPerformedRiskAssessmentsError);
-  const filters       = useAppSelector(selectPerformedRiskAssessmentsFilters);
+  const items = useAppSelector(selectPerformedRiskAssessments);
+  const meta = useAppSelector(selectPerformedRiskAssessmentsMeta);
+  const loading = useAppSelector(selectPerformedRiskAssessmentsLoading);
+  const error = useAppSelector(selectPerformedRiskAssessmentsError);
+  const filters = useAppSelector(selectPerformedRiskAssessmentsFilters);
   const actionLoading = useAppSelector(selectPerformedRiskAssessmentsActionLoading);
-  const actionError   = useAppSelector(selectPerformedRiskAssessmentsActionError);
+  const actionError = useAppSelector(selectPerformedRiskAssessmentsActionError);
 
   const canWrite = hasPermission('performed_risk_assessments.update');
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editPra,    setEditPra]    = useState(null);
-  const [detailPra,  setDetailPra]  = useState(null);
-  const [deleteTgt,  setDeleteTgt]  = useState(null);
-  const [deleting,   setDeleting]   = useState(false);
-  const [dateInput,  setDateInput]  = useState('');
+  const [editPra, setEditPra] = useState(null);
+  const [detailPra, setDetailPra] = useState(null);
+  const [deleteTgt, setDeleteTgt] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [dateInput, setDateInput] = useState('');
   const dateTimer = useRef(null);
 
   const filterDate = filters['filter[performed_date]'];
