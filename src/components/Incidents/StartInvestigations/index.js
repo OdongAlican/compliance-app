@@ -83,9 +83,20 @@ function displayName(u) {
 
 function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos]   = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
     <div className="relative inline-block text-left">
-      <button type="button" onClick={() => setOpen((o) => !o)}
+      <button type="button" ref={btnRef} onClick={toggle}
         className="p-1 rounded hover:opacity-75"
         style={{ color: 'var(--text-muted)' }} aria-haspopup="menu">
         <EllipsisVerticalIcon className="h-5 w-5" />
@@ -93,7 +104,8 @@ function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="ui-menu absolute right-0 mt-1 z-50" role="menu">
+          <div className="ui-menu fixed z-50" role="menu"
+            style={{ top: pos.top, right: pos.right }}>
             <button type="button" role="menuitem" className="ui-menu-item"
               onClick={() => { onView(); setOpen(false); }}>
               View Details
@@ -937,10 +949,10 @@ function InvestigationDrawer({ record, onClose }) {
                   <div key={i} className="rounded-xl p-3"
                     style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                     <p className="text-xs" style={{ color: 'var(--text)' }}>{d.narrative}</p>
-                    {d.file_url && (
-                      <a href={d.file_url} target="_blank" rel="noreferrer"
+                    {(d.file_path || d.file_name) && (
+                      <a href={d.file_path} target="_blank" rel="noreferrer"
                         className="text-xs mt-1 hover:underline" style={{ color: 'var(--accent)' }}>
-                        View attachment
+                        {d.file_name ?? 'View attachment'}
                       </a>
                     )}
                   </div>
