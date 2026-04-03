@@ -11,7 +11,7 @@
  *  - Delete confirmation modal
  *  - Permission-gated actions (performed_risk_assessments.update)
  */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
   PlusIcon,
@@ -21,12 +21,17 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   TrashIcon,
+  BoltIcon,
+  UserGroupIcon,
+  FlagIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { EllipsisVerticalIcon } from '@heroicons/react/20/solid';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import {
   fetchPerformedRiskAssessments,
   createPerformedRiskAssessment,
+  updatePerformedRiskAssessment,
   deletePerformedRiskAssessment,
   setPerformedRiskAssessmentFilters,
   clearPerformedRiskAssessmentErrors,
@@ -38,7 +43,15 @@ import {
   selectPerformedRiskAssessmentsActionLoading,
   selectPerformedRiskAssessmentsActionError,
 } from '../../../store/slices/performedRiskAssessmentSlice';
-import { RiskAssessmentService, PerformedRiskAssessmentService } from '../../../services/hazardAndRisk.service';
+import {
+  RiskAssessmentService,
+  PerformedRiskAssessmentService,
+  CorrectiveActionService,
+  EntryPriorityService,
+  PerformedEntryService,
+  HazardReportService,
+} from '../../../services/hazardAndRisk.service';
+import UsersService from '../../../services/users.service';
 import useAuth from '../../../hooks/useAuth';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -55,13 +68,25 @@ function displayName(u) {
 
 // ── ActionMenu ─────────────────────────────────────────────────────────────
 
-function ActionMenu({ onView, onDelete, canDelete }) {
+function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+
+  function handleOpen() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
     <div className="relative inline-block text-left">
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleOpen}
         className="p-1 rounded hover:opacity-75"
         style={{ color: 'var(--text-muted)' }}
         aria-haspopup="menu"
@@ -71,13 +96,25 @@ function ActionMenu({ onView, onDelete, canDelete }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="ui-menu absolute right-0 mt-1 z-50" role="menu">
+          <div
+            className="ui-menu fixed z-50"
+            style={{ top: coords.top, right: coords.right }}
+            role="menu"
+          >
             <button
               type="button" role="menuitem" className="ui-menu-item"
               onClick={() => { onView(); setOpen(false); }}
             >
               View Details
             </button>
+            {canEdit && (
+              <button
+                type="button" role="menuitem" className="ui-menu-item"
+                onClick={() => { onEdit(); setOpen(false); }}
+              >
+                Edit
+              </button>
+            )}
             {canDelete && (
               <>
                 <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }} />
@@ -253,7 +290,8 @@ function EntryForm({ entry, index, onChange, onRemove, error }) {
   );
 }
 
-function CreateModal({ open, onClose, onSave, saving, saveError }) {
+function CreateModal({ open, pra, onClose, onSave, saving, saveError }) {
+  const isEdit = !!pra;
   const [step, setStep]       = useState(0);
   const [raList, setRaList]   = useState([]);
   const [raLoading, setRaLoading] = useState(false);
@@ -262,14 +300,28 @@ function CreateModal({ open, onClose, onSave, saving, saveError }) {
   const [errors, setErrors]   = useState({});
   const [entryErrors, setEntryErrors] = useState([]);
 
-  // Load risk assessments for dropdown
+  // Load risk assessments for dropdown and pre-populate when editing
   useEffect(() => {
     if (!open) return;
     setStep(0);
-    setForm({ risk_assessment_id: '', performed_date: '', note: '' });
-    setEntries([{ ...EMPTY_ENTRY }]);
     setErrors({});
     setEntryErrors([]);
+
+    if (isEdit) {
+      setForm({
+        risk_assessment_id: String(pra.risk_assessment_id ?? ''),
+        performed_date:     pra.performed_date ?? '',
+        note:               pra.note ?? '',
+      });
+      const existingEntries = (pra.performed_risk_assessment_entries ?? []).map((e) => ({
+        hazard_description:       e.hazard_description ?? '',
+        current_control_measures: e.current_control_measures ?? '',
+      }));
+      setEntries(existingEntries.length > 0 ? existingEntries : [{ ...EMPTY_ENTRY }]);
+    } else {
+      setForm({ risk_assessment_id: '', performed_date: '', note: '' });
+      setEntries([{ ...EMPTY_ENTRY }]);
+    }
 
     setRaLoading(true);
     RiskAssessmentService.list({ per_page: 100 })
@@ -279,7 +331,7 @@ function CreateModal({ open, onClose, onSave, saving, saveError }) {
       })
       .catch(() => toast.error('Failed to load risk assessments'))
       .finally(() => setRaLoading(false));
-  }, [open]);
+  }, [open, isEdit, pra]);
 
   function validateStep0() {
     const errs = {};
@@ -324,13 +376,13 @@ function CreateModal({ open, onClose, onSave, saving, saveError }) {
   function submit() {
     if (!validateStep1()) { setStep(1); return; }
     const payload = {
-      risk_assessment_id: Number(form.risk_assessment_id),
-      performed_date:     form.performed_date,
-      entries:            entries.map(({ hazard_description, current_control_measures }) => ({
+      performed_date: form.performed_date,
+      entries:        entries.map(({ hazard_description, current_control_measures }) => ({
         hazard_description,
         current_control_measures,
       })),
     };
+    if (!isEdit) payload.risk_assessment_id = Number(form.risk_assessment_id);
     if (form.note.trim()) payload.note = form.note;
     onSave(payload);
   }
@@ -351,7 +403,7 @@ function CreateModal({ open, onClose, onSave, saving, saveError }) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-            New Performed Risk Assessment
+            {isEdit ? 'Edit Performed Risk Assessment' : 'New Performed Risk Assessment'}
           </h2>
           <button
             type="button" onClick={onClose}
@@ -402,7 +454,7 @@ function CreateModal({ open, onClose, onSave, saving, saveError }) {
                 className="ui-input w-full"
                 value={form.risk_assessment_id}
                 onChange={(e) => setForm({ ...form, risk_assessment_id: e.target.value })}
-                disabled={raLoading}
+                disabled={raLoading || isEdit}
               >
                 <option value="">
                   {raLoading ? 'Loading…' : '— Select a risk assessment —'}
@@ -573,9 +625,671 @@ function CreateModal({ open, onClose, onSave, saving, saveError }) {
               className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               style={{ background: 'var(--accent)' }}
             >
-              {saving ? 'Creating…' : 'Create'}
+              {saving ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create')}
             </button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Execute Entry Modal ────────────────────────────────────────────────────
+
+function ExecuteEntryModal({ entry, open, onClose, onDone }) {
+  const [form, setForm]         = useState({ hazard_id: '', due_date: '', note: '' });
+  const [imageBefore, setImageBefore] = useState(null);
+  const [proofFile, setProofFile]     = useState(null);
+  const [hazardList, setHazardList]   = useState([]);
+  const [submitting, setSubmitting]   = useState(false);
+  const [errors, setErrors]           = useState({});
+
+  useEffect(() => {
+    if (!open) return;
+    setForm({ hazard_id: '', due_date: '', note: '' });
+    setImageBefore(null);
+    setProofFile(null);
+    setErrors({});
+    HazardReportService.list({ per_page: 100 })
+      .then((res) => {
+        const list = Array.isArray(res) ? res : (res.data ?? []);
+        setHazardList(list);
+      })
+      .catch(() => {});
+  }, [open]);
+
+  function validate() {
+    const errs = {};
+    if (!form.hazard_id)   errs.hazard_id            = 'Hazard report is required';
+    if (!form.due_date)    errs.due_date              = 'Due date is required';
+    if (!imageBefore)      errs.image_before          = 'Image before is required';
+    if (!proofFile)        errs.proof_of_completion   = 'Proof of completion is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function submit() {
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append('hazard_id', form.hazard_id);
+      fd.append('due_date', form.due_date);
+      if (form.note) fd.append('note', form.note);
+      fd.append('image_before', imageBefore);
+      fd.append('proof_of_completion', proofFile);
+      await PerformedEntryService.execute(entry.id, fd);
+      toast.success('Entry executed successfully.');
+      onDone();
+      onClose();
+    } catch (e) {
+      const msgs = e.response?.data?.errors ?? e.response?.data?.message ?? 'Execution failed.';
+      toast.error(Array.isArray(msgs) ? msgs.join(', ') : String(msgs));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+    >
+      <div
+        className="ui-card w-full max-w-md p-6 space-y-4"
+        style={{ maxHeight: '90vh', overflowY: 'auto' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(22,163,74,.12)' }}
+            >
+              <BoltIcon className="h-4 w-4" style={{ color: '#16a34a' }} />
+            </div>
+            <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Execute Entry</h3>
+          </div>
+          <button
+            type="button" onClick={onClose}
+            className="p-1 rounded hover:opacity-75" style={{ color: 'var(--text-muted)' }}
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Link this entry to a hazard report and upload evidence files to mark it as executed.
+        </p>
+
+        {/* Hazard Report */}
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+            Hazard Report <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <select
+            className="ui-input w-full text-sm"
+            value={form.hazard_id}
+            onChange={(e) => setForm({ ...form, hazard_id: e.target.value })}
+          >
+            <option value="">— Select hazard report —</option>
+            {hazardList.map((h) => (
+              <option key={h.id} value={h.id}>
+                #{h.id} — {h.hazard_type} @ {h.location}
+              </option>
+            ))}
+          </select>
+          {errors.hazard_id && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>{errors.hazard_id}</p>
+          )}
+        </div>
+
+        {/* Due Date */}
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+            Due Date <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            type="date" className="ui-input w-full"
+            value={form.due_date}
+            onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+          />
+          {errors.due_date && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>{errors.due_date}</p>
+          )}
+        </div>
+
+        {/* Image Before */}
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+            Image Before <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            type="file" accept="image/*" className="ui-input w-full text-sm"
+            onChange={(e) => setImageBefore(e.target.files?.[0] ?? null)}
+          />
+          {imageBefore && (
+            <p className="text-xs mt-0.5" style={{ color: '#16a34a' }}>✓ {imageBefore.name}</p>
+          )}
+          {errors.image_before && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>{errors.image_before}</p>
+          )}
+        </div>
+
+        {/* Proof of Completion */}
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+            Proof of Completion <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            type="file" accept="image/*,application/pdf" className="ui-input w-full text-sm"
+            onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+          />
+          {proofFile && (
+            <p className="text-xs mt-0.5" style={{ color: '#16a34a' }}>✓ {proofFile.name}</p>
+          )}
+          {errors.proof_of_completion && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>{errors.proof_of_completion}</p>
+          )}
+        </div>
+
+        {/* Note */}
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Note</label>
+          <textarea
+            className="ui-input w-full resize-none text-sm" rows={2}
+            value={form.note}
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
+            placeholder="Optional notes…"
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button" onClick={onClose} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-75"
+            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button" onClick={submit} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#16a34a' }}
+          >
+            {submitting ? 'Executing…' : 'Execute'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Corrective Action Modal ────────────────────────────────────────────────
+
+function CorrectiveActionModal({ entry, open, onClose, onDone }) {
+  const EMPTY_SCORE = { probability: '', consequence: '', result: '' };
+  const [form, setForm]         = useState({ description: '' });
+  const [inherent, setInherent] = useState({ ...EMPTY_SCORE });
+  const [residual, setResidual] = useState({ ...EMPTY_SCORE });
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors]         = useState({});
+
+  useEffect(() => {
+    if (!open) return;
+    setForm({ description: '' });
+    setInherent({ ...EMPTY_SCORE });
+    setResidual({ ...EMPTY_SCORE });
+    setErrors({});
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function validate() {
+    const errs = {};
+    if (!form.description?.trim()) errs.description = 'Description is required';
+    if (!inherent.probability || !inherent.consequence || !inherent.result)
+      errs.inherent = 'All inherent risk score fields are required';
+    if (!residual.probability || !residual.consequence || !residual.result)
+      errs.residual = 'All residual risk score fields are required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function submit() {
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      await CorrectiveActionService.create({
+        performed_risk_assessment_entry_id: entry.id,
+        description: form.description,
+        inherent_risk_score: {
+          probability:  Number(inherent.probability),
+          consequence:  Number(inherent.consequence),
+          result:       Number(inherent.result),
+        },
+        residual_risk_score: {
+          probability:  Number(residual.probability),
+          consequence:  Number(residual.consequence),
+          result:       Number(residual.result),
+        },
+      });
+      toast.success('Corrective action added.');
+      onDone();
+      onClose();
+    } catch (e) {
+      const msgs = e.response?.data?.errors ?? e.response?.data?.message ?? 'Failed to save.';
+      toast.error(Array.isArray(msgs) ? msgs.join(', ') : String(msgs));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) return null;
+
+  function ScoreFields({ label, value, onChange }) {
+    return (
+      <div className="space-y-1.5">
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+          {label} <span style={{ color: 'var(--danger)' }}>*</span>
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {['probability', 'consequence', 'result'].map((field) => (
+            <div key={field}>
+              <label
+                className="block text-[10px] capitalize mb-0.5"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {field}
+              </label>
+              <input
+                type="number" min={1} max={25} className="ui-input w-full text-xs"
+                value={value[field]}
+                onChange={(e) => onChange({ ...value, [field]: e.target.value })}
+                placeholder="1–25"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+    >
+      <div
+        className="ui-card w-full max-w-md p-6 space-y-4"
+        style={{ maxHeight: '90vh', overflowY: 'auto' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(217,119,6,.12)' }}
+            >
+              <CheckCircleIcon className="h-4 w-4" style={{ color: '#d97706' }} />
+            </div>
+            <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Add Corrective Action</h3>
+          </div>
+          <button
+            type="button" onClick={onClose}
+            className="p-1 rounded hover:opacity-75" style={{ color: 'var(--text-muted)' }}
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+            Description <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <textarea
+            className="ui-input w-full resize-none text-sm" rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Describe the corrective action…"
+          />
+          {errors.description && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>{errors.description}</p>
+          )}
+        </div>
+
+        <ScoreFields label="Inherent Risk Score" value={inherent} onChange={setInherent} />
+        {errors.inherent && (
+          <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors.inherent}</p>
+        )}
+
+        <ScoreFields label="Residual Risk Score" value={residual} onChange={setResidual} />
+        {errors.residual && (
+          <p className="text-xs" style={{ color: 'var(--danger)' }}>{errors.residual}</p>
+        )}
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button" onClick={onClose} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-75"
+            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button" onClick={submit} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#d97706' }}
+          >
+            {submitting ? 'Saving…' : 'Add Action'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Priority Modal ─────────────────────────────────────────────────────────
+
+const PRIORITY_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
+
+function PriorityModal({ entry, open, onClose, onDone }) {
+  const existing = entry?.priority ?? null;
+  const [form, setForm]         = useState({ priority_level: '', due_date: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors]         = useState({});
+
+  useEffect(() => {
+    if (!open) return;
+    setForm({
+      priority_level: existing?.priority_level ?? '',
+      due_date:       existing?.due_date ?? '',
+    });
+    setErrors({});
+  }, [open, existing]);
+
+  function validate() {
+    const errs = {};
+    if (!form.priority_level) errs.priority_level = 'Priority level is required';
+    if (!form.due_date)       errs.due_date       = 'Due date is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function submit() {
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      if (existing?.id) {
+        await EntryPriorityService.update(existing.id, form);
+        toast.success('Priority updated.');
+      } else {
+        await EntryPriorityService.create({
+          performed_risk_assessment_entry_id: entry.id,
+          ...form,
+        });
+        toast.success('Priority set.');
+      }
+      onDone();
+      onClose();
+    } catch (e) {
+      const msgs = e.response?.data?.errors ?? e.response?.data?.message ?? 'Failed to save.';
+      toast.error(Array.isArray(msgs) ? msgs.join(', ') : String(msgs));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) return null;
+
+  const levelColors = { Low: '#16a34a', Medium: '#d97706', High: '#dc2626', Critical: '#7c3aed' };
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+    >
+      <div className="ui-card w-full max-w-sm p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(124,58,237,.12)' }}
+            >
+              <FlagIcon className="h-4 w-4" style={{ color: '#7c3aed' }} />
+            </div>
+            <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              {existing ? 'Update Priority' : 'Set Priority'}
+            </h3>
+          </div>
+          <button
+            type="button" onClick={onClose}
+            className="p-1 rounded hover:opacity-75" style={{ color: 'var(--text-muted)' }}
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Priority level buttons */}
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text)' }}>
+            Priority Level <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {PRIORITY_LEVELS.map((level) => {
+              const color = levelColors[level];
+              const selected = form.priority_level === level;
+              return (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setForm({ ...form, priority_level: level })}
+                  className="py-2 rounded-lg text-xs font-semibold transition-all"
+                  style={{
+                    background: selected ? color : `${color}1a`,
+                    color: selected ? '#fff' : color,
+                    border: `1px solid ${color}40`,
+                  }}
+                >
+                  {level}
+                </button>
+              );
+            })}
+          </div>
+          {errors.priority_level && (
+            <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.priority_level}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+            Due Date <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            type="date" className="ui-input w-full"
+            value={form.due_date}
+            onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+          />
+          {errors.due_date && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--danger)' }}>{errors.due_date}</p>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button" onClick={onClose} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-75"
+            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button" onClick={submit} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#7c3aed' }}
+          >
+            {submitting ? 'Saving…' : (existing ? 'Update' : 'Set Priority')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Contractor Modal ───────────────────────────────────────────────────────
+
+function ContractorModal({ entry, open, onClose, onDone }) {
+  const [users, setUsers]       = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [query, setQuery]       = useState('');
+  const [fetching, setFetching] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const searchTimer = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelected(entry?.contractors ?? []);
+    setQuery('');
+    loadUsers('');
+  }, [open, entry]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function loadUsers(q) {
+    setFetching(true);
+    try {
+      const params = { per_page: 50, 'filter[role]': 'contractor' };
+      if (q) params.q = q;
+      const res = await UsersService.list(params);
+      const list = Array.isArray(res) ? res : (res.data ?? []);
+      setUsers(list);
+    } catch (_) {}
+    finally { setFetching(false); }
+  }
+
+  function handleSearch(val) {
+    setQuery(val);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => loadUsers(val), 300);
+  }
+
+  function toggle(u) {
+    setSelected((prev) =>
+      prev.find((v) => v.id === u.id) ? prev.filter((v) => v.id !== u.id) : [...prev, u]
+    );
+  }
+
+  async function submit() {
+    setSubmitting(true);
+    try {
+      await PerformedEntryService.assignContractor(entry.id, {
+        contractor_ids: selected.map((u) => u.id),
+      });
+      toast.success('Contractors updated.');
+      onDone();
+      onClose();
+    } catch (e) {
+      const msgs = e.response?.data?.errors ?? e.response?.data?.message ?? 'Failed to assign.';
+      toast.error(Array.isArray(msgs) ? msgs.join(', ') : String(msgs));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) return null;
+
+  const unselected = users.filter((u) => !selected.find((s) => s.id === u.id));
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+    >
+      <div
+        className="ui-card w-full max-w-sm p-6 space-y-4"
+        style={{ maxHeight: '85vh', overflowY: 'auto' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(124,58,237,.12)' }}
+            >
+              <UserGroupIcon className="h-4 w-4" style={{ color: '#7c3aed' }} />
+            </div>
+            <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Assign Contractors</h3>
+          </div>
+          <button
+            type="button" onClick={onClose}
+            className="p-1 rounded hover:opacity-75" style={{ color: 'var(--text-muted)' }}
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Selected chips */}
+        {selected.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {selected.map((u) => (
+              <span
+                key={u.id}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium"
+                style={{ background: 'rgba(124,58,237,.12)', color: '#7c3aed' }}
+              >
+                {displayName(u)}
+                <button
+                  type="button" onClick={() => toggle(u)}
+                  className="ml-0.5 hover:opacity-70 leading-none"
+                >
+                  <XMarkIcon className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Search */}
+        <input
+          className="ui-input w-full text-sm"
+          placeholder="Search contractors…"
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+
+        {/* List */}
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {fetching ? (
+            <p className="text-xs text-center py-3" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+          ) : unselected.length === 0 ? (
+            <p className="text-xs text-center py-3" style={{ color: 'var(--text-muted)' }}>
+              {query ? 'No results' : 'No contractors available'}
+            </p>
+          ) : unselected.map((u) => (
+            <button
+              key={u.id} type="button" onClick={() => toggle(u)}
+              className="w-full text-left px-3 py-2 rounded-lg text-xs hover:opacity-80 transition-opacity"
+              style={{ background: 'var(--bg-raised)', color: 'var(--text)' }}
+            >
+              {displayName(u)}
+              {u.email && (
+                <span className="ml-1" style={{ color: 'var(--text-muted)' }}>({u.email})</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button" onClick={onClose} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-75"
+            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button" onClick={submit} disabled={submitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#7c3aed' }}
+          >
+            {submitting ? 'Saving…' : 'Save'}
+          </button>
         </div>
       </div>
     </div>
@@ -612,7 +1326,7 @@ function DetailDrawer({ pra, onClose }) {
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchDetail = useCallback(() => {
     if (!pra) { setDetail(null); return; }
     setLoading(true);
     PerformedRiskAssessmentService.get(pra.id)
@@ -621,12 +1335,15 @@ function DetailDrawer({ pra, onClose }) {
         setDetail(d);
       })
       .catch(() => {
-        // fallback to the row data from the list
         setDetail(pra);
         toast.error('Could not load full details.');
       })
       .finally(() => setLoading(false));
   }, [pra]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   if (!pra) return null;
 
@@ -722,7 +1439,7 @@ function DetailDrawer({ pra, onClose }) {
 
                 <div className="space-y-3">
                   {entries.map((entry, i) => (
-                    <EntryCard key={entry.id ?? i} entry={entry} index={i} />
+                    <EntryCard key={entry.id ?? i} entry={entry} index={i} onRefresh={fetchDetail} />
                   ))}
                 </div>
               </section>
@@ -734,161 +1451,245 @@ function DetailDrawer({ pra, onClose }) {
   );
 }
 
-function EntryCard({ entry, index }) {
-  const [expanded, setExpanded] = useState(false);
-  const hasMeta = !!(
-    entry.people_at_risks?.length ||
-    entry.contractors?.length ||
-    entry.priority ||
-    entry.corrective_actions?.length
-  );
+function EntryCard({ entry, index, onRefresh }) {
+  const [expanded, setExpanded]       = useState(false);
+  const [executeOpen, setExecuteOpen] = useState(false);
+  const [correctiveOpen, setCorrectiveOpen] = useState(false);
+  const [priorityOpen, setPriorityOpen]     = useState(false);
+  const [contractorOpen, setContractorOpen] = useState(false);
+
+  const isExecuted = !!entry.hazard_id;
 
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ border: '1px solid var(--border)' }}
-    >
-      {/* Entry header */}
-      <button
-        type="button"
-        className="w-full flex items-start gap-3 p-3 text-left hover:opacity-90 transition-opacity"
-        style={{ background: 'var(--bg-raised)' }}
-        onClick={() => setExpanded((o) => !o)}
+    <>
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ border: '1px solid var(--border)' }}
       >
-        <span
-          className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
-          style={{ background: 'rgba(22,163,74,.15)', color: '#16a34a' }}
+        {/* Entry header */}
+        <button
+          type="button"
+          className="w-full flex items-start gap-3 p-3 text-left hover:opacity-90 transition-opacity"
+          style={{ background: 'var(--bg-raised)' }}
+          onClick={() => setExpanded((o) => !o)}
         >
-          {index + 1}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
-            {entry.hazard_description}
-          </p>
-          <p className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>
-            Controls: {entry.current_control_measures}
-          </p>
-        </div>
-        <span
-          className="text-xs flex-shrink-0 mt-0.5 transition-transform"
-          style={{ color: 'var(--text-muted)', transform: expanded ? 'rotate(90deg)' : 'rotate(0)' }}
-        >
-          ›
-        </span>
-      </button>
-
-      {/* Entry details */}
-      {expanded && (
-        <div
-          className="px-4 pb-4 pt-2 space-y-3"
-          style={{ background: 'var(--bg)' }}
-        >
-          {entry.due_date && (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Due: <span style={{ color: 'var(--text)' }}>{formatDate(entry.due_date)}</span>
+          <span
+            className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
+            style={{ background: 'rgba(22,163,74,.15)', color: '#16a34a' }}
+          >
+            {index + 1}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
+              {entry.hazard_description}
             </p>
-          )}
-          {entry.note && (
-            <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>{entry.note}</p>
-          )}
+            <p className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>
+              Controls: {entry.current_control_measures}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+            {isExecuted && (
+              <span
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                style={{ background: 'rgba(22,163,74,.12)', color: '#16a34a' }}
+              >
+                <CheckCircleIcon className="h-3 w-3" /> Done
+              </span>
+            )}
+            <span
+              className="text-xs transition-transform"
+              style={{
+                color: 'var(--text-muted)',
+                display: 'inline-block',
+                transform: expanded ? 'rotate(90deg)' : 'rotate(0)',
+              }}
+            >
+              ›
+            </span>
+          </div>
+        </button>
 
-          {/* People at risk */}
-          {entry.people_at_risks?.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-                People at Risk
+        {/* Entry details */}
+        {expanded && (
+          <div
+            className="px-4 pb-4 pt-2 space-y-4"
+            style={{ background: 'var(--bg)' }}
+          >
+            {entry.due_date && (
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Due: <span style={{ color: 'var(--text)' }}>{formatDate(entry.due_date)}</span>
               </p>
-              <div className="flex flex-wrap gap-1">
-                {entry.people_at_risks.map((p, pi) => (
-                  <span
-                    key={pi}
-                    className="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                    style={{ background: 'rgba(220,38,38,.1)', color: '#dc2626' }}
-                  >
-                    {p.title ?? p.name ?? p}
-                  </span>
-                ))}
+            )}
+            {entry.note && (
+              <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>{entry.note}</p>
+            )}
+
+            {/* People at risk */}
+            {entry.people_at_risks?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+                  People at Risk
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {entry.people_at_risks.map((p, pi) => (
+                    <span
+                      key={pi}
+                      className="px-2 py-0.5 rounded-full text-[11px] font-medium"
+                      style={{ background: 'rgba(220,38,38,.1)', color: '#dc2626' }}
+                    >
+                      {p.title ?? p.name ?? p}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Contractors */}
-          {entry.contractors?.length > 0 && (
+            {/* Contractors */}
             <div>
-              <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-                Contractors
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {entry.contractors.map((c) => (
-                  <span
-                    key={c.id}
-                    className="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                    style={{ background: 'rgba(124,58,237,.1)', color: '#7c3aed' }}
-                  >
-                    {displayName(c)}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Priority */}
-          {entry.priority && (
-            <div>
-              <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-                Priority
-              </p>
-              <div className="flex items-center gap-2">
-                <span
-                  className="px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                  style={{
-                    background: 'rgba(217,119,6,.12)',
-                    color: '#d97706',
-                  }}
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Contractors</p>
+                <button
+                  type="button"
+                  onClick={() => setContractorOpen(true)}
+                  className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md hover:opacity-80"
+                  style={{ background: 'rgba(124,58,237,.1)', color: '#7c3aed' }}
                 >
-                  {entry.priority.priority_level}
-                </span>
-                {entry.priority.due_date && (
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Due: {formatDate(entry.priority.due_date)}
-                  </span>
-                )}
+                  <UserGroupIcon className="h-3 w-3" />
+                  {entry.contractors?.length > 0 ? 'Edit' : 'Assign'}
+                </button>
               </div>
+              {entry.contractors?.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {entry.contractors.map((c) => (
+                    <span
+                      key={c.id}
+                      className="px-2 py-0.5 rounded-full text-[11px] font-medium"
+                      style={{ background: 'rgba(124,58,237,.1)', color: '#7c3aed' }}
+                    >
+                      {displayName(c)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No contractors assigned.</p>
+              )}
             </div>
-          )}
 
-          {/* Corrective Actions */}
-          {entry.corrective_actions?.length > 0 && (
+            {/* Priority */}
             <div>
-              <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
-                Corrective Actions ({entry.corrective_actions.length})
-              </p>
-              <div className="space-y-2">
-                {entry.corrective_actions.map((ca) => (
-                  <div
-                    key={ca.id}
-                    className="rounded-lg p-2.5 space-y-1.5"
-                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-                  >
-                    <p className="text-xs" style={{ color: 'var(--text)' }}>{ca.description}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      <RiskScoreBadge score={ca.inherent_risk_score}  label="Inherent" />
-                      <RiskScoreBadge score={ca.residual_risk_score}  label="Residual" />
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Priority</p>
+                <button
+                  type="button"
+                  onClick={() => setPriorityOpen(true)}
+                  className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md hover:opacity-80"
+                  style={{ background: 'rgba(217,119,6,.1)', color: '#d97706' }}
+                >
+                  <FlagIcon className="h-3 w-3" />
+                  {entry.priority ? 'Edit' : 'Set'}
+                </button>
               </div>
+              {entry.priority ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                    style={{ background: 'rgba(217,119,6,.12)', color: '#d97706' }}
+                  >
+                    {entry.priority.priority_level}
+                  </span>
+                  {entry.priority.due_date && (
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      Due: {formatDate(entry.priority.due_date)}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No priority set.</p>
+              )}
             </div>
-          )}
 
-          {!hasMeta && (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              No additional details assigned.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
+            {/* Corrective Actions */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                  Corrective Actions
+                  {entry.corrective_actions?.length > 0 && ` (${entry.corrective_actions.length})`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCorrectiveOpen(true)}
+                  className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md hover:opacity-80"
+                  style={{ background: 'rgba(217,119,6,.1)', color: '#d97706' }}
+                >
+                  <PlusIcon className="h-3 w-3" /> Add
+                </button>
+              </div>
+              {entry.corrective_actions?.length > 0 ? (
+                <div className="space-y-2">
+                  {entry.corrective_actions.map((ca) => (
+                    <div
+                      key={ca.id}
+                      className="rounded-lg p-2.5 space-y-1.5"
+                      style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+                    >
+                      <p className="text-xs" style={{ color: 'var(--text)' }}>{ca.description}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <RiskScoreBadge score={ca.inherent_risk_score} label="Inherent" />
+                        <RiskScoreBadge score={ca.residual_risk_score} label="Residual" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No corrective actions yet.</p>
+              )}
+            </div>
+
+            {/* Execute entry */}
+            {!isExecuted ? (
+              <button
+                type="button"
+                onClick={() => setExecuteOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
+                style={{
+                  background: 'rgba(22,163,74,.12)',
+                  color: '#16a34a',
+                  border: '1px solid rgba(22,163,74,.25)',
+                }}
+              >
+                <BoltIcon className="h-4 w-4" /> Execute This Entry
+              </button>
+            ) : (
+              <div
+                className="flex items-center gap-2 py-1.5 px-3 rounded-lg text-xs font-medium"
+                style={{ background: 'rgba(22,163,74,.08)', color: '#16a34a' }}
+              >
+                <CheckCircleIcon className="h-4 w-4 flex-shrink-0" />
+                Entry executed — linked to Hazard #{entry.hazard_id}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Per-entry modals */}
+      <ExecuteEntryModal
+        entry={entry} open={executeOpen}
+        onClose={() => setExecuteOpen(false)} onDone={onRefresh}
+      />
+      <CorrectiveActionModal
+        entry={entry} open={correctiveOpen}
+        onClose={() => setCorrectiveOpen(false)} onDone={onRefresh}
+      />
+      <PriorityModal
+        entry={entry} open={priorityOpen}
+        onClose={() => setPriorityOpen(false)} onDone={onRefresh}
+      />
+      <ContractorModal
+        entry={entry} open={contractorOpen}
+        onClose={() => setContractorOpen(false)} onDone={onRefresh}
+      />
+    </>
   );
 }
 
@@ -909,6 +1710,7 @@ export default function PerformedRiskAssessmentsPage() {
   const canWrite = hasPermission('performed_risk_assessments.update');
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editPra,    setEditPra]    = useState(null);
   const [detailPra,  setDetailPra]  = useState(null);
   const [deleteTgt,  setDeleteTgt]  = useState(null);
   const [deleting,   setDeleting]   = useState(false);
@@ -944,6 +1746,16 @@ export default function PerformedRiskAssessmentsPage() {
     if (createPerformedRiskAssessment.fulfilled.match(result)) {
       toast.success('Performed risk assessment created.');
       setCreateOpen(false);
+      dispatch(fetchPerformedRiskAssessments(filters));
+    }
+  }
+
+  async function handleEdit(payload) {
+    if (!editPra) return;
+    const result = await dispatch(updatePerformedRiskAssessment({ id: editPra.id, data: payload }));
+    if (updatePerformedRiskAssessment.fulfilled.match(result)) {
+      toast.success('Performed risk assessment updated.');
+      setEditPra(null);
       dispatch(fetchPerformedRiskAssessments(filters));
     }
   }
@@ -1095,7 +1907,9 @@ export default function PerformedRiskAssessmentsPage() {
                       <td className="ui-td text-right">
                         <ActionMenu
                           onView={() => setDetailPra(pra)}
+                          onEdit={() => setEditPra(pra)}
                           onDelete={() => setDeleteTgt(pra)}
+                          canEdit={canWrite}
                           canDelete={canWrite}
                         />
                       </td>
@@ -1118,6 +1932,14 @@ export default function PerformedRiskAssessmentsPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onSave={handleSave}
+        saving={actionLoading}
+        saveError={actionError}
+      />
+      <CreateModal
+        open={!!editPra}
+        pra={editPra}
+        onClose={() => setEditPra(null)}
+        onSave={handleEdit}
         saving={actionLoading}
         saveError={actionError}
       />
