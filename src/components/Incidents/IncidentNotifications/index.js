@@ -1430,7 +1430,7 @@ function DetailDrawer({ record, onClose, canEdit, onUpdate }) {
             <button type="button" onClick={onClose}
               className="p-1.5 rounded-lg hover:opacity-75 flex-shrink-0"
               style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              <XMarkIcon className="h-4.5 w-4.5" />
+              <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
         </div>
