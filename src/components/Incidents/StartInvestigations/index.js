@@ -15,7 +15,7 @@
  *  - Delete confirmation modal
  *  - Permission-gated write actions (start_incident_investigations.update)
  */
-import { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
   PlusIcon,
@@ -31,6 +31,12 @@ import {
   BuildingOfficeIcon,
   DocumentTextIcon,
   BoltIcon,
+  CloudArrowUpIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import { EllipsisVerticalIcon } from '@heroicons/react/20/solid';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
@@ -60,6 +66,16 @@ const STEPS = [
   'Properties Involved',
   'Incident Descriptions',
   'Actions Taken',
+  'Review',
+];
+
+const STEP_META = [
+  { Icon: ClipboardDocumentCheckIcon, label: 'Incident' },
+  { Icon: UserCircleIcon,             label: 'People' },
+  { Icon: BuildingOfficeIcon,         label: 'Properties' },
+  { Icon: DocumentTextIcon,           label: 'Descriptions' },
+  { Icon: BoltIcon,                   label: 'Actions' },
+  { Icon: CheckCircleIcon,            label: 'Review' },
 ];
 
 const EMPTY_PERSON = { user_id: '', injury_sustained: 'no', nature_of_injury: '', _user: null };
@@ -175,26 +191,40 @@ function DeleteConfirmModal({ open, name, onConfirm, onCancel, loading }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div className="ui-card max-w-sm w-full p-6 space-y-4">
-        <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-          Delete Investigation
-        </h3>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Are you sure you want to delete{' '}
-          <strong style={{ color: 'var(--text)' }}>{name}</strong>?
-          This action cannot be undone.
-        </p>
-        <div className="flex justify-end gap-2 pt-1">
+      style={{ background: 'rgba(0,0,0,0.55)' }}>
+      <div className="ui-card w-full max-w-sm overflow-hidden"
+        style={{ border: '1px solid rgba(239,68,68,.25)' }}>
+        <div className="px-6 pt-6 pb-5 text-center"
+          style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'rgba(239,68,68,.1)', border: '2px solid rgba(239,68,68,.2)' }}>
+            <TrashIcon className="h-7 w-7" style={{ color: '#ef4444' }} />
+          </div>
+          <h3 className="text-base font-bold mb-1" style={{ color: 'var(--text)' }}>
+            Delete Investigation
+          </h3>
+          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl"
+            style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)' }}>
+            <ClipboardDocumentCheckIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#ef4444' }} />
+            <span className="text-sm font-semibold" style={{ color: '#ef4444' }}>{name}</span>
+          </div>
+          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+            This action <strong style={{ color: 'var(--text)' }}>cannot be undone.</strong>{' '}
+            All investigation data will be permanently removed.
+          </p>
+        </div>
+        <div className="flex gap-3 px-6 py-4" style={{ background: 'var(--bg-surface)' }}>
           <button type="button" onClick={onCancel} disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
-            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-            Cancel
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80"
+            style={{ border: '1px solid var(--border)', color: 'var(--text)', background: 'var(--bg-raised)' }}>
+            Keep it
           </button>
           <button type="button" onClick={onConfirm} disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90"
-            style={{ background: 'var(--danger)' }}>
-            {loading ? 'Deleting…' : 'Delete'}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 flex items-center justify-center gap-2"
+            style={{ background: loading ? 'rgba(239,68,68,.5)' : '#ef4444' }}>
+            {loading
+              ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Deleting…</>
+              : <><TrashIcon className="h-4 w-4" /> Yes, delete</>}
           </button>
         </div>
       </div>
@@ -497,336 +527,626 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
 
   if (!open) return null;
 
+  const PURPLE = '#7c3aed';
+
+  /* ── Reusable step card shell ── */
+  function StepCard({ index, total, label, onRemove, children }) {
+    return (
+      <div className="rounded-2xl overflow-hidden"
+        style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+        <div className="flex items-center justify-between px-4 py-2.5"
+          style={{ background: 'rgba(124,58,237,.06)', borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+              style={{ background: PURPLE }}>{index + 1}</span>
+            <span className="text-xs font-semibold" style={{ color: PURPLE }}>{label} #{index + 1}</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>of {total}</span>
+          </div>
+          {total > 1 && (
+            <button type="button" onClick={onRemove}
+              className="p-1 rounded-lg hover:opacity-75"
+              style={{ border: '1px solid rgba(239,68,68,.3)', color: 'var(--danger)' }}>
+              <TrashIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="p-4 space-y-3">{children}</div>
+      </div>
+    );
+  }
+
+  /* ── File upload zone ── */
+  function FileUploadZone({ value, onChange }) {
+    const fileRef = useRef(null);
+    const [dragging, setDragging] = useState(false);
+
+    function handleDrop(e) {
+      e.preventDefault();
+      setDragging(false);
+      const f = e.dataTransfer.files?.[0];
+      if (f) onChange(f);
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    if (value) {
+      return (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+          style={{ background: 'rgba(124,58,237,.06)', border: '1px solid rgba(124,58,237,.25)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(124,58,237,.15)' }}>
+            <DocumentTextIcon className="h-5 w-5" style={{ color: PURPLE }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{value.name}</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatSize(value.size)}</p>
+          </div>
+          <button type="button" onClick={() => onChange(null)}
+            className="p-1.5 rounded-lg hover:opacity-75 flex-shrink-0"
+            style={{ border: '1px solid rgba(239,68,68,.3)', color: 'var(--danger)' }}>
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        className="w-full rounded-2xl px-4 py-6 flex flex-col items-center gap-2 transition-all"
+        style={{
+          border: `2px dashed ${dragging ? PURPLE : 'var(--border)'}`,
+          background: dragging ? 'rgba(124,58,237,.05)' : 'var(--bg-surface)',
+        }}
+      >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: 'rgba(124,58,237,.1)' }}>
+          <CloudArrowUpIcon className="h-5 w-5" style={{ color: PURPLE }} />
+        </div>
+        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Drop a file or click to browse</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>PDF, images, documents — max 20 MB</p>
+        <input ref={fileRef} type="file" className="hidden"
+          onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+      </button>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}>
       <div className="ui-card w-full max-w-2xl"
         style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-5"
-          style={{ borderBottom: '1px solid var(--border)' }}>
-          <div>
-            <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-              {record ? 'Edit Investigation' : 'Start New Investigation'}
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Step {step + 1} of {STEPS.length} — {STEPS[step]}
-            </p>
+        {/* ── Modal header ── */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4"
+          style={{
+            background: 'linear-gradient(135deg, rgba(124,58,237,.1) 0%, rgba(124,58,237,.02) 100%)',
+            borderBottom: '1px solid var(--border)',
+          }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(124,58,237,.15)' }}>
+              <ClipboardDocumentCheckIcon className="h-5 w-5" style={{ color: PURPLE }} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold" style={{ color: 'var(--text)' }}>
+                {record ? 'Edit Investigation' : 'Start New Investigation'}
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                Step {step + 1} of {STEPS.length} — {STEPS[step]}
+              </p>
+            </div>
           </div>
           <button type="button" onClick={onClose}
-            className="p-1.5 rounded hover:opacity-75" style={{ color: 'var(--text-muted)' }}>
+            className="p-1.5 rounded-lg hover:opacity-75"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Progress */}
-        <div className="flex gap-1 px-5 pt-4">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex-1 h-1 rounded-full transition-all"
-              style={{ background: i <= step ? '#7c3aed' : 'var(--border)' }} />
-          ))}
+        {/* ── Stepper ── */}
+        <div className="flex items-center px-4 py-3 gap-1"
+          style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+          {STEP_META.map((m, i) => {
+            const done   = i < step;
+            const active = i === step;
+            return (
+              <React.Fragment key={m.label}>
+                <div className="flex flex-col items-center gap-0.5" style={{ minWidth: 0 }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                    style={{
+                      background: done ? 'rgba(16,185,129,.15)' : active ? PURPLE : 'var(--border)',
+                      color: done ? '#10b981' : active ? '#fff' : 'var(--text-muted)',
+                    }}>
+                    {done ? '✓' : i + 1}
+                  </div>
+                  <span className="text-[9px] font-medium text-center leading-tight hidden sm:block"
+                    style={{ color: active ? PURPLE : 'var(--text-muted)', maxWidth: 52 }}>
+                    {m.label}
+                  </span>
+                </div>
+                {i < STEP_META.length - 1 && (
+                  <div className="flex-1 h-px mx-0.5 transition-all"
+                    style={{ background: i < step ? '#10b981' : 'var(--border)' }} />
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
 
-        {/* Body */}
+        {/* ── Body ── */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
 
-          {/* ── Step 0: Select Incident ── */}
+          {/* Step 0: Select Incident */}
           {step === 0 && (
             <>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                  Incident Notification <span style={{ color: 'var(--danger)' }}>*</span>
-                </label>
-                <IncidentPicker value={selectedIncident} onChange={setSelectedIncident} />
-                <FieldError msg={errors.incident} />
+              <div className="rounded-2xl overflow-hidden"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+                <div className="flex items-center gap-2 px-4 py-2.5"
+                  style={{ background: 'rgba(124,58,237,.06)', borderBottom: '1px solid var(--border)' }}>
+                  <ClipboardDocumentCheckIcon className="h-4 w-4" style={{ color: PURPLE }} />
+                  <p className="text-xs font-semibold" style={{ color: PURPLE }}>Incident to Investigate</p>
+                  <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{ background: 'rgba(239,68,68,.1)', color: '#ef4444' }}>Required</span>
+                </div>
+                <div className="p-4">
+                  <IncidentPicker value={selectedIncident} onChange={setSelectedIncident} />
+                  <FieldError msg={errors.incident} />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                  Investigation Notes
-                </label>
-                <textarea rows={4} className="ui-input w-full"
-                  placeholder="Overview of the investigation…"
-                  value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+              <div className="rounded-2xl overflow-hidden"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+                <div className="flex items-center gap-2 px-4 py-2.5"
+                  style={{ background: 'rgba(124,58,237,.06)', borderBottom: '1px solid var(--border)' }}>
+                  <PencilSquareIcon className="h-4 w-4" style={{ color: PURPLE }} />
+                  <p className="text-xs font-semibold" style={{ color: PURPLE }}>Investigation Notes</p>
+                  <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>Optional</span>
+                </div>
+                <div className="p-4">
+                  <textarea rows={4} className="ui-input w-full"
+                    placeholder="Provide an overview of the investigation…"
+                    value={notes} onChange={(e) => setNotes(e.target.value)} />
+                </div>
               </div>
             </>
           )}
 
-          {/* ── Step 1: People Injured ── */}
+          {/* Step 1: People Injured */}
           {step === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {people.map((p, i) => (
-                <div key={i} className="rounded-xl p-4 relative"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                      Person #{i + 1}
-                    </span>
-                    {people.length > 1 && (
-                      <button type="button" onClick={() => removePerson(i)}
-                        className="p-0.5 hover:opacity-75" style={{ color: 'var(--danger)' }}>
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    )}
+                <StepCard key={i} index={i} total={people.length} label="Person" onRemove={() => removePerson(i)}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      USER <span style={{ color: 'var(--danger)' }}>*</span>
+                    </label>
+                    <UserPicker value={p._user} onChange={(u) => updatePerson(i, '_user', u)} />
+                    <FieldError msg={errors[`person_${i}_user`]} />
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        User <span style={{ color: 'var(--danger)' }}>*</span>
-                      </label>
-                      <UserPicker value={p._user} onChange={(u) => updatePerson(i, '_user', u)} />
-                      <FieldError msg={errors[`person_${i}_user`]} />
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      INJURY SUSTAINED
+                    </label>
+                    <div className="flex gap-2">
+                      {['no', 'yes'].map((val) => (
+                        <button key={val} type="button"
+                          onClick={() => updatePerson(i, 'injury_sustained', val)}
+                          className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all"
+                          style={{
+                            background: p.injury_sustained === val
+                              ? (val === 'yes' ? 'rgba(239,68,68,.12)' : 'rgba(16,185,129,.12)')
+                              : 'var(--bg-surface)',
+                            border: `1px solid ${p.injury_sustained === val
+                              ? (val === 'yes' ? 'rgba(239,68,68,.4)' : 'rgba(16,185,129,.4)')
+                              : 'var(--border)'}`,
+                            color: p.injury_sustained === val
+                              ? (val === 'yes' ? '#ef4444' : '#10b981')
+                              : 'var(--text-muted)',
+                          }}>
+                          {val === 'yes' ? '⚠ Yes' : '✓ No'}
+                        </button>
+                      ))}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Injury Sustained
-                      </label>
-                      <select className="ui-input w-full"
-                        value={p.injury_sustained}
-                        onChange={(e) => updatePerson(i, 'injury_sustained', e.target.value)}>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
-                    </div>
-                    {p.injury_sustained === 'yes' && (
-                      <div>
-                        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                          Nature of Injury <span style={{ color: 'var(--danger)' }}>*</span>
-                        </label>
-                        <input type="text" className="ui-input w-full"
-                          placeholder="Describe the injury…"
-                          value={p.nature_of_injury}
-                          onChange={(e) => updatePerson(i, 'nature_of_injury', e.target.value)} />
-                        <FieldError msg={errors[`person_${i}_injury`]} />
-                      </div>
-                    )}
                   </div>
-                </div>
+                  {p.injury_sustained === 'yes' && (
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        NATURE OF INJURY <span style={{ color: 'var(--danger)' }}>*</span>
+                      </label>
+                      <input type="text" className="ui-input w-full"
+                        placeholder="Describe the injury…"
+                        value={p.nature_of_injury}
+                        onChange={(e) => updatePerson(i, 'nature_of_injury', e.target.value)} />
+                      <FieldError msg={errors[`person_${i}_injury`]} />
+                    </div>
+                  )}
+                </StepCard>
               ))}
               <button type="button" onClick={addPerson}
-                className="flex items-center gap-1.5 text-sm font-medium hover:opacity-75"
-                style={{ color: 'var(--accent)' }}>
-                <PlusIcon className="h-4 w-4" /> Add Person
+                className="w-full py-2.5 rounded-2xl flex items-center justify-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-all"
+                style={{ border: `2px dashed ${PURPLE}`, color: PURPLE, background: 'rgba(124,58,237,.04)' }}>
+                <PlusIcon className="h-4 w-4" /> Add Another Person
               </button>
             </div>
           )}
 
-          {/* ── Step 2: Properties Involved ── */}
+          {/* Step 2: Properties Involved */}
           {step === 2 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {properties.map((prop, i) => (
-                <div key={i} className="rounded-xl p-4"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                      Property #{i + 1}
-                    </span>
-                    {properties.length > 1 && (
-                      <button type="button" onClick={() => removeProperty(i)}
-                        className="p-0.5 hover:opacity-75" style={{ color: 'var(--danger)' }}>
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    )}
+                <StepCard key={i} index={i} total={properties.length} label="Property" onRemove={() => removeProperty(i)}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>TYPE OF PROPERTY</label>
+                    <input type="text" className="ui-input w-full"
+                      placeholder="e.g. Vehicle, Equipment, Building…"
+                      value={prop.type_of_property}
+                      onChange={(e) => updateProperty(i, 'type_of_property', e.target.value)} />
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Type of Property
-                      </label>
-                      <input type="text" className="ui-input w-full"
-                        placeholder="e.g. Vehicle, Equipment, Building…"
-                        value={prop.type_of_property}
-                        onChange={(e) => updateProperty(i, 'type_of_property', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Description
-                      </label>
-                      <input type="text" className="ui-input w-full"
-                        placeholder="Property description…"
-                        value={prop.description}
-                        onChange={(e) => updateProperty(i, 'description', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Nature of Damage
-                      </label>
-                      <input type="text" className="ui-input w-full"
-                        placeholder="Describe the damage…"
-                        value={prop.nature_of_damage}
-                        onChange={(e) => updateProperty(i, 'nature_of_damage', e.target.value)} />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>DESCRIPTION</label>
+                    <input type="text" className="ui-input w-full"
+                      placeholder="Property description…"
+                      value={prop.description}
+                      onChange={(e) => updateProperty(i, 'description', e.target.value)} />
                   </div>
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>NATURE OF DAMAGE</label>
+                    <input type="text" className="ui-input w-full"
+                      placeholder="Describe the damage…"
+                      value={prop.nature_of_damage}
+                      onChange={(e) => updateProperty(i, 'nature_of_damage', e.target.value)} />
+                  </div>
+                </StepCard>
               ))}
               <button type="button" onClick={addProperty}
-                className="flex items-center gap-1.5 text-sm font-medium hover:opacity-75"
-                style={{ color: 'var(--accent)' }}>
-                <PlusIcon className="h-4 w-4" /> Add Property
+                className="w-full py-2.5 rounded-2xl flex items-center justify-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-all"
+                style={{ border: `2px dashed ${PURPLE}`, color: PURPLE, background: 'rgba(124,58,237,.04)' }}>
+                <PlusIcon className="h-4 w-4" /> Add Another Property
               </button>
             </div>
           )}
 
-          {/* ── Step 3: Incident Descriptions ── */}
+          {/* Step 3: Incident Descriptions */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {descriptions.map((d, i) => (
-                <div key={i} className="rounded-xl p-4"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                      Description #{i + 1}
-                    </span>
-                    {descriptions.length > 1 && (
-                      <button type="button" onClick={() => removeDesc(i)}
-                        className="p-0.5 hover:opacity-75" style={{ color: 'var(--danger)' }}>
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    )}
+                <StepCard key={i} index={i} total={descriptions.length} label="Description" onRemove={() => removeDesc(i)}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      NARRATIVE <span style={{ color: 'var(--danger)' }}>*</span>
+                    </label>
+                    <textarea rows={4} className="ui-input w-full"
+                      placeholder="Describe what happened in detail…"
+                      value={d.narrative}
+                      onChange={(e) => updateDesc(i, 'narrative', e.target.value)} />
+                    <FieldError msg={errors[`desc_${i}`]} />
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Narrative <span style={{ color: 'var(--danger)' }}>*</span>
-                      </label>
-                      <textarea rows={3} className="ui-input w-full"
-                        placeholder="Describe what happened…"
-                        value={d.narrative}
-                        onChange={(e) => updateDesc(i, 'narrative', e.target.value)} />
-                      <FieldError msg={errors[`desc_${i}`]} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Supporting File (optional)
-                      </label>
-                      <input type="file" className="ui-input w-full text-xs"
-                        onChange={(e) => updateDesc(i, 'file', e.target.files?.[0] ?? null)} />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>SUPPORTING FILE
+                      <span className="ml-1 font-normal normal-case" style={{ color: 'var(--text-muted)' }}>(optional)</span>
+                    </label>
+                    <FileUploadZone
+                      value={d.file ?? null}
+                      onChange={(f) => updateDesc(i, 'file', f)}
+                    />
                   </div>
-                </div>
+                </StepCard>
               ))}
               <button type="button" onClick={addDesc}
-                className="flex items-center gap-1.5 text-sm font-medium hover:opacity-75"
-                style={{ color: 'var(--accent)' }}>
-                <PlusIcon className="h-4 w-4" /> Add Description
+                className="w-full py-2.5 rounded-2xl flex items-center justify-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-all"
+                style={{ border: `2px dashed ${PURPLE}`, color: PURPLE, background: 'rgba(124,58,237,.04)' }}>
+                <PlusIcon className="h-4 w-4" /> Add Another Description
               </button>
             </div>
           )}
 
-          {/* ── Step 4: Actions Taken / Review ── */}
+          {/* Step 4: Actions Taken */}
           {step === 4 && (
-            <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--text-muted)' }}>Actions Taken</p>
+            <div className="space-y-3">
               {actions.map((a, i) => (
-                <div key={i} className="rounded-xl p-4"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                      Action #{i + 1}
-                    </span>
-                    {actions.length > 1 && (
-                      <button type="button" onClick={() => removeAction(i)}
-                        className="p-0.5 hover:opacity-75" style={{ color: 'var(--danger)' }}>
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    )}
+                <StepCard key={i} index={i} total={actions.length} label="Action" onRemove={() => removeAction(i)}>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>DESCRIPTION</label>
+                    <input type="text" className="ui-input w-full"
+                      placeholder="What action was taken?"
+                      value={a.description}
+                      onChange={(e) => updateAction(i, 'description', e.target.value)} />
                   </div>
-                  <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>ASSIGNED TO</label>
+                    <UserPicker value={a._user} onChange={(u) => updateAction(i, '_user', u)} placeholder="Search user…" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Description
-                      </label>
-                      <input type="text" className="ui-input w-full"
-                        placeholder="What action was taken?"
-                        value={a.description}
-                        onChange={(e) => updateAction(i, 'description', e.target.value)} />
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>ACTION DATE</label>
+                      <input type="date" className="ui-input w-full"
+                        value={a.action_date}
+                        onChange={(e) => updateAction(i, 'action_date', e.target.value)} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                        Assigned To
-                      </label>
-                      <UserPicker value={a._user}
-                        onChange={(u) => updateAction(i, '_user', u)}
-                        placeholder="Search user…" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                          Action Date
-                        </label>
-                        <input type="date" className="ui-input w-full"
-                          value={a.action_date}
-                          onChange={(e) => updateAction(i, 'action_date', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-                          Action Time
-                        </label>
-                        <input type="time" className="ui-input w-full"
-                          value={a.action_time}
-                          onChange={(e) => updateAction(i, 'action_time', e.target.value)} />
-                      </div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>ACTION TIME</label>
+                      <input type="time" className="ui-input w-full"
+                        value={a.action_time}
+                        onChange={(e) => updateAction(i, 'action_time', e.target.value)} />
                     </div>
                   </div>
-                </div>
+                </StepCard>
               ))}
               <button type="button" onClick={addAction}
-                className="flex items-center gap-1.5 text-sm font-medium hover:opacity-75"
-                style={{ color: 'var(--accent)' }}>
-                <PlusIcon className="h-4 w-4" /> Add Action
+                className="w-full py-2.5 rounded-2xl flex items-center justify-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-all"
+                style={{ border: `2px dashed ${PURPLE}`, color: PURPLE, background: 'rgba(124,58,237,.04)' }}>
+                <PlusIcon className="h-4 w-4" /> Add Another Action
               </button>
-
-              {/* Summary */}
-              <div className="rounded-xl p-4 mt-2"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Review Summary
-                </p>
-                <div className="space-y-1 text-xs" style={{ color: 'var(--text)' }}>
-                  <p><strong>Incident:</strong> {selectedIncident?.incident_type ?? '—'} · {selectedIncident?.location}</p>
-                  <p><strong>Notes:</strong> {notes || '—'}</p>
-                  <p><strong>People Injured:</strong> {people.filter(p => p._user || p.user_id).length}</p>
-                  <p><strong>Properties Involved:</strong> {properties.filter(p => p.type_of_property).length}</p>
-                  <p><strong>Descriptions:</strong> {descriptions.filter(d => d.narrative).length}</p>
-                  <p><strong>Actions Taken:</strong> {actions.filter(a => a.description).length}</p>
-                </div>
-              </div>
             </div>
           )}
 
-          {saveError && (
-            <p className="text-sm" style={{ color: 'var(--danger)' }}>{saveError}</p>
+          {/* Step 5: Review */}
+          {step === 5 && (() => {
+            const filledPeople     = people.filter((p) => p._user || p.user_id);
+            const filledProperties = properties.filter((p) => p.type_of_property);
+            const filledDescs      = descriptions.filter((d) => d.narrative?.trim());
+            const filledActions    = actions.filter((a) => a.description?.trim());
+            const ready            = !!selectedIncident && filledDescs.length > 0;
+
+            function SummarySection({ icon: Icon, label, count, color, children }) {
+              return (
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+                  <div className="flex items-center gap-2 px-4 py-2.5"
+                    style={{ background: `${color}10`, borderBottom: count > 0 ? '1px solid var(--border)' : 'none' }}>
+                    <Icon className="h-4 w-4" style={{ color }} />
+                    <p className="text-xs font-semibold flex-1" style={{ color }}>{label}</p>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: `${color}20`, color }}>{count}</span>
+                  </div>
+                  {count === 0 ? (
+                    <div className="px-4 py-3 flex items-center gap-2">
+                      <ExclamationTriangleIcon className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None added</p>
+                    </div>
+                  ) : children}
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+
+                {/* Incident hero card */}
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+                  <div className="px-5 py-4"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(124,58,237,.1) 0%, rgba(124,58,237,.03) 100%)',
+                      borderBottom: '1px solid var(--border)',
+                    }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(124,58,237,.15)' }}>
+                        <ClipboardDocumentCheckIcon className="h-5 w-5" style={{ color: PURPLE }} />
+                      </div>
+                      <div>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Incident</p>
+                        <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                          {selectedIncident
+                            ? `${selectedIncident.incident_type ?? '#' + selectedIncident.id} — ${selectedIncident.location ?? ''}`
+                            : '—'}
+                        </p>
+                      </div>
+                      <span className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-full"
+                        style={{ background: record ? 'rgba(245,158,11,.12)' : 'rgba(124,58,237,.12)', color: record ? '#d97706' : PURPLE }}>
+                        {record ? '✎ Editing' : '+ New'}
+                      </span>
+                    </div>
+                  </div>
+                  {notes && (
+                    <div className="flex gap-3 px-4 py-3">
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: 'rgba(124,58,237,.1)' }}>
+                        <PencilSquareIcon className="h-3.5 w-3.5" style={{ color: PURPLE }} />
+                      </div>
+                      <p className="text-sm" style={{ color: 'var(--text)', lineHeight: 1.7 }}>{notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Counts grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'People Injured',       val: filledPeople.length,     color: '#ef4444', Icon: UserCircleIcon },
+                    { label: 'Properties Involved',  val: filledProperties.length, color: '#f59e0b', Icon: BuildingOfficeIcon },
+                    { label: 'Descriptions',         val: filledDescs.length,      color: '#0ea5e9', Icon: DocumentTextIcon },
+                    { label: 'Actions Taken',        val: filledActions.length,    color: '#10b981', Icon: BoltIcon },
+                  ].map(({ label, val, color, Icon }) => (
+                    <div key={label} className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                      style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${color}15` }}>
+                        <Icon className="h-4 w-4" style={{ color }} />
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold leading-none" style={{ color: 'var(--text)' }}>{val}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* People detail */}
+                <SummarySection icon={UserCircleIcon} label="People Injured" count={filledPeople.length} color="#ef4444">
+                  <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {filledPeople.map((p, i) => (
+                      <div key={i} className="flex items-center gap-3 px-4 py-2.5"
+                        style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                          style={{ background: '#ef4444' }}>
+                          {((p._user?.firstname?.[0] ?? '') + (p._user?.lastname?.[0] ?? '')).toUpperCase() || (i + 1)}
+                        </div>
+                        <p className="flex-1 text-sm" style={{ color: 'var(--text)' }}>{displayName(p._user)}</p>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                          style={{
+                            background: p.injury_sustained === 'yes' ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.1)',
+                            color: p.injury_sustained === 'yes' ? '#ef4444' : '#10b981',
+                          }}>
+                          {p.injury_sustained === 'yes' ? 'Injured' : 'No injury'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </SummarySection>
+
+                {/* Properties detail */}
+                <SummarySection icon={BuildingOfficeIcon} label="Properties Involved" count={filledProperties.length} color="#f59e0b">
+                  <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {filledProperties.map((p, i) => (
+                      <div key={i} className="flex items-center gap-3 px-4 py-2.5"
+                        style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                        <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: 'rgba(245,158,11,.15)' }}>
+                          <BuildingOfficeIcon className="h-3.5 w-3.5" style={{ color: '#f59e0b' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{p.type_of_property}</p>
+                          {p.nature_of_damage && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{p.nature_of_damage}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SummarySection>
+
+                {/* Descriptions detail */}
+                <SummarySection icon={DocumentTextIcon} label="Incident Descriptions" count={filledDescs.length} color="#0ea5e9">
+                  <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {filledDescs.map((d, i) => (
+                      <div key={i} className="px-4 py-3"
+                        style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                        <p className="text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text)' }}>{d.narrative}</p>
+                        {(d.file || d.file_name) && (
+                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                            style={{ background: 'rgba(124,58,237,.08)' }}>
+                            <DocumentTextIcon className="h-3 w-3" style={{ color: PURPLE }} />
+                            <span className="text-[10px] font-medium" style={{ color: PURPLE }}>
+                              {d.file?.name ?? d.file_name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </SummarySection>
+
+                {/* Actions detail */}
+                <SummarySection icon={BoltIcon} label="Actions Taken" count={filledActions.length} color="#10b981">
+                  <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {filledActions.map((a, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-2.5"
+                        style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                        <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: 'rgba(16,185,129,.15)' }}>
+                          <BoltIcon className="h-3.5 w-3.5" style={{ color: '#10b981' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{a.description}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {a._user && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{displayName(a._user)}</span>}
+                            {a.action_date && (
+                              <span className="flex items-center gap-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                <CalendarDaysIcon className="h-3 w-3" />{formatDate(a.action_date)}
+                              </span>
+                            )}
+                            {a.action_time && (
+                              <span className="flex items-center gap-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                <ClockIcon className="h-3 w-3" />{a.action_time}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SummarySection>
+
+                {/* Readiness banner */}
+                <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                  style={{
+                    background: ready ? 'rgba(16,185,129,.06)' : 'rgba(239,68,68,.06)',
+                    border: `1px solid ${ready ? 'rgba(16,185,129,.25)' : 'rgba(239,68,68,.25)'}`,
+                  }}>
+                  {ready
+                    ? <CheckCircleIcon className="h-5 w-5 flex-shrink-0" style={{ color: '#10b981' }} />
+                    : <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" style={{ color: '#ef4444' }} />}
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold mb-0.5"
+                      style={{ color: ready ? '#10b981' : '#ef4444' }}>
+                      {ready ? 'Ready to submit' : 'Action required'}
+                    </p>
+                    <p className="text-xs" style={{ color: ready ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                      {ready
+                        ? `Review the details above and click "${record ? 'Update Investigation' : 'Start Investigation'}" to save.`
+                        : 'Select an incident and add at least one description before submitting.'}
+                    </p>
+                  </div>
+                </div>
+
+                {saveError && (
+                  <div className="rounded-2xl px-4 py-3 flex items-center gap-2"
+                    style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)' }}>
+                    <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: '#ef4444' }} />
+                    <p className="text-sm" style={{ color: '#ef4444' }}>{saveError}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {step < 5 && saveError && (
+            <div className="rounded-xl px-4 py-3 flex items-center gap-2"
+              style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)' }}>
+              <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: '#ef4444' }} />
+              <p className="text-sm" style={{ color: '#ef4444' }}>{saveError}</p>
+            </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between gap-2 p-5"
+        {/* ── Footer ── */}
+        <div className="flex justify-between gap-2 px-5 py-4"
           style={{ borderTop: '1px solid var(--border)' }}>
           <button type="button" onClick={onClose} disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
+            className="px-4 py-2 rounded-xl text-sm font-medium hover:opacity-75"
             style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
             Cancel
           </button>
           <div className="flex gap-2">
             {step > 0 && (
               <button type="button" onClick={back} disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
+                className="px-4 py-2 rounded-xl text-sm font-medium hover:opacity-75"
                 style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
                 Back
               </button>
             )}
             {step < STEPS.length - 1 ? (
               <button type="button" onClick={next}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90"
-                style={{ background: '#7c3aed' }}>
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white hover:opacity-90"
+                style={{ background: PURPLE }}>
                 Next
               </button>
             ) : (
               <button type="button" onClick={submit} disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90"
-                style={{ background: '#7c3aed' }}>
-                {saving ? 'Saving…' : record ? 'Update' : 'Start Investigation'}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white hover:opacity-90 flex items-center gap-2"
+                style={{ background: saving ? 'rgba(124,58,237,.5)' : PURPLE }}>
+                {saving
+                  ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Saving…</>
+                  : <>{record ? 'Update Investigation' : 'Start Investigation'}</>}
               </button>
             )}
           </div>
@@ -842,147 +1162,273 @@ function InvestigationDrawer({ record, onClose }) {
   if (!record) return null;
 
   const incident = record.incident_investigation ?? {};
+  const PURPLE   = '#7c3aed';
 
-  function Section({ title, icon: Icon, color, children }) {
+  const stats = [
+    { label: 'People',      val: record.people_injured?.length     ?? 0, color: '#ef4444', Icon: UserCircleIcon },
+    { label: 'Properties',  val: record.properties_involved?.length ?? 0, color: '#f59e0b', Icon: BuildingOfficeIcon },
+    { label: 'Descriptions',val: record.incident_descriptions?.length ?? 0, color: '#0ea5e9', Icon: DocumentTextIcon },
+    { label: 'Actions',     val: record.actions_taken?.length       ?? 0, color: '#10b981', Icon: BoltIcon },
+  ];
+
+  function DrawerSection({ title, icon: Icon, color, count, children }) {
     return (
-      <div>
-        <div className="flex items-center gap-2 mb-2">
+      <div className="rounded-2xl overflow-hidden"
+        style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+        <div className="flex items-center gap-2 px-4 py-2.5"
+          style={{ background: `${color}10`, borderBottom: count > 0 ? '1px solid var(--border)' : 'none' }}>
           <Icon className="h-4 w-4" style={{ color }} />
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-            {title}
-          </p>
+          <p className="text-xs font-semibold flex-1" style={{ color }}>{title}</p>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            style={{ background: `${color}20`, color }}>{count}</span>
         </div>
-        {children}
+        {count === 0 ? (
+          <div className="flex items-center gap-2 px-4 py-3">
+            <ExclamationTriangleIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None recorded</p>
+          </div>
+        ) : children}
       </div>
     );
   }
 
   return (
     <>
-      <div className="fixed inset-0 z-30" style={{ background: 'rgba(0,0,0,0.3)' }}
+      <div className="fixed inset-0 z-30" style={{ background: 'rgba(0,0,0,0.4)' }}
         onClick={onClose} />
-      <div className="fixed top-0 right-0 bottom-0 z-40 w-full max-w-lg overflow-y-auto"
-        style={{ background: 'var(--bg-raised)', boxShadow: 'var(--shadow-md)' }}>
+      <div className="fixed top-0 right-0 bottom-0 z-40 w-full max-w-lg flex flex-col"
+        style={{ background: 'var(--bg-raised)', boxShadow: '-4px 0 24px rgba(0,0,0,.12)' }}>
 
-        {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between px-6 py-4 z-10"
-          style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(124,58,237,.12)' }}>
-              <ClipboardDocumentCheckIcon className="h-5 w-5" style={{ color: '#7c3aed' }} />
+        {/* Gradient header */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(124,58,237,.14) 0%, rgba(124,58,237,.04) 100%)',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          {/* Title row */}
+          <div className="flex items-center justify-between px-5 pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(124,58,237,.15)' }}>
+                <ClipboardDocumentCheckIcon className="h-6 w-6" style={{ color: PURPLE }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
+                  style={{ color: PURPLE, letterSpacing: '0.1em' }}>Investigation</p>
+                <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--text)' }}>
+                  #{record.id}
+                </h2>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                Investigation #{record.id}
-              </h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {incident.incident_type ?? '—'} · {incident.location ?? ''}
-              </p>
-            </div>
+            <button type="button" onClick={onClose}
+              className="p-1.5 rounded-lg hover:opacity-75"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg-raised)' }}>
+              <XMarkIcon className="h-5 w-5" />
+            </button>
           </div>
-          <button type="button" onClick={onClose}
-            className="p-1.5 rounded hover:opacity-75" style={{ color: 'var(--text-muted)' }}>
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+
+          {/* Incident info rows */}
+          <div className="px-5 pb-4 space-y-2">
+            {incident.incident_type && (
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(124,58,237,.12)' }}>
+                  <BoltIcon className="h-3.5 w-3.5" style={{ color: PURPLE }} />
+                </div>
+                <span className="text-sm" style={{ color: 'var(--text)' }}>{incident.incident_type}</span>
+              </div>
+            )}
+            {incident.location && (
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(124,58,237,.12)' }}>
+                  <BuildingOfficeIcon className="h-3.5 w-3.5" style={{ color: PURPLE }} />
+                </div>
+                <span className="text-sm" style={{ color: 'var(--text)' }}>{incident.location}</span>
+              </div>
+            )}
+            {incident.date_of_incident && (
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(124,58,237,.12)' }}>
+                  <CalendarDaysIcon className="h-3.5 w-3.5" style={{ color: PURPLE }} />
+                </div>
+                <span className="text-sm" style={{ color: 'var(--text)' }}>{formatDate(incident.date_of_incident)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-4 px-4 pb-4 gap-2">
+            {stats.map(({ label, val, color, Icon }) => (
+              <div key={label} className="rounded-xl px-2 py-2 flex flex-col items-center gap-0.5"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+                <Icon className="h-4 w-4" style={{ color }} />
+                <p className="text-sm font-bold leading-none" style={{ color: 'var(--text)' }}>{val}</p>
+                <p className="text-[9px] text-center leading-tight" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="px-6 py-5 space-y-6">
-          {/* Notes */}
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+
+          {/* Investigation notes */}
           {record.notes && (
-            <div className="rounded-xl p-4"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Notes</p>
-              <p className="text-sm" style={{ color: 'var(--text)' }}>{record.notes}</p>
+            <div className="rounded-2xl overflow-hidden"
+              style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: `${PURPLE}10`, borderBottom: '1px solid var(--border)' }}>
+                <PencilSquareIcon className="h-4 w-4" style={{ color: PURPLE }} />
+                <p className="text-xs font-semibold" style={{ color: PURPLE }}>Investigation Notes</p>
+              </div>
+              <p className="px-4 py-3 text-sm leading-relaxed" style={{ color: 'var(--text)' }}>
+                {record.notes}
+              </p>
             </div>
           )}
 
           {/* People Injured */}
-          <Section title="People Injured" icon={UserCircleIcon} color="#ef4444">
-            {record.people_injured?.length ? (
-              <div className="space-y-2">
-                {record.people_injured.map((p, i) => (
-                  <div key={i} className="rounded-xl p-3"
-                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                    <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
+          <DrawerSection title="People Injured" icon={UserCircleIcon} color="#ef4444"
+            count={record.people_injured?.length ?? 0}>
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {record.people_injured?.map((p, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{ background: '#ef4444' }}>
+                    {((p.user?.firstname?.[0] ?? '') + (p.user?.lastname?.[0] ?? '')).toUpperCase() || (i + 1)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
                       {displayName(p.user ?? {})}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      Injured: <strong>{p.injury_sustained}</strong>
-                      {p.nature_of_injury && ` — ${p.nature_of_injury}`}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None recorded</p>
-            )}
-          </Section>
-
-          {/* Properties Involved */}
-          <Section title="Properties Involved" icon={BuildingOfficeIcon} color="#d97706">
-            {record.properties_involved?.length ? (
-              <div className="space-y-2">
-                {record.properties_involved.map((p, i) => (
-                  <div key={i} className="rounded-xl p-3"
-                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                    <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
-                      {p.type_of_property ?? '—'}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.description}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      Damage: {p.nature_of_damage || '—'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None recorded</p>
-            )}
-          </Section>
-
-          {/* Descriptions */}
-          <Section title="Incident Descriptions" icon={DocumentTextIcon} color="#2563eb">
-            {record.incident_descriptions?.length ? (
-              <div className="space-y-2">
-                {record.incident_descriptions.map((d, i) => (
-                  <div key={i} className="rounded-xl p-3"
-                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                    <p className="text-xs" style={{ color: 'var(--text)' }}>{d.narrative}</p>
-                    {(d.file_path || d.file_name) && (
-                      <a href={d.file_path} target="_blank" rel="noreferrer"
-                        className="text-xs mt-1 hover:underline" style={{ color: 'var(--accent)' }}>
-                        {d.file_name ?? 'View attachment'}
-                      </a>
+                    {p.nature_of_injury && (
+                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{p.nature_of_injury}</p>
                     )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None recorded</p>
-            )}
-          </Section>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+                    style={{
+                      background: p.injury_sustained === 'yes' ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.1)',
+                      color: p.injury_sustained === 'yes' ? '#ef4444' : '#10b981',
+                    }}>
+                    {p.injury_sustained === 'yes' ? 'Injured' : 'No injury'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
 
-          {/* Actions Taken */}
-          <Section title="Actions Taken" icon={BoltIcon} color="#7c3aed">
-            {record.actions_taken?.length ? (
-              <div className="space-y-2">
-                {record.actions_taken.map((a, i) => (
-                  <div key={i} className="rounded-xl p-3"
-                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                    <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{a.description}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {displayName(a.user ?? {})}
-                      {a.action_date && ` · ${formatDate(a.action_date)}`}
-                      {a.action_time && ` ${a.action_time}`}
+          {/* Properties Involved */}
+          <DrawerSection title="Properties Involved" icon={BuildingOfficeIcon} color="#f59e0b"
+            count={record.properties_involved?.length ?? 0}>
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {record.properties_involved?.map((p, i) => (
+                <div key={i} className="flex items-start gap-3 px-4 py-3"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(245,158,11,.15)' }}>
+                    <BuildingOfficeIcon className="h-4 w-4" style={{ color: '#f59e0b' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                      {p.type_of_property ?? '—'}
+                    </p>
+                    {p.description && (
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.description}</p>
+                    )}
+                    {p.nature_of_damage && (
+                      <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg"
+                        style={{ background: 'rgba(245,158,11,.1)' }}>
+                        <ExclamationTriangleIcon className="h-3 w-3" style={{ color: '#f59e0b' }} />
+                        <span className="text-[10px] font-medium" style={{ color: '#f59e0b' }}>{p.nature_of_damage}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
+
+          {/* Incident Descriptions */}
+          <DrawerSection title="Incident Descriptions" icon={DocumentTextIcon} color="#0ea5e9"
+            count={record.incident_descriptions?.length ?? 0}>
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {record.incident_descriptions?.map((d, i) => (
+                <div key={i} className="px-4 py-3"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                  <div className="flex items-start gap-2 mb-1">
+                    <div className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ background: 'rgba(14,165,233,.12)' }}>
+                      <DocumentTextIcon className="h-3 w-3" style={{ color: '#0ea5e9' }} />
+                    </div>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                      Description #{i + 1}
                     </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>None recorded</p>
-            )}
-          </Section>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text)', paddingLeft: '1.75rem' }}>
+                    {d.narrative}
+                  </p>
+                  {(d.file_path || d.file_name) && (
+                    <div style={{ paddingLeft: '1.75rem' }}>
+                      <a href={d.file_path} target="_blank" rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:opacity-80"
+                        style={{ background: `${PURPLE}10`, border: `1px solid ${PURPLE}25` }}>
+                        <DocumentTextIcon className="h-3 w-3" style={{ color: PURPLE }} />
+                        <span className="text-[11px] font-medium" style={{ color: PURPLE }}>
+                          {d.file_name ?? 'View attachment'}
+                        </span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
+
+          {/* Actions Taken */}
+          <DrawerSection title="Actions Taken" icon={BoltIcon} color="#10b981"
+            count={record.actions_taken?.length ?? 0}>
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {record.actions_taken?.map((a, i) => (
+                <div key={i} className="flex items-start gap-3 px-4 py-3"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(16,185,129,.15)' }}>
+                    <BoltIcon className="h-4 w-4" style={{ color: '#10b981' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                      {a.description}
+                    </p>
+                    {(a.user || a.action_date || a.action_time) && (
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        {a.user && (
+                          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <UserCircleIcon className="h-3.5 w-3.5" />
+                            {displayName(a.user)}
+                          </span>
+                        )}
+                        {a.action_date && (
+                          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <CalendarDaysIcon className="h-3.5 w-3.5" />
+                            {formatDate(a.action_date)}
+                          </span>
+                        )}
+                        {a.action_time && (
+                          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <ClockIcon className="h-3.5 w-3.5" />
+                            {a.action_time}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
         </div>
       </div>
     </>
