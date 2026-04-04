@@ -213,26 +213,51 @@ function DeleteConfirmModal({ open, name, onConfirm, onCancel, loading }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div className="ui-card max-w-sm w-full p-6 space-y-4">
-        <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-          Delete Incident Notification
-        </h3>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Are you sure you want to delete{' '}
-          <strong style={{ color: 'var(--text)' }}>{name}</strong>?
-          This cannot be undone.
-        </p>
-        <div className="flex justify-end gap-2 pt-1">
+      style={{ background: 'rgba(0,0,0,0.55)' }}>
+      <div className="ui-card w-full max-w-sm overflow-hidden"
+        style={{ border: '1px solid rgba(239,68,68,.25)' }}>
+
+        {/* Top danger band */}
+        <div className="px-6 pt-6 pb-5 text-center"
+          style={{ borderBottom: '1px solid var(--border)' }}>
+          {/* Icon */}
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'rgba(239,68,68,.1)', border: '2px solid rgba(239,68,68,.2)' }}>
+            <TrashIcon className="h-7 w-7" style={{ color: '#ef4444' }} />
+          </div>
+
+          <h3 className="text-base font-bold mb-1" style={{ color: 'var(--text)' }}>
+            Delete Incident Notification
+          </h3>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            You are about to permanently delete
+          </p>
+
+          {/* Name pill */}
+          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl"
+            style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)' }}>
+            <BellAlertIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#ef4444' }} />
+            <span className="text-sm font-semibold" style={{ color: '#ef4444' }}>{name}</span>
+          </div>
+
+          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+            This action <strong style={{ color: 'var(--text)'}}>cannot be undone.</strong> All associated data including witness statements will be permanently removed.
+          </p>
+        </div>
+
+        {/* Footer actions */}
+        <div className="flex gap-3 px-6 py-4" style={{ background: 'var(--bg-surface)' }}>
           <button type="button" onClick={onCancel} disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
-            style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-            Cancel
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-opacity"
+            style={{ border: '1px solid var(--border)', color: 'var(--text)', background: 'var(--bg-raised)' }}>
+            Keep it
           </button>
           <button type="button" onClick={onConfirm} disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90"
-            style={{ background: 'var(--danger)' }}>
-            {loading ? 'Deleting…' : 'Delete'}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            style={{ background: loading ? 'rgba(239,68,68,.5)' : '#ef4444' }}>
+            {loading
+              ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Deleting…</>
+              : <><TrashIcon className="h-4 w-4" /> Yes, delete</>}
           </button>
         </div>
       </div>
