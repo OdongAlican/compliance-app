@@ -24,6 +24,7 @@ import riskAssessmentsReducer        from './slices/riskAssessmentSlice';
 import performedRiskAssessmentsReducer from './slices/performedRiskAssessmentSlice';
 import incidentNotificationsReducer  from './slices/incidentNotificationSlice';
 import startInvestigationsReducer    from './slices/startInvestigationSlice';
+import hsaChecklistReducer           from './slices/hsaChecklistSlice';
 
 const store = configureStore({
   reducer: {
@@ -42,6 +43,7 @@ const store = configureStore({
     performedRiskAssessments: performedRiskAssessmentsReducer,
     incidentNotifications:    incidentNotificationsReducer,
     startInvestigations:      startInvestigationsReducer,
+    hsaChecklist:             hsaChecklistReducer,
   },
   // Redux Toolkit adds redux-thunk and (in development) the Immer proxy by default.
   // The devTools flag is automatically false in production builds.
