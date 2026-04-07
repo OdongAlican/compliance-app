@@ -4,15 +4,68 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
+
+// Map backend IDs to correct routes and icons
 const items = [
-  { title: 'Checklist',                formPath: '/form/checklist',  icon: FaClipboardList, color: 'blue' },
-  { title: 'Workplace Inspection',     formPath: '/form/workplace',  icon: FaHardHat,       color: 'amber' },
-  { title: 'Emergency Preparedness',   formPath: '/form/emergency',  icon: FaFire,          color: 'red' },
-  { title: 'PPE Compliance',           formPath: '/form/ppe-com',    icon: FaFirstAid,      color: 'purple' },
-  { title: 'CAPA Tracking',            formPath: '/form/capa',       icon: FaListAlt,       color: 'teal' },
-  { title: 'Management Review Meeting',formPath: '/form/management', icon: FaUsers,         color: 'green' },
-  { title: 'Recent Audit',             formPath: '/form/audit',      icon: FaHistory,       color: 'blue' },
+  {
+    id: 1,
+    title: 'Checklist',
+    formPath: '/health-and-safety/checklist',
+    icon: FaClipboardList,
+    color: 'blue',
+  },
+  {
+    id: 2,
+    title: 'Workplace Inspection Report',
+    formPath: '/form/workplace',
+    icon: FaHardHat,
+    color: 'amber',
+  },
+  {
+    id: 3,
+    title: 'Training and competency',
+    formPath: '/form/training',
+    icon: FaUsers,
+    color: 'green',
+  },
+  {
+    id: 4,
+    title: 'Emergency preparedness',
+    formPath: '/form/emergency',
+    icon: FaFire,
+    color: 'red',
+  },
+  {
+    id: 5,
+    title: 'PPE Compliance',
+    formPath: '/form/ppe-com',
+    icon: FaFirstAid,
+    color: 'purple',
+  },
+  {
+    id: 6,
+    title: 'Contractor Safety',
+    formPath: '/form/contractor-safety',
+    icon: FaUsers,
+    color: 'teal',
+  },
+  {
+    id: 7,
+    title: 'Management Review meeting',
+    formPath: '/form/management',
+    icon: FaListAlt,
+    color: 'amber',
+  },
+  {
+    id: 8,
+    title: 'CAPA Tracking',
+    formPath: '/form/capa',
+    icon: FaClipboardList,
+    color: 'blue',
+  },
 ];
+
+
 
 const COLORS = {
   blue:   { bg: 'rgba(37,99,235,.15)',  color: '#2563eb' },
