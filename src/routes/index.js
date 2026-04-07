@@ -68,6 +68,7 @@ import CapaInterface        from '../Forms-interface/CapaInterface';
 import RecentAuditInterface from '../Forms-interface/RecentAuditInterface';
 import PPECompInterface     from '../Forms-interface/PPECompInterface';
 import ManagementInterface  from '../Forms-interface/ManagementInterface';
+import ChecklistPage        from '../components/HealthAndSafety/Checklist';
 
 // ── Param wrappers ────────────────────────────────────────────────────────
 function HazardReportExecuteWrapper() {
@@ -130,6 +131,7 @@ export default function AppRoutes() {
       <Route path="/form/swimming-pool"    element={<Layout><SwimmingPoolInterface /></Layout>} />
 
       {/* ── Protected — Audits ── */}
+      <Route path="/health-and-safety/checklist" element={<Layout><ChecklistPage /></Layout>} />
       <Route path="/form/checklist"   element={<Layout><ChecklistInterface /></Layout>} />
       <Route path="/form/workplace"   element={<Layout><WorkPlaceInterface /></Layout>} />
       <Route path="/form/emergency"   element={<Layout><EmergencyInterface /></Layout>} />
