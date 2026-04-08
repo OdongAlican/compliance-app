@@ -227,6 +227,21 @@ export const performHsaChecklist = createAsyncThunk(
   }
 );
 
+/** Fetch a single performed checklist (full detail incl. performedChecklist items) */
+export const fetchHsaPerformedDetail = createAsyncThunk(
+  'hsaChecklist/fetchPerformedDetail',
+  async ({ auditId, performedId }, { rejectWithValue }) => {
+    try {
+      const res = await HsaPerformService.get(auditId, performedId);
+      return { performedId, data: res.data ?? res };
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.error || 'Failed to load performed detail.'
+      );
+    }
+  }
+);
+
 /** Fetch issues for a performed checklist */
 export const fetchHsaIssues = createAsyncThunk(
   'hsaChecklist/fetchIssues',
@@ -353,6 +368,9 @@ const hsaChecklistSlice = createSlice({
     // Issues (keyed by performedId)
     issuesByPerformed: {},
 
+    // Full performed detail (keyed by performedId)
+    performedDetailByPerformed: {},
+
     // Generic action state
     actionLoading: false,
     actionError:   null,
@@ -478,6 +496,12 @@ const hsaChecklistSlice = createSlice({
         s.issuesByPerformed[a.payload.performedId] = a.payload.data;
       });
 
+    // ── fetchHsaPerformedDetail ──────────────────────────────────────────
+    builder
+      .addCase(fetchHsaPerformedDetail.fulfilled, (s, a) => {
+        s.performedDetailByPerformed[a.payload.performedId] = a.payload.data;
+      });
+
     // ── issue mutation thunks (all share actionLoading) ─────────────────
     const issueMutations = [
       updateHsaCorrectiveAction,
@@ -518,6 +542,7 @@ export const selectHsaChecklistsError  = (s) => s.hsaChecklist.checklistsError;
 export const selectHsaActionLoading    = (s) => s.hsaChecklist.actionLoading;
 export const selectHsaActionError      = (s) => s.hsaChecklist.actionError;
 export const selectHsaFilters          = (s) => s.hsaChecklist.filters;
-export const selectHsaIssuesByPerformed= (s) => s.hsaChecklist.issuesByPerformed;
+export const selectHsaIssuesByPerformed          = (s) => s.hsaChecklist.issuesByPerformed;
+export const selectHsaPerformedDetailByPerformed = (s) => s.hsaChecklist.performedDetailByPerformed;
 
 export default hsaChecklistSlice.reducer;
