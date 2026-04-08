@@ -1172,7 +1172,7 @@ function PerformModal({ isOpen, onClose, checklist, auditId }) {
     const payload = {
       audit_date: form.audit_date,
       audit_note: form.audit_note.trim() || undefined,
-      auditor_id: currentUser?.id,
+      auditor_id: checklist?.auditors?.[0]?.id || currentUser?.id,
       performedChecklist,
       issues: issuesPayload,
     };
@@ -1214,30 +1214,93 @@ function PerformModal({ isOpen, onClose, checklist, auditId }) {
       <div className="p-6 overflow-y-auto flex-1">
         {/* ── Audit Info Tab ── */}
         {activeTab === 0 && (
-          <div className="grid grid-cols-2 gap-4 max-w-lg">
-            <div className="col-span-2">
-              <div className="rounded-xl p-4 mb-4" style={{ background: ACCENT_LIGHT, border: `1px solid ${ACCENT}` }}>
-                <p className="text-xs font-bold mb-1" style={{ color: ACCENT }}>Audit Details</p>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                  <div><span style={{ color: "var(--text-muted)" }}>Auditor No.: </span><span style={{ color: "var(--text)" }}>{checklist?.auditor_number}</span></div>
-                  <div><span style={{ color: "var(--text-muted)" }}>Area: </span><span style={{ color: "var(--text)" }}>{checklist?.area_audited}</span></div>
-                  <div><span style={{ color: "var(--text-muted)" }}>Scheduled: </span><span style={{ color: "var(--text)" }}>{formatDate(checklist?.date)}</span></div>
-                  <div><span style={{ color: "var(--text-muted)" }}>Auditors: </span><span style={{ color: "var(--text)" }}>{(checklist?.auditors || []).map(displayName).join(", ") || "—"}</span></div>
+          <div className="flex flex-col gap-6">
+            {/* Hero identity card */}
+            <div className="relative rounded-2xl overflow-hidden p-5"
+              style={{ background: `linear-gradient(135deg, ${ACCENT}22 0%, ${ACCENT}06 100%)`, border: `1px solid ${ACCENT}33` }}>
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none"
+                style={{ background: `radial-gradient(circle, ${ACCENT}22, transparent 70%)` }} />
+              <div className="absolute -bottom-6 -left-4 w-20 h-20 rounded-full pointer-events-none"
+                style={{ background: `radial-gradient(circle, ${ACCENT}15, transparent 70%)` }} />
+              <div className="flex items-start gap-4 relative">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${ACCENT}, #059669)`, boxShadow: `0 6px 18px ${ACCENT}55` }}>
+                  <ClipboardDocumentCheckIcon className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: ACCENT }}>Performing Audit</p>
+                  <p className="text-base font-bold" style={{ color: "var(--text)" }}>{checklist?.area_audited || "—"}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>Auditor #{checklist?.auditor_number}</span>
+                    <span style={{ color: "var(--text-muted)" }}>·</span>
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>{templates.length} template{templates.length !== 1 ? "s" : ""}</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Detail chips grid */}
             <div>
-              <Field label="Audit Date" required error={errors.audit_date}>
-                <input type="date" value={form.audit_date}
-                  onChange={(e) => { setForm((f) => ({ ...f, audit_date: e.target.value })); setErrors({}); }}
-                  className="ui-input text-sm" />
-              </Field>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-4 rounded-full" style={{ background: ACCENT }} />
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Checklist Details</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="rounded-xl p-3 flex items-start gap-2.5"
+                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                    <CalendarDaysIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: "var(--text-muted)" }}>Scheduled</p>
+                    <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>{formatDate(checklist?.date)}</p>
+                  </div>
+                </div>
+                <div className="rounded-xl p-3 flex items-start gap-2.5"
+                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                    <ClipboardDocumentCheckIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: "var(--text-muted)" }}>Auditor No.</p>
+                    <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>#{checklist?.auditor_number}</p>
+                  </div>
+                </div>
+                <div className="col-span-2 rounded-xl p-3 flex items-start gap-2.5"
+                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                    <UsersIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: "var(--text-muted)" }}>Assigned Auditors</p>
+                    <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>{(checklist?.auditors || []).map(displayName).join(", ") || "—"}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="col-span-2">
-              <Field label="Audit Note">
-                <textarea value={form.audit_note} onChange={(e) => setForm((f) => ({ ...f, audit_note: e.target.value }))}
-                  placeholder="General observations or notes…" rows={3} className="ui-input text-sm resize-none" />
-              </Field>
+
+            {/* Form fields */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-4 rounded-full" style={{ background: ACCENT }} />
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Audit Information</p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Field label="Audit Date" required error={errors.audit_date}>
+                  <input type="date" value={form.audit_date}
+                    onChange={(e) => { setForm((f) => ({ ...f, audit_date: e.target.value })); setErrors({}); }}
+                    className="ui-input text-sm" />
+                </Field>
+                <Field label="Audit Note">
+                  <textarea value={form.audit_note}
+                    onChange={(e) => setForm((f) => ({ ...f, audit_note: e.target.value }))}
+                    placeholder="General observations, findings, or notes about this audit…"
+                    rows={4} className="ui-input text-sm resize-none" />
+                </Field>
+              </div>
             </div>
           </div>
         )}
@@ -1348,40 +1411,114 @@ function PerformModal({ isOpen, onClose, checklist, auditId }) {
         )}
 
         {/* ── Summary Tab ── */}
-        {activeTab === tabs.length - 1 && (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-              <div className="px-4 py-3" style={{ background: ACCENT_LIGHT, borderBottom: "1px solid var(--border)" }}>
-                <p className="text-xs font-bold" style={{ color: ACCENT }}>Audit Summary</p>
-              </div>
-              {[
-                { label: "Checklist", value: `#${checklist?.auditor_number} — ${checklist?.area_audited}` },
-                { label: "Audit Date", value: formatDate(form.audit_date) },
-                { label: "Templates", value: `${templates.length} section(s)` },
-                { label: "Total Items", value: templates.reduce((n, t) => n + (t.health_and_safety_audit_checklist_item_templates || []).filter((i) => i.active !== false).length, 0) },
-                { label: "Issues", value: issues.filter((i) => i.name.trim()).length },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-2.5"
-                  style={{ borderBottom: "1px solid var(--border)" }}>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
-                  <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{value}</span>
+        {activeTab === tabs.length - 1 && (() => {
+          const allStatuses = templates.flatMap((t) =>
+            (t.health_and_safety_audit_checklist_item_templates || []).filter((item) => item.active !== false)
+              .map((item) => results[t.id]?.[item.id]?.status || "compliant")
+          );
+          const compliantCount = allStatuses.filter((s) => s === "compliant").length;
+          const nonCompliantCount = allStatuses.filter((s) => s === "non_compliant").length;
+          const naCount = allStatuses.filter((s) => s === "not_applicable").length;
+          const issueCount = issues.filter((i) => i.name.trim()).length;
+          return (
+            <div className="flex flex-col gap-5">
+              {/* Identity hero */}
+              <div className="relative rounded-2xl overflow-hidden p-4"
+                style={{ background: `linear-gradient(135deg, ${ACCENT}22 0%, ${ACCENT}06 100%)`, border: `1px solid ${ACCENT}33` }}>
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full pointer-events-none"
+                  style={{ background: `radial-gradient(circle, ${ACCENT}20, transparent 70%)` }} />
+                <div className="flex items-center gap-3 relative">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: `linear-gradient(135deg, ${ACCENT}, #059669)`, boxShadow: `0 4px 14px ${ACCENT}55` }}>
+                    <CheckBadgeIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: ACCENT }}>Ready to Submit</p>
+                    <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
+                      {checklist?.area_audited || "—"} · #{checklist?.auditor_number}
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Audit Date: {formatDate(form.audit_date)}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-            {form.audit_note && (
-              <div className="rounded-xl p-4" style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>Audit Note</p>
-                <p className="text-sm" style={{ color: "var(--text)" }}>{form.audit_note}</p>
               </div>
-            )}
-            <button onClick={handleSubmit} disabled={actionLoading}
-              className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-60"
-              style={{ background: ACCENT, color: "#fff" }}>
-              {actionLoading ? <Spinner size={4} /> : <CheckBadgeIcon className="h-5 w-5" />}
-              Submit Audit
-            </button>
-          </div>
-        )}
+
+              {/* Completion stats */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-4 rounded-full" style={{ background: ACCENT }} />
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Completion Overview</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { label: "Compliant", value: compliantCount, color: "#10b981", bg: "rgba(16,185,129,0.1)", icon: <CheckCircleIcon className="h-4 w-4" /> },
+                    { label: "Non-Compliant", value: nonCompliantCount, color: "#ef4444", bg: "rgba(239,68,68,0.1)", icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
+                    { label: "Not Applicable", value: naCount, color: "#6b7280", bg: "rgba(107,114,128,0.1)", icon: <XMarkIcon className="h-4 w-4" /> },
+                    { label: "Issues Raised", value: issueCount, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", icon: <BellAlertIcon className="h-4 w-4" /> },
+                  ].map(({ label, value, color, bg, icon }) => (
+                    <div key={label} className="rounded-xl p-3.5 flex items-center gap-3"
+                      style={{ background: "var(--bg-raised)", border: `1px solid ${color}30` }}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: bg, color }}>
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black leading-none" style={{ color }}>{value}</p>
+                        <p className="text-[10px] font-semibold mt-0.5 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Audit details list */}
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                <div className="px-4 py-2.5" style={{ background: ACCENT_LIGHT, borderBottom: "1px solid var(--border)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: ACCENT }}>Audit Details</p>
+                </div>
+                {[
+                  { label: "Checklist", value: `#${checklist?.auditor_number} — ${checklist?.area_audited}` },
+                  { label: "Audit Date", value: formatDate(form.audit_date) },
+                  { label: "Templates", value: `${templates.length} section(s)` },
+                  { label: "Total Items", value: allStatuses.length },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between px-4 py-2.5"
+                    style={{ borderBottom: "1px solid var(--border)" }}>
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
+                    <span className="text-xs font-semibold" style={{ color: "var(--text)" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Audit Note */}
+              {form.audit_note && (
+                <div className="rounded-xl p-4"
+                  style={{ background: "var(--bg-raised)", borderLeft: `3px solid ${ACCENT}`, border: `1px solid ${ACCENT}33` }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: ACCENT }}>Audit Note</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{form.audit_note}</p>
+                </div>
+              )}
+
+              {/* Actions row */}
+              <div className="flex items-center gap-3">
+                <button onClick={() => setActiveTab((t) => t - 1)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-opacity"
+                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)", color: "var(--text-muted)", minWidth: "110px" }}>
+                  <ChevronLeftIcon className="h-4 w-4" /> Previous
+                </button>
+                <button onClick={handleSubmit} disabled={actionLoading}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-60 transition-opacity"
+                  style={{
+                    background: `linear-gradient(135deg, ${ACCENT} 0%, #059669 100%)`,
+                    color: "#fff",
+                    boxShadow: `0 4px 18px ${ACCENT}55`,
+                  }}>
+                  {actionLoading ? <Spinner size={4} /> : <CheckBadgeIcon className="h-5 w-5" />}
+                  Submit Audit
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Navigation footer */}
@@ -2104,7 +2241,13 @@ function PerformedDetailModal({ isOpen, onClose, performed, auditId }) {
   if (!isOpen || !performed) return null;
 
   const issues = issuesByPerformed[performed.id] ?? [];
-  const performedItems = performed.performed_items ?? performed.performed_checklists ?? [];
+  // Items come embedded in the checklist list/show response as performed_health_and_safety_audit_checklist_items
+  const rawItems = performed.performed_health_and_safety_audit_checklist_items
+    ?? performed.performedChecklist
+    ?? performed.performed_items
+    ?? performed.performed_checklists
+    ?? [];
+  const performedItems = rawItems;
   const auditorInitial = (
     performed.auditor?.firstname?.[0] || performed.auditor?.first_name?.[0] || "A"
   ).toUpperCase();
@@ -2115,9 +2258,9 @@ function PerformedDetailModal({ isOpen, onClose, performed, auditId }) {
   ];
 
   const ITEM_STATUS = {
-    compliant:      { bg: "rgba(16,185,129,.08)",  border: "#10b981", color: "#10b981", icon: "✓" },
-    non_compliant:  { bg: "rgba(239,68,68,.06)",   border: "#ef4444", color: "#ef4444", icon: "✗" },
-    not_applicable: { bg: "rgba(107,114,128,.06)", border: "#9ca3af", color: "#9ca3af", icon: "—" },
+    compliant:      { bg: "rgba(16,185,129,.08)",  border: "#10b981", color: "#10b981", label: "Compliant",      icon: <CheckCircleIcon className="h-3.5 w-3.5" /> },
+    non_compliant:  { bg: "rgba(239,68,68,.06)",   border: "#ef4444", color: "#ef4444", label: "Non-Compliant", icon: <ExclamationTriangleIcon className="h-3.5 w-3.5" /> },
+    not_applicable: { bg: "rgba(107,114,128,.06)", border: "#9ca3af", color: "#9ca3af", label: "N/A",            icon: <XMarkIcon className="h-3.5 w-3.5" /> },
   };
 
   return createPortal(
@@ -2244,41 +2387,105 @@ function PerformedDetailModal({ isOpen, onClose, performed, auditId }) {
                     No checklist items were recorded for this audit session.
                   </p>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {performedItems.map((item, idx) => {
-                    const s = ITEM_STATUS[item.status] || ITEM_STATUS.not_applicable;
-                    return (
-                      <div key={item.id ?? idx}
-                        className="flex items-start gap-3 rounded-xl px-4 py-3"
-                        style={{ background: s.bg, border: `1px solid ${s.border}25`, borderLeft: `3px solid ${s.border}` }}>
-                        <span className="text-sm font-bold flex-shrink-0 mt-0.5 w-5 text-center"
-                          style={{ color: s.color }}>
-                          {s.icon}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                            {item.label ?? item.name ?? `Item #${idx + 1}`}
-                          </p>
-                          {item.status && (
-                            <span className="text-[11px] font-semibold mt-0.5 inline-block"
-                              style={{ color: s.color }}>
-                              {item.status.replace(/_/g, " ")}
-                            </span>
-                          )}
-                          {item.comment && (
-                            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{item.comment}</p>
-                          )}
+              ) : (() => {
+                const compliantCount    = performedItems.filter((i) => (i.status ?? "").toLowerCase() === "compliant"     ).length;
+                const nonCompliantCount = performedItems.filter((i) => (i.status ?? "").toLowerCase() === "non_compliant" ).length;
+                const naCount           = performedItems.filter((i) => (i.status ?? "").toLowerCase() === "not_applicable").length;
+
+                // Group by template
+                const groups = [];
+                const seen = new Map();
+                performedItems.forEach((item) => {
+                  const tmpl = item.health_and_safety_audit_checklist_item_template;
+                  const tmplId = tmpl?.health_and_safety_audit_checklist_template_id ?? "uncategorised";
+                  const tmplName = tmpl?.health_and_safety_audit_checklist_template?.name ?? "General";
+                  if (!seen.has(tmplId)) {
+                    seen.set(tmplId, groups.length);
+                    groups.push({ tmplId, tmplName, items: [] });
+                  }
+                  groups[seen.get(tmplId)].items.push(item);
+                });
+
+                return (
+                  <div className="flex flex-col gap-4">
+                    {/* Summary bar */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: "Compliant",     value: compliantCount,    color: "#10b981", bg: "rgba(16,185,129,0.08)",  icon: <CheckCircleIcon className="h-4 w-4" /> },
+                        { label: "Non-Compliant", value: nonCompliantCount, color: "#ef4444", bg: "rgba(239,68,68,0.08)",   icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
+                        { label: "N/A",           value: naCount,           color: "#9ca3af", bg: "rgba(107,114,128,0.08)", icon: <XMarkIcon className="h-4 w-4" /> },
+                      ].map(({ label, value, color, bg, icon }) => (
+                        <div key={label} className="rounded-xl p-3 flex items-center gap-2.5"
+                          style={{ background: "var(--bg-raised)", border: `1px solid ${color}25` }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ background: bg, color }}>
+                            {icon}
+                          </div>
+                          <div>
+                            <p className="text-lg font-black leading-none" style={{ color }}>{value}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+                          </div>
                         </div>
-                        <span className="text-[10px] font-mono flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded"
-                          style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                          #{idx + 1}
-                        </span>
+                      ))}
+                    </div>
+
+                    {/* Grouped items */}
+                    {groups.map(({ tmplId, tmplName, items: groupItems }) => (
+                      <div key={tmplId} className="flex flex-col gap-1.5">
+                        {/* Section header */}
+                        <div className="flex items-center gap-2 px-1 py-1.5">
+                          <div className="w-1 h-4 rounded-full flex-shrink-0" style={{ background: ACCENT }} />
+                          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{tmplName}</p>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                            {groupItems.length}
+                          </span>
+                        </div>
+
+                        {/* Item cards */}
+                        {groupItems.map((item, idx) => {
+                          const statusKey = (item.status ?? "").toLowerCase();
+                          const s = ITEM_STATUS[statusKey] || ITEM_STATUS.not_applicable;
+                          const label = item.health_and_safety_audit_checklist_item_template?.label ?? item.label ?? item.name ?? `Item #${idx + 1}`;
+                          const positionNum = item.health_and_safety_audit_checklist_item_template?.position ?? idx + 1;
+                          return (
+                            <div key={item.id ?? idx}
+                              className="flex items-start gap-3 rounded-xl px-4 py-3.5"
+                              style={{
+                                background: "var(--bg-raised)",
+                                border: `1px solid var(--border)`,
+                                borderLeft: `3px solid ${s.border}`,
+                              }}>
+                              {/* Position badge */}
+                              <span className="text-[10px] font-bold flex-shrink-0 w-5 h-5 rounded flex items-center justify-center mt-0.5"
+                                style={{ background: `${s.border}18`, color: s.color }}>
+                                {positionNum}
+                              </span>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold leading-snug" style={{ color: "var(--text)" }}>{label}</p>
+                                {item.comment && (
+                                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                                    {item.comment}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Status pill */}
+                              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold flex-shrink-0 mt-0.5"
+                                style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}30` }}>
+                                {s.icon}
+                                {s.label}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -2315,7 +2522,7 @@ function DetailDrawer({ isOpen, onClose, checklist, onStartAudit, canPerform, au
 
   const auditors = checklist.auditors || [];
   const performed = checklist.performed_health_and_safety_audit_checklists || [];
-  const totalIssues = performed.reduce((n, p) => n + (p.issues?.length || 0), 0);
+  const totalIssues = performed.reduce((n, p) => n + (p.performed_health_and_safety_audit_checklist_issues?.length || 0), 0);
 
   return createPortal(
     <>
@@ -2507,7 +2714,7 @@ function DetailDrawer({ isOpen, onClose, checklist, onStartAudit, canPerform, au
 
                   <div className="flex flex-col gap-3">
                     {performed.map((p, idx) => {
-                      const issueCount = p.issues?.length || 0;
+                      const issueCount = p.performed_health_and_safety_audit_checklist_issues?.length || 0;
                       return (
                         <div key={p.id} className="flex items-start gap-3">
                           {/* Timeline dot */}
