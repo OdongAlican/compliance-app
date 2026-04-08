@@ -169,6 +169,15 @@ export const HsaChecklistSetupService = {
 // ─────────────────────────────────────────────────────────────────────────────
 export const HsaPerformService = {
   /**
+   * GET /health_and_safety_audits/:auditId/performed_health_and_safety_audit_checklists/:performedId
+   * Returns full performed record including performedChecklist items.
+   */
+  get: (auditId, performedId) =>
+    api.get(
+      `${HSA_BASE}/${auditId}/performed_health_and_safety_audit_checklists/${performedId}`
+    ),
+
+  /**
    * POST /health_and_safety_audits/:auditId/checklists/:checklistId/perform
    *
    * Payload shape:
