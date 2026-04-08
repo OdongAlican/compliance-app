@@ -33,6 +33,8 @@ import {
   PaperClipIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   CalendarDaysIcon,
   CheckBadgeIcon,
   WrenchScrewdriverIcon,
@@ -1405,6 +1407,7 @@ function PerformModal({ isOpen, onClose, checklist, auditId }) {
 
 // ─── Issue Manager Modal ──────────────────────────────────────────────────────
 
+// eslint-disable-next-line no-unused-vars
 function IssueManagerModal({ isOpen, onClose, checklist, auditId }) {
   const dispatch = useAppDispatch();
   const issuesByPerformed = useAppSelector(selectHsaIssuesByPerformed);
@@ -1776,184 +1779,843 @@ function IssueManagerModal({ isOpen, onClose, checklist, auditId }) {
   );
 }
 
-// ─── Detail Drawer ────────────────────────────────────────────────────────────
+// ─── HSA Issue Card ───────────────────────────────────────────────────────────
 
-function DetailDrawer({ isOpen, onClose, checklist, onStartAudit, onManageIssues, canPerform }) {
-  if (!checklist) return null;
-  const auditors = checklist.auditors || [];
-  const performed = checklist.performed_health_and_safety_audit_checklists || [];
-  const totalIssues = performed.reduce((n, p) => n + (p.issues?.length || 0), 0);
+function HsaIssueCard({ issue: initialIssue, auditId, performedId }) {
+  const dispatch = useAppDispatch();
+  const [expanded, setExpanded] = useState(false);
+  const [activeSection, setActiveSection] = useState(null);
+  const [issue, setIssue] = useState(initialIssue);
+  const [saving, setSaving] = useState(false);
+  const [caText, setCaText]           = useState(initialIssue.corrective_action ?? "");
+  const [priority, setPriority]       = useState(initialIssue.priority_level ?? "medium");
+  const [dueDate, setDueDate]         = useState(initialIssue.due_date ?? "");
+  const [contractor, setContractor]   = useState(initialIssue.contractor ?? null);
+  const [executeForm, setExecuteForm] = useState({ completion_date: "", completion_notes: "", file: null });
+
+  useEffect(() => {
+    setIssue(initialIssue);
+    setCaText(initialIssue.corrective_action ?? "");
+    setPriority(initialIssue.priority_level ?? "medium");
+    setDueDate(initialIssue.due_date ?? "");
+    setContractor(initialIssue.contractor ?? null);
+  }, [initialIssue]);
+
+  function toggle(s) { setActiveSection((p) => (p === s ? null : s)); }
+
+  async function saveCA() {
+    if (!caText.trim()) return;
+    setSaving(true);
+    const r = await dispatch(updateHsaCorrectiveAction({ auditId, performedId, issueId: issue.id, correctiveAction: caText.trim() }));
+    setSaving(false);
+    if (updateHsaCorrectiveAction.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, corrective_action: caText.trim() }));
+      toast.success("Corrective action updated."); setActiveSection(null);
+    } else { toast.error(r.payload || "Save failed."); }
+  }
+
+  async function savePriority() {
+    setSaving(true);
+    const r = await dispatch(updateHsaPriorityDueDate({ auditId, performedId, issueId: issue.id, priority_level: priority, due_date: dueDate }));
+    setSaving(false);
+    if (updateHsaPriorityDueDate.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, priority_level: priority, due_date: dueDate }));
+      toast.success("Priority updated."); setActiveSection(null);
+    } else { toast.error(r.payload || "Save failed."); }
+  }
+
+  async function saveContractor() {
+    if (!contractor) return;
+    setSaving(true);
+    const r = await dispatch(assignHsaContractor({ auditId, performedId, issueId: issue.id, contractorId: contractor.id }));
+    setSaving(false);
+    if (assignHsaContractor.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, contractor }));
+      toast.success("Contractor assigned."); setActiveSection(null);
+    } else { toast.error(r.payload || "Assign failed."); }
+  }
+
+  async function saveExecute() {
+    if (!executeForm.completion_date) { toast.error("Completion date is required."); return; }
+    setSaving(true);
+    const r = await dispatch(executeHsaIssue({ auditId, performedId, issueId: issue.id, data: executeForm }));
+    setSaving(false);
+    if (executeHsaIssue.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, status: "closed" }));
+      toast.success("Issue executed & closed."); setActiveSection(null);
+    } else { toast.error(r.payload || "Execute failed."); }
+  }
+
+  const contractorName = issue.contractor
+    ? [issue.contractor.firstname || issue.contractor.first_name, issue.contractor.lastname || issue.contractor.last_name].filter(Boolean).join(" ")
+    : null;
+
+  const isClosed = issue.status === "closed";
+  const priorityAccentMap = { critical: "#ef4444", high: "#f97316", medium: "#f59e0b", low: "#3b82f6" };
+  const priorityAccent = isClosed ? "#10b981" : (priorityAccentMap[issue.priority_level] || "#6b7280");
+
+  const ISSUE_ACTIONS = [
+    { key: "ca",         label: "Corrective Action",  Icon: WrenchScrewdriverIcon },
+    { key: "priority",   label: "Priority / Due Date", Icon: CalendarDaysIcon },
+    { key: "contractor", label: "Assign Contractor",   Icon: UsersIcon },
+    { key: "execute",    label: "Execute / Close",     Icon: CheckCircleIcon },
+  ];
+
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{
+        border: "1px solid var(--border)",
+        borderLeft: `3px solid ${priorityAccent}`,
+        background: "var(--bg-raised)",
+        opacity: isClosed ? 0.75 : 1,
+      }}>
+      {/* ── Header row ── */}
+      <div className="flex items-start justify-between gap-3 px-4 py-3.5 cursor-pointer select-none"
+        onClick={() => setExpanded((p) => !p)}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            {isClosed
+              ? <CheckCircleIcon className="h-4 w-4 flex-shrink-0" style={{ color: "#10b981" }} />
+              : <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: priorityAccent }} />
+            }
+            <span className="text-sm font-semibold leading-tight" style={{ color: "var(--text)" }}>{issue.name}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {issue.priority_level && <PriorityBadge priority={issue.priority_level} />}
+            {issue.due_date && (
+              <span className="flex items-center gap-1 text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
+                <CalendarDaysIcon className="h-3 w-3" />
+                {formatDate(issue.due_date)}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {issue.status && (
+            <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold"
+              style={{
+                background: isClosed ? "rgba(16,185,129,.12)" : "rgba(107,114,128,.1)",
+                color: isClosed ? "#10b981" : "var(--text-muted)",
+              }}>
+              {issue.status.replace(/_/g, " ")}
+            </span>
+          )}
+          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              background: expanded ? ACCENT_LIGHT : "var(--bg)",
+              border: `1px solid ${expanded ? ACCENT : "var(--border)"}`,
+              transition: "all 0.15s",
+            }}>
+            {expanded
+              ? <ChevronUpIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+              : <ChevronDownIcon className="h-3.5 w-3.5" style={{ color: "var(--text-muted)" }} />
+            }
+          </div>
+        </div>
+      </div>
+
+      {/* ── Expanded body ── */}
+      {expanded && (
+        <div className="px-4 pb-4 flex flex-col gap-3" style={{ borderTop: "1px solid var(--border)" }}>
+
+          {/* Existing saved values summary */}
+          {(issue.corrective_action || contractorName) && (
+            <div className="mt-3 rounded-xl p-3.5" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+              {issue.corrective_action && (
+                <div className="mb-2 last:mb-0">
+                  <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1"
+                    style={{ color: ACCENT }}>
+                    <WrenchScrewdriverIcon className="h-3 w-3" /> Corrective Action
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: "var(--text)" }}>{issue.corrective_action}</p>
+                </div>
+              )}
+              {contractorName && (
+                <div className="mt-2 pt-2" style={{ borderTop: issue.corrective_action ? "1px solid var(--border)" : "none" }}>
+                  <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1"
+                    style={{ color: ACCENT }}>
+                    <UsersIcon className="h-3 w-3" /> Assigned Contractor
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text)" }}>{contractorName}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action chips */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {ISSUE_ACTIONS.map(({ key, label, Icon }) => {
+              const isActive = activeSection === key;
+              const chipColor = key === "execute" ? "#ef4444" : ACCENT;
+              return (
+                <button key={key} onClick={() => toggle(key)}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full"
+                  style={{
+                    border: `1px solid ${isActive ? chipColor : "var(--border)"}`,
+                    color: isActive ? "#fff" : "var(--text-muted)",
+                    background: isActive ? chipColor : "var(--bg)",
+                    boxShadow: isActive ? `0 2px 8px ${chipColor}40` : "none",
+                    transition: "all 0.15s",
+                  }}>
+                  <Icon className="h-3.5 w-3.5" />{label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Corrective Action panel ── */}
+          {activeSection === "ca" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${ACCENT}35`, background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: ACCENT_LIGHT, borderBottom: `1px solid ${ACCENT}25` }}>
+                <WrenchScrewdriverIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                <p className="text-xs font-bold" style={{ color: ACCENT }}>Corrective Action</p>
+              </div>
+              <div className="p-4">
+                <textarea rows={3} value={caText} onChange={(e) => setCaText(e.target.value)}
+                  placeholder="Describe the corrective action…" className="ui-input text-sm resize-none w-full" />
+                <div className="flex justify-end mt-3">
+                  <button onClick={saveCA} disabled={saving || !caText.trim()}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: ACCENT, opacity: saving || !caText.trim() ? 0.5 : 1, boxShadow: `0 2px 10px rgba(16,185,129,0.35)` }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Priority + Due Date panel ── */}
+          {activeSection === "priority" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${ACCENT}35`, background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: ACCENT_LIGHT, borderBottom: `1px solid ${ACCENT}25` }}>
+                <CalendarDaysIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                <p className="text-xs font-bold" style={{ color: ACCENT }}>Priority & Due Date</p>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Priority">
+                    <select value={priority} onChange={(e) => setPriority(e.target.value)} className="ui-input text-sm">
+                      {PRIORITY_LEVELS.map((p) => <option key={p} value={p}>{PRIORITY_STYLES[p].label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Due Date">
+                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="ui-input text-sm" />
+                  </Field>
+                </div>
+                <div className="flex justify-end mt-3">
+                  <button onClick={savePriority} disabled={saving}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: ACCENT, opacity: saving ? 0.5 : 1, boxShadow: `0 2px 10px rgba(16,185,129,0.35)` }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Contractor panel ── */}
+          {activeSection === "contractor" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${ACCENT}35`, background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: ACCENT_LIGHT, borderBottom: `1px solid ${ACCENT}25` }}>
+                <UsersIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                <p className="text-xs font-bold" style={{ color: ACCENT }}>Assign Contractor</p>
+              </div>
+              <div className="p-4">
+                <ContractorPicker selected={contractor} onSelect={setContractor} />
+                <div className="flex justify-end mt-3">
+                  <button onClick={saveContractor} disabled={saving || !contractor}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: ACCENT, opacity: saving || !contractor ? 0.5 : 1, boxShadow: `0 2px 10px rgba(16,185,129,0.35)` }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Execute panel ── */}
+          {activeSection === "execute" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(239,68,68,.25)", background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: "rgba(239,68,68,.06)", borderBottom: "1px solid rgba(239,68,68,.15)" }}>
+                <ExclamationTriangleIcon className="h-3.5 w-3.5" style={{ color: "#ef4444" }} />
+                <p className="text-xs font-bold" style={{ color: "#ef4444" }}>Execute & Close Issue</p>
+              </div>
+              <div className="p-4">
+                <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+                  Completing this form will permanently close this issue. Ensure all details are accurate before proceeding.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <Field label="Completion Date" required>
+                    <input type="date" value={executeForm.completion_date}
+                      onChange={(e) => setExecuteForm((f) => ({ ...f, completion_date: e.target.value }))}
+                      className="ui-input text-sm" />
+                  </Field>
+                  <Field label="Completion Notes">
+                    <textarea rows={2} value={executeForm.completion_notes}
+                      onChange={(e) => setExecuteForm((f) => ({ ...f, completion_notes: e.target.value }))}
+                      placeholder="Closing notes…" className="ui-input text-sm resize-none" />
+                  </Field>
+                  <Field label="Supporting Document">
+                    <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer hover:opacity-80"
+                      style={{ border: "2px dashed var(--border)", background: "var(--bg-surface)" }}>
+                      <PaperClipIcon className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {executeForm.file ? executeForm.file.name : "Click to attach a document (optional)"}
+                      </span>
+                      <input type="file" className="hidden"
+                        onChange={(e) => setExecuteForm((f) => ({ ...f, file: e.target.files[0] || null }))} />
+                    </label>
+                  </Field>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button onClick={saveExecute} disabled={saving || !executeForm.completion_date}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: "#ef4444", opacity: saving || !executeForm.completion_date ? 0.5 : 1, boxShadow: "0 2px 10px rgba(239,68,68,0.35)" }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Execute & Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Performed Audit Detail Modal ─────────────────────────────────────────────
+
+function PerformedDetailModal({ isOpen, onClose, performed, auditId }) {
+  const dispatch = useAppDispatch();
+  const issuesByPerformed = useAppSelector(selectHsaIssuesByPerformed);
+  const [activeTab, setActiveTab] = useState("issues");
+
+  useEffect(() => {
+    if (isOpen && performed) {
+      dispatch(fetchHsaIssues({ auditId, performedId: performed.id, params: {} }));
+      setActiveTab("issues");
+    }
+  }, [isOpen, performed, auditId, dispatch]);
+
+  if (!isOpen || !performed) return null;
+
+  const issues = issuesByPerformed[performed.id] ?? [];
+  const performedItems = performed.performed_items ?? performed.performed_checklists ?? [];
+  const auditorInitial = (
+    performed.auditor?.firstname?.[0] || performed.auditor?.first_name?.[0] || "A"
+  ).toUpperCase();
+
+  const tabs = [
+    { key: "issues", label: "Issues",          count: issues.length },
+    { key: "items",  label: "Checklist Items",  count: performedItems.length },
+  ];
+
+  const ITEM_STATUS = {
+    compliant:      { bg: "rgba(16,185,129,.08)",  border: "#10b981", color: "#10b981", icon: "✓" },
+    non_compliant:  { bg: "rgba(239,68,68,.06)",   border: "#ef4444", color: "#ef4444", icon: "✗" },
+    not_applicable: { bg: "rgba(107,114,128,.06)", border: "#9ca3af", color: "#9ca3af", icon: "—" },
+  };
 
   return createPortal(
-    <div className="fixed inset-0" style={{ zIndex: 9990 }}
+    <div className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.6)", zIndex: 10002, backdropFilter: "blur(4px)" }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      {/* Backdrop */}
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} onClick={onClose} />
-      {/* Drawer */}
-      <div className="absolute top-0 right-0 bottom-0 w-full max-w-xl flex flex-col overflow-hidden"
-        style={{ background: "var(--bg-surface)", boxShadow: "-8px 0 32px rgba(0,0,0,0.2)" }}>
-        {/* Gradient header */}
-        <div className="flex-shrink-0 px-6 py-6 relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, #059669 60%, #047857 100%)` }}>
-          <div className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: "radial-gradient(circle at 70% 50%, #fff 0%, transparent 70%)" }} />
-          <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg hover:opacity-70"
-            style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(255,255,255,0.2)" }}>
-              <ClipboardDocumentCheckIcon className="h-7 w-7 text-white" />
+      <div className="w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden"
+        style={{
+          background: "var(--bg-surface)",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.3), 0 0 0 1px var(--border)",
+          maxHeight: "90vh",
+          zIndex: 10003,
+        }}>
+
+        {/* ── Header banner ── */}
+        <div className="relative overflow-hidden flex-shrink-0 px-6 py-5"
+          style={{ background: `linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.03) 50%, transparent 100%)`, borderBottom: "1px solid var(--border)" }}>
+          {/* Soft decorative glow */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none"
+            style={{ background: `radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%)` }} />
+
+          <div className="flex items-center gap-4 relative">
+            {/* Auditor avatar */}
+            <div className="w-13 h-13 flex-shrink-0 flex items-center justify-center rounded-2xl text-white text-base font-bold"
+              style={{
+                width: 52, height: 52,
+                background: `linear-gradient(135deg, ${ACCENT} 0%, #047857 100%)`,
+                boxShadow: `0 4px 14px rgba(16,185,129,0.4)`,
+              }}>
+              {auditorInitial}
             </div>
-            <div>
-              <p className="text-white text-xs font-semibold opacity-80 mb-0.5">Health & Safety — Checklist</p>
-              <h2 className="text-white text-lg font-bold leading-tight">{checklist.auditor_number}</h2>
-              <p className="text-white text-sm opacity-80 mt-0.5">{checklist.area_audited}</p>
-              <div className="mt-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                  style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-                  {STATUS_STYLES[checklist.status]?.label || checklist.status}
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-widest mb-0.5" style={{ color: ACCENT }}>
+                Performed Audit
+              </p>
+              <h2 className="text-lg font-bold leading-tight" style={{ color: "var(--text)" }}>
+                {formatDate(performed.audit_date || performed.created_at)}
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Conducted by {displayName(performed.auditor)}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              <button onClick={onClose}
+                className="p-2 rounded-xl hover:opacity-70 transition-opacity"
+                style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+              {issues.length > 0 && (
+                <span className="text-[11px] px-2.5 py-1 rounded-full font-bold whitespace-nowrap"
+                  style={{ background: "rgba(239,68,68,.1)", color: "#ef4444" }}>
+                  {issues.length} open issue{issues.length !== 1 ? "s" : ""}
                 </span>
-              </div>
+              )}
             </div>
           </div>
-          {/* Stats strip */}
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            {[
-              { label: "Auditors",    value: auditors.length },
-              { label: "Audits Run",  value: performed.length },
-              { label: "Issues",      value: totalIssues },
-            ].map(({ label, value }) => (
-              <div key={label} className="rounded-xl px-3 py-2 text-center"
-                style={{ background: "rgba(255,255,255,0.15)" }}>
-                <p className="text-white text-lg font-bold">{value}</p>
-                <p className="text-white text-[10px] opacity-75">{label}</p>
-              </div>
+        </div>
+
+        {/* ── Pill tab bar ── */}
+        <div className="flex-shrink-0 px-5 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+          <div className="inline-flex rounded-xl p-1 gap-0.5" style={{ background: "var(--bg-raised)" }}>
+            {tabs.map(({ key, label, count }) => (
+              <button key={key} onClick={() => setActiveTab(key)}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold"
+                style={{
+                  background: activeTab === key ? "var(--bg-surface)" : "transparent",
+                  color: activeTab === key ? "var(--text)" : "var(--text-muted)",
+                  boxShadow: activeTab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+                  transition: "all 0.15s",
+                }}>
+                {label}
+                {count > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center"
+                    style={{
+                      background: activeTab === key && key === "issues" ? "rgba(239,68,68,.12)" : activeTab === key ? ACCENT_LIGHT : "rgba(107,114,128,.1)",
+                      color: activeTab === key && key === "issues" ? "#ef4444" : activeTab === key ? ACCENT : "var(--text-muted)",
+                    }}>
+                    {count}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
-          {canPerform && (
-            <button onClick={onStartAudit}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90"
-              style={{ background: ACCENT, color: "#fff" }}>
-              <PlayIcon className="h-4 w-4" /> Start Audit
-            </button>
-          )}
-          {performed.length > 0 && (
-            <button onClick={onManageIssues}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80"
-              style={{ background: ACCENT_LIGHT, color: ACCENT }}>
-              <BellAlertIcon className="h-4 w-4" /> Issues
-            </button>
-          )}
-        </div>
+        {/* ── Tab body ── */}
+        <div className="flex-1 overflow-y-auto">
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-6">
-          {/* Checklist Info */}
-          <section>
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-              Checklist Details
-            </h3>
-            <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-              {[
-                { label: "Date",     value: formatDate(checklist.date) },
-                { label: "Status",   value: <StatusBadge status={checklist.status} /> },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-3"
-                  style={{ borderBottom: "1px solid var(--border)" }}>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
-                  <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{value}</span>
+          {/* Issues tab */}
+          {activeTab === "issues" && (
+            <div className="p-5">
+              {issues.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                    style={{ background: ACCENT_LIGHT }}>
+                    <CheckCircleIcon className="h-8 w-8" style={{ color: ACCENT }} />
+                  </div>
+                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text)" }}>No Issues Found</p>
+                  <p className="text-xs text-center max-w-xs" style={{ color: "var(--text-muted)" }}>
+                    This audit session has no recorded issues.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {issues.map((iss) => (
+                    <HsaIssueCard key={iss.id} issue={iss} auditId={auditId} performedId={performed.id} />
+                  ))}
+                </div>
+              )}
             </div>
-          </section>
+          )}
 
-          {/* Auditors */}
-          <section>
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-              Assigned Auditors
-            </h3>
-            {auditors.length === 0 ? (
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>No auditors assigned.</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {auditors.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3 rounded-xl px-4 py-3"
-                    style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                      style={{ background: ACCENT }}>
-                      {(a.first_name?.[0] || a.email?.[0] || "A").toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{displayName(a)}</p>
-                      <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{a.employee_id || a.email || ""}</p>
-                    </div>
+          {/* Checklist Items tab */}
+          {activeTab === "items" && (
+            <div className="p-5">
+              {performedItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                    style={{ background: ACCENT_LIGHT }}>
+                    <ClipboardDocumentCheckIcon className="h-8 w-8" style={{ color: ACCENT }} />
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Performed Audits */}
-          {performed.length > 0 && (
-            <section>
-              <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Performed Audits
-              </h3>
-              <div className="flex flex-col gap-2">
-                {performed.map((p) => (
-                  <div key={p.id} className="rounded-xl px-4 py-3"
-                    style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>
-                        Audit on {formatDate(p.audit_date || p.created_at)}
-                      </p>
-                      <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                        by {displayName(p.auditor)}
-                      </span>
-                    </div>
-                    {p.audit_note && (
-                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{p.audit_note}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[11px] px-2 py-0.5 rounded-full"
-                        style={{ background: ACCENT_LIGHT, color: ACCENT }}>
-                        {p.issues?.length || 0} issues
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  <p className="text-sm font-bold mb-1" style={{ color: "var(--text)" }}>No Items Recorded</p>
+                  <p className="text-xs text-center max-w-xs" style={{ color: "var(--text-muted)" }}>
+                    No checklist items were recorded for this audit session.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {performedItems.map((item, idx) => {
+                    const s = ITEM_STATUS[item.status] || ITEM_STATUS.not_applicable;
+                    return (
+                      <div key={item.id ?? idx}
+                        className="flex items-start gap-3 rounded-xl px-4 py-3"
+                        style={{ background: s.bg, border: `1px solid ${s.border}25`, borderLeft: `3px solid ${s.border}` }}>
+                        <span className="text-sm font-bold flex-shrink-0 mt-0.5 w-5 text-center"
+                          style={{ color: s.color }}>
+                          {s.icon}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                            {item.label ?? item.name ?? `Item #${idx + 1}`}
+                          </p>
+                          {item.status && (
+                            <span className="text-[11px] font-semibold mt-0.5 inline-block"
+                              style={{ color: s.color }}>
+                              {item.status.replace(/_/g, " ")}
+                            </span>
+                          )}
+                          {item.comment && (
+                            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{item.comment}</p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-mono flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded"
+                          style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                          #{idx + 1}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
+
+        {/* ── Audit note footer ── */}
+        {performed.audit_note && (
+          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl"
+              style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+              <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: ACCENT }} />
+              <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                <span className="font-semibold" style={{ color: "var(--text)" }}>Audit Note: </span>
+                {performed.audit_note}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body
   );
 }
 
-// ─── Action Menu ──────────────────────────────────────────────────────────────
+// ─── Detail Drawer ────────────────────────────────────────────────────────────
 
-function ActionMenu({ onEdit, onReassign, onView, onStartAudit, onManageIssues, onTemplates, onDelete, canUpdate, canDelete: canDel, canPerform }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+function DetailDrawer({ isOpen, onClose, checklist, onStartAudit, canPerform, auditId }) {
+  const [detailPerform, setDetailPerform] = useState(null);
 
   useEffect(() => {
-    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    if (!isOpen) setDetailPerform(null);
+  }, [isOpen]);
+
+  if (!isOpen || !checklist) return null;
+
+  const auditors = checklist.auditors || [];
+  const performed = checklist.performed_health_and_safety_audit_checklists || [];
+  const totalIssues = performed.reduce((n, p) => n + (p.issues?.length || 0), 0);
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0" style={{ zIndex: 9990 }}
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+
+        {/* Backdrop */}
+        <div className="absolute inset-0"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(3px)" }}
+          onClick={onClose} />
+
+        {/* Drawer panel */}
+        <div className="absolute top-0 right-0 bottom-0 w-full max-w-xl flex flex-col overflow-hidden"
+          style={{ background: "var(--bg-surface)", boxShadow: "-16px 0 48px rgba(0,0,0,0.2), 0 0 0 1px var(--border)" }}>
+
+          {/* ── Gradient header ── */}
+          <div className="flex-shrink-0 px-6 py-7 relative overflow-hidden"
+            style={{ background: `linear-gradient(140deg, ${ACCENT} 0%, #059669 50%, #047857 100%)` }}>
+            {/* Decorative bg elements */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ backgroundImage: "radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.13) 0%, transparent 55%)" }} />
+            <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full pointer-events-none"
+              style={{ background: "rgba(0,0,0,0.07)" }} />
+            <div className="absolute top-6 right-20 w-12 h-12 rounded-full pointer-events-none"
+              style={{ background: "rgba(255,255,255,0.06)" }} />
+
+            {/* Close button */}
+            <button onClick={onClose}
+              className="absolute top-4 right-4 p-1.5 rounded-xl hover:opacity-80 transition-opacity"
+              style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}>
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+
+            {/* Identity */}
+            <div className="flex items-start gap-4 pr-8">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: "rgba(255,255,255,0.18)",
+                  boxShadow: "0 0 0 4px rgba(255,255,255,0.08), inset 0 1px 2px rgba(255,255,255,0.15)",
+                }}>
+                <ClipboardDocumentCheckIcon className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white/65 text-[11px] font-bold uppercase tracking-widest mb-0.5">
+                  HSA · Checklist
+                </p>
+                <h2 className="text-white text-xl font-bold leading-tight tracking-tight">
+                  {checklist.auditor_number}
+                </h2>
+                {checklist.area_audited && (
+                  <p className="text-white/70 text-sm mt-1 truncate">{checklist.area_audited}</p>
+                )}
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold"
+                    style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
+                    {STATUS_STYLES[checklist.status]?.label || checklist.status}
+                  </span>
+                  {checklist.date && (
+                    <span className="text-white/55 text-[11px]">{formatDate(checklist.date)}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Stats strip */}
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {[
+                { label: "Auditors",   value: auditors.length,  Icon: UsersIcon },
+                { label: "Audits Run", value: performed.length, Icon: ClipboardDocumentCheckIcon },
+                { label: "Issues",     value: totalIssues,      Icon: ExclamationTriangleIcon },
+              ].map(({ label, value, Icon }) => (
+                <div key={label} className="rounded-xl px-3 pt-2.5 pb-3 text-center"
+                  style={{ background: "rgba(255,255,255,0.12)" }}>
+                  <Icon className="h-3.5 w-3.5 text-white/50 mx-auto mb-1.5" />
+                  <p className="text-white text-xl font-bold leading-none">{value}</p>
+                  <p className="text-white/55 text-[10px] mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Scrollable body ── */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-7">
+
+            {/* Section: Checklist Details */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-0.5 h-4 rounded-full" style={{ background: ACCENT }} />
+                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                  Checklist Details
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Date",   value: formatDate(checklist.date) },
+                  { label: "Status", value: <StatusBadge status={checklist.status} /> },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-2xl px-4 py-3"
+                    style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5"
+                      style={{ color: "var(--text-muted)" }}>{label}</p>
+                    <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Section: Assigned Auditors */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-0.5 h-4 rounded-full" style={{ background: ACCENT }} />
+                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                  Assigned Auditors
+                </p>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                  style={{ background: ACCENT_LIGHT, color: ACCENT }}>{auditors.length}</span>
+              </div>
+              {auditors.length === 0 ? (
+                <div className="flex items-center gap-3 rounded-2xl px-4 py-4"
+                  style={{ background: "var(--bg-raised)", border: "1px dashed var(--border)" }}>
+                  <UsersIcon className="h-5 w-5 flex-shrink-0" style={{ color: "var(--text-muted)", opacity: 0.4 }} />
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>No auditors assigned yet.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {auditors.map((a) => (
+                    <div key={a.id} className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                      style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, ${ACCENT} 0%, #047857 100%)`,
+                          boxShadow: `0 2px 8px rgba(16,185,129,0.3)`,
+                        }}>
+                        {(a.firstname?.[0] || a.first_name?.[0] || a.email?.[0] || "A").toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text)" }}>{displayName(a)}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>{a.employee_id || a.email || "Auditor"}</p>
+                      </div>
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ACCENT }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Section: Audit Log */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-0.5 h-4 rounded-full" style={{ background: ACCENT }} />
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                    Audit Log
+                  </p>
+                  {performed.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                      style={{ background: ACCENT_LIGHT, color: ACCENT }}>{performed.length}</span>
+                  )}
+                </div>
+                {canPerform && (
+                  <button onClick={onStartAudit}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity"
+                    style={{ background: ACCENT, color: "#fff", boxShadow: `0 2px 10px rgba(16,185,129,0.4)` }}>
+                    <PlayIcon className="h-3.5 w-3.5" /> Start Audit
+                  </button>
+                )}
+              </div>
+
+              {performed.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 rounded-2xl"
+                  style={{ background: "var(--bg-raised)", border: "1px dashed var(--border)" }}>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+                    style={{ background: ACCENT_LIGHT }}>
+                    <CalendarDaysIcon className="h-6 w-6" style={{ color: ACCENT }} />
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>No Audits Yet</p>
+                  {canPerform && (
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                      Click "Start Audit" to record the first audit.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Timeline layout */
+                <div className="relative">
+                  {/* Vertical connecting line */}
+                  <div className="absolute top-5 bottom-5 pointer-events-none"
+                    style={{ left: 19, width: 2, background: `linear-gradient(to bottom, ${ACCENT}50, transparent)`, borderRadius: 2 }} />
+
+                  <div className="flex flex-col gap-3">
+                    {performed.map((p, idx) => {
+                      const issueCount = p.issues?.length || 0;
+                      return (
+                        <div key={p.id} className="flex items-start gap-3">
+                          {/* Timeline dot */}
+                          <div className="flex-shrink-0 mt-[18px] z-10">
+                            <div className="w-2.5 h-2.5 rounded-full"
+                              style={{
+                                marginLeft: 15,
+                                background: issueCount > 0 ? "#ef4444" : ACCENT,
+                                boxShadow: `0 0 0 3px ${issueCount > 0 ? "rgba(239,68,68,.18)" : ACCENT_LIGHT}`,
+                              }} />
+                          </div>
+
+                          {/* Card */}
+                          <div className="flex-1 rounded-2xl p-4 cursor-pointer"
+                            style={{ background: "var(--bg-raised)", border: "1px solid var(--border)", transition: "border-color 0.15s, box-shadow 0.15s" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = ACCENT;
+                              e.currentTarget.style.boxShadow = `0 4px 16px rgba(16,185,129,0.1)`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "var(--border)";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
+                            onClick={() => setDetailPerform(p)}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                                    {formatDate(p.audit_date || p.created_at)}
+                                  </p>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                                    style={{ background: "var(--bg)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                                    #{performed.length - idx}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                                  by {displayName(p.auditor)}
+                                </p>
+                                {p.audit_note && (
+                                  <p className="text-[11px] mt-1.5 truncate" style={{ color: "var(--text-muted)" }}>
+                                    {p.audit_note}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold whitespace-nowrap"
+                                  style={{
+                                    background: issueCount > 0 ? "rgba(239,68,68,.1)" : ACCENT_LIGHT,
+                                    color: issueCount > 0 ? "#ef4444" : ACCENT,
+                                  }}>
+                                  {issueCount} issue{issueCount !== 1 ? "s" : ""}
+                                </span>
+                                <ChevronRightIcon className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <PerformedDetailModal
+        isOpen={Boolean(detailPerform)}
+        onClose={() => setDetailPerform(null)}
+        performed={detailPerform}
+        auditId={auditId}
+      />
+    </>,
+    document.body
+  );
+}
+
+// ─── Action Menu ──────────────────────────────────────────────────────────────
+
+function ActionMenu({ onEdit, onReassign, onView, onStartAudit, onTemplates, onDelete, canUpdate, canDelete: canDel, canPerform }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
+      const inMenu    = menuRef.current    && menuRef.current.contains(e.target);
+      if (!inTrigger && !inMenu) setOpen(false);
+    }
     if (open) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  function handleToggle(e) {
+    e.stopPropagation();
+    if (!open) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((o) => !o);
+  }
+
   const items = [
     { label: "View Details",       icon: EyeIcon,            action: onView,           show: true },
     { label: "Start Audit",        icon: PlayIcon,           action: onStartAudit,     show: canPerform },
-    { label: "Manage Issues",      icon: BellAlertIcon,      action: onManageIssues,   show: canPerform },
     { label: "Edit",               icon: PencilSquareIcon,   action: onEdit,           show: canUpdate },
     { label: "Reassign Auditors",  icon: UsersIcon,          action: onReassign,       show: canUpdate },
     { label: "Manage Templates",   icon: Cog6ToothIcon,      action: onTemplates,      show: canUpdate },
@@ -1961,21 +2623,29 @@ function ActionMenu({ onEdit, onReassign, onView, onStartAudit, onManageIssues, 
   ].filter((i) => i.show);
 
   return (
-    <div className="relative" ref={ref}>
-      <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-        className="p-1.5 rounded-lg hover:opacity-80"
-        style={{ background: open ? "var(--bg-raised)" : "transparent", color: "var(--text-muted)" }}>
-        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 mt-1 w-48 rounded-xl overflow-hidden z-50"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-lg)",
-          }}>
+    <>
+      <div ref={triggerRef}>
+        <button onClick={handleToggle}
+          className="p-1.5 rounded-lg hover:opacity-80"
+          style={{ background: open ? "var(--bg-raised)" : "transparent", color: "var(--text-muted)" }}>
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+          </svg>
+        </button>
+      </div>
+      {open && createPortal(
+        <div ref={menuRef} style={{
+          position: "fixed",
+          top: pos.top,
+          right: pos.right,
+          zIndex: 10001,
+          width: 192,
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-lg)",
+        }}>
           {items.map(({ label, icon: Icon, action, danger }) => (
             <button key={label} onClick={() => { setOpen(false); action(); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold hover:opacity-80 transition-opacity"
@@ -1983,9 +2653,10 @@ function ActionMenu({ onEdit, onReassign, onView, onStartAudit, onManageIssues, 
               <Icon className="h-4 w-4 flex-shrink-0" />{label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
@@ -2023,7 +2694,6 @@ export default function ChecklistPage() {
   const [deleting,       setDeleting]       = useState(false);
   const [reassignModal,  setReassignModal]  = useState({ open: false, checklist: null });
   const [performModal,   setPerformModal]   = useState({ open: false, checklist: null });
-  const [issueModal,     setIssueModal]     = useState({ open: false, checklist: null });
   const [templateModal,  setTemplateModal]  = useState(false);
   const [detailDrawer,   setDetailDrawer]   = useState({ open: false, checklist: null });
 
@@ -2293,7 +2963,6 @@ export default function ChecklistPage() {
                           onEdit={() => setSetupModal({ open: true, checklist: cl })}
                           onReassign={() => setReassignModal({ open: true, checklist: cl })}
                           onStartAudit={() => setPerformModal({ open: true, checklist: cl })}
-                          onManageIssues={() => setIssueModal({ open: true, checklist: cl })}
                           onTemplates={() => setTemplateModal(true)}
                           onDelete={() => setDeleteTarget(cl)}
                         />
@@ -2327,12 +2996,6 @@ export default function ChecklistPage() {
         checklist={performModal.checklist}
         auditId={auditId}
       />
-      <IssueManagerModal
-        isOpen={issueModal.open}
-        onClose={() => setIssueModal({ open: false, checklist: null })}
-        checklist={issueModal.checklist}
-        auditId={auditId}
-      />
       <TemplateManagerModal
         isOpen={templateModal}
         onClose={() => setTemplateModal(false)}
@@ -2354,10 +3017,7 @@ export default function ChecklistPage() {
           setDetailDrawer((d) => ({ ...d, open: false }));
           setPerformModal({ open: true, checklist: detailDrawer.checklist });
         }}
-        onManageIssues={() => {
-          setDetailDrawer((d) => ({ ...d, open: false }));
-          setIssueModal({ open: true, checklist: detailDrawer.checklist });
-        }}
+        auditId={auditId}
       />
       </>
       )}
