@@ -1,6 +1,5 @@
-import React from 'react';
 import {
-  FaClipboardList, FaHardHat, FaFirstAid, FaFire, FaListAlt, FaUsers, FaHistory, FaArrowRight,
+  FaClipboardList, FaHardHat, FaFirstAid, FaFire, FaListAlt, FaUsers, FaArrowRight,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,7 +16,7 @@ const items = [
   {
     id: 2,
     title: 'Workplace Inspection Report',
-    formPath: '/form/workplace',
+    formPath: '/health-and-safety/workplace-inspection-report',
     icon: FaHardHat,
     color: 'amber',
   },
