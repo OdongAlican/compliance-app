@@ -69,6 +69,7 @@ import RecentAuditInterface from '../Forms-interface/RecentAuditInterface';
 import PPECompInterface     from '../Forms-interface/PPECompInterface';
 import ManagementInterface  from '../Forms-interface/ManagementInterface';
 import ChecklistPage        from '../components/HealthAndSafety/Checklist';
+import WirPage              from '../components/HealthAndSafety/WorkplaceInspectionReport';
 
 // ── Param wrappers ────────────────────────────────────────────────────────
 function HazardReportExecuteWrapper() {
@@ -132,6 +133,7 @@ export default function AppRoutes() {
 
       {/* ── Protected — Audits ── */}
       <Route path="/health-and-safety/checklist" element={<Layout><ChecklistPage /></Layout>} />
+      <Route path="/health-and-safety/workplace-inspection-report" element={<Layout><WirPage /></Layout>} />
       <Route path="/form/checklist"   element={<Layout><ChecklistInterface /></Layout>} />
       <Route path="/form/workplace"   element={<Layout><WorkPlaceInterface /></Layout>} />
       <Route path="/form/emergency"   element={<Layout><EmergencyInterface /></Layout>} />
