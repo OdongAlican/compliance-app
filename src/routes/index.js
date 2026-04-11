@@ -71,6 +71,7 @@ import ManagementInterface  from '../Forms-interface/ManagementInterface';
 import ChecklistPage        from '../components/HealthAndSafety/Checklist';
 import WirPage              from '../components/HealthAndSafety/WorkplaceInspectionReport';
 import TcPage               from '../components/HealthAndSafety/TrainingAndCompetency';
+import EpPage               from '../components/HealthAndSafety/EmergencyPreparedness';
 
 // ── Param wrappers ────────────────────────────────────────────────────────
 function HazardReportExecuteWrapper() {
@@ -136,6 +137,7 @@ export default function AppRoutes() {
       <Route path="/health-and-safety/checklist" element={<Layout><ChecklistPage /></Layout>} />
       <Route path="/health-and-safety/workplace-inspection-report" element={<Layout><WirPage /></Layout>} />
       <Route path="/health-and-safety/training-and-competency" element={<Layout><TcPage /></Layout>} />
+      <Route path="/health-and-safety/emergency-preparedness" element={<Layout><EpPage /></Layout>} />
       <Route path="/form/checklist"   element={<Layout><ChecklistInterface /></Layout>} />
       <Route path="/form/workplace"   element={<Layout><WorkPlaceInterface /></Layout>} />
       <Route path="/form/emergency"   element={<Layout><EmergencyInterface /></Layout>} />
