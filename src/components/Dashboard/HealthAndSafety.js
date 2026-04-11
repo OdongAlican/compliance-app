@@ -23,7 +23,7 @@ const items = [
   {
     id: 3,
     title: 'Training and competency',
-    formPath: '/form/training',
+    formPath: '/health-and-safety/training-and-competency',
     icon: FaUsers,
     color: 'green',
   },
