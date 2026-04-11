@@ -30,7 +30,7 @@ const items = [
   {
     id: 4,
     title: 'Emergency preparedness',
-    formPath: '/form/emergency',
+    formPath: '/health-and-safety/emergency-preparedness',
     icon: FaFire,
     color: 'red',
   },
