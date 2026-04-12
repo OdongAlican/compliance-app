@@ -66,12 +66,12 @@ import WorkPlaceInterface   from '../Forms-interface/WorkPlaceInterface';
 import EmergencyInterface   from '../Forms-interface/EmergencyInterface';
 import CapaInterface        from '../Forms-interface/CapaInterface';
 import RecentAuditInterface from '../Forms-interface/RecentAuditInterface';
-import PPECompInterface     from '../Forms-interface/PPECompInterface';
 import ManagementInterface  from '../Forms-interface/ManagementInterface';
 import ChecklistPage        from '../components/HealthAndSafety/Checklist';
 import WirPage              from '../components/HealthAndSafety/WorkplaceInspectionReport';
 import TcPage               from '../components/HealthAndSafety/TrainingAndCompetency';
 import EpPage               from '../components/HealthAndSafety/EmergencyPreparedness';
+import PpeCompliancePage    from '../components/HealthAndSafety/PPECompliance';
 
 // ── Param wrappers ────────────────────────────────────────────────────────
 function HazardReportExecuteWrapper() {
@@ -138,12 +138,12 @@ export default function AppRoutes() {
       <Route path="/health-and-safety/workplace-inspection-report" element={<Layout><WirPage /></Layout>} />
       <Route path="/health-and-safety/training-and-competency" element={<Layout><TcPage /></Layout>} />
       <Route path="/health-and-safety/emergency-preparedness" element={<Layout><EpPage /></Layout>} />
+      <Route path="/health-and-safety/ppe-compliance" element={<Layout><PpeCompliancePage /></Layout>} />
       <Route path="/form/checklist"   element={<Layout><ChecklistInterface /></Layout>} />
       <Route path="/form/workplace"   element={<Layout><WorkPlaceInterface /></Layout>} />
       <Route path="/form/emergency"   element={<Layout><EmergencyInterface /></Layout>} />
       <Route path="/form/capa"        element={<Layout><CapaInterface /></Layout>} />
       <Route path="/form/audit"       element={<Layout><RecentAuditInterface /></Layout>} />
-      <Route path="/form/ppe-com"     element={<Layout><PPECompInterface /></Layout>} />
       <Route path="/form/management"  element={<Layout><ManagementInterface /></Layout>} />
 
     </Routes>
