@@ -1276,20 +1276,26 @@ function ReassignModal({ isOpen, onClose, record, auditId }) {
   const actionLoading = useAppSelector(selectPpeComplianceActionLoading);
   const actionError   = useAppSelector(selectPpeComplianceActionError);
 
-  const [auditorIds, setAuditorIds] = useState([]);
-  const [allUsers, setAllUsers]     = useState([]);
+  const [selectedAuditors, setSelectedAuditors] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
-      setAuditorIds((record?.auditors ?? record?.auditor_ids ?? []).map((a) => (typeof a === "object" ? a.id : a)));
+      setSelectedAuditors(
+        (record?.auditors ?? []).filter((a) => typeof a === "object" && a !== null)
+      );
     }
   }, [isOpen, record]);
 
-  useEffect(() => {
-    UsersService.list().then((u) => setAllUsers(Array.isArray(u) ? u : u?.data ?? [])).catch(() => {});
-  }, []);
+  function toggleAuditor(user) {
+    setSelectedAuditors((prev) =>
+      prev.some((u) => u.id === user.id)
+        ? prev.filter((u) => u.id !== user.id)
+        : [...prev, user]
+    );
+  }
 
   const handleSave = async () => {
+    const auditorIds = selectedAuditors.map((u) => u.id);
     const res = await dispatch(reassignPpeComplianceAuditors({ auditId, ppeCompId: record.id, auditorIds }));
     if (!res.error) {
       toast.success("Auditors reassigned.");
@@ -1297,30 +1303,39 @@ function ReassignModal({ isOpen, onClose, record, auditId }) {
     }
   };
 
-  if (!isOpen || !record) return null;
-
   return (
-    <ModalShell
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Reassign Auditors"
-      subtitle={`Record: ${record.audit_number || "—"}`}
-      icon={<UsersIcon className="h-5 w-5 text-white" />}
-      accent={ACCENT}>
-      <div className="flex flex-col gap-4">
+    <ModalShell isOpen={isOpen} onClose={onClose} title="Reassign Auditors" width="max-w-md">
 
-        {/* Record banner */}
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
-          style={{ background: ACCENT_LIGHT, border: `1px solid ${ACCENT}30` }}>
-          <ShieldCheckIcon className="h-5 w-5 flex-shrink-0" style={{ color: ACCENT }} />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold" style={{ color: ACCENT }}>PPE Compliance Record</p>
-            <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-              {record.audit_number} {record.area_audited ? `· ${record.area_audited}` : ""}
-            </p>
+      {/* Record context banner */}
+      {record && (
+        <div className="mx-6 mt-2 mb-1 rounded-xl px-4 py-3 flex items-center gap-3"
+          style={{ background: ACCENT_LIGHT, border: `1px solid ${ACCENT}25` }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, boxShadow: `0 4px 12px ${ACCENT}40` }}>
+            <ShieldCheckIcon className="h-4 w-4 text-white" />
           </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: ACCENT }}>
+              PPE Compliance Record
+            </p>
+            <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
+              {record.audit_number || `#${record.id}`}
+            </p>
+            {record.area_audited && (
+              <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{record.area_audited}</p>
+            )}
+          </div>
+          {selectedAuditors.length > 0 && (
+            <span className="flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full"
+              style={{ background: ACCENT, color: "#fff" }}>
+              {selectedAuditors.length} selected
+            </span>
+          )}
         </div>
+      )}
 
+      {/* Auditor picker */}
+      <div className="px-6 py-4 flex-1 overflow-y-auto flex flex-col gap-4">
         {actionError && (
           <div className="px-3 py-2.5 rounded-xl text-xs flex items-start gap-2"
             style={{ background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#ef4444" }}>
@@ -1329,29 +1344,35 @@ function ReassignModal({ isOpen, onClose, record, auditId }) {
           </div>
         )}
 
-        <AuditorPicker value={auditorIds} onChange={setAuditorIds} allUsers={allUsers} />
+        <AuditorPicker selected={selectedAuditors} onToggle={toggleAuditor} label="Search & assign auditors" />
 
-        {/* Warning if none selected */}
-        {auditorIds.length === 0 && (
-          <div className="px-3 py-2.5 rounded-xl text-xs flex items-start gap-2"
-            style={{ background: "rgba(245,158,11,.08)", border: "1px solid rgba(245,158,11,.3)", color: "#8b5cf6" }}>
-            <ExclamationTriangleIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-            <span>At least one auditor is recommended for this record.</span>
+        {selectedAuditors.length === 0 && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl"
+            style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: "#f59e0b" }} />
+            <p className="text-xs" style={{ color: "#b45309" }}>At least one auditor must be assigned.</p>
           </div>
         )}
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
+      {/* Footer */}
+      <div className="flex gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
+        <button onClick={onClose}
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80"
           style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
           Cancel
         </button>
-        <button onClick={handleSave} disabled={actionLoading || auditorIds.length === 0}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-          style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)` }}>
+        <button onClick={handleSave} disabled={actionLoading || selectedAuditors.length === 0}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-50"
+          style={{
+            background: selectedAuditors.length > 0 ? ACCENT : "var(--bg-raised)",
+            color: selectedAuditors.length > 0 ? "#fff" : "var(--text-muted)",
+            border: selectedAuditors.length > 0 ? "none" : "1px solid var(--border)",
+            transition: "all 0.2s",
+          }}>
           {actionLoading
-            ? <><Spinner size={4} />Saving…</>
-            : `Save${auditorIds.length > 0 ? ` (${auditorIds.length})` : ""}`}
+            ? <><Spinner size={4} /> Saving…</>
+            : <><UsersIcon className="h-4 w-4" /> Save {selectedAuditors.length > 0 ? `(${selectedAuditors.length})` : ""}</>}
         </button>
       </div>
     </ModalShell>
@@ -1365,312 +1386,515 @@ const PERFORM_TABS = ["Audit Info", "Checklist Items", "Issues", "Summary"];
 function PerformModal({ isOpen, onClose, record, auditId }) {
   const dispatch      = useAppDispatch();
   const actionLoading = useAppSelector(selectPpeComplianceActionLoading);
-  const actionError   = useAppSelector(selectPpeComplianceActionError);
+  const { user: currentUser } = useAuth();
 
-  const [tab, setTab]             = useState(0);
-  const [auditDate, setAuditDate] = useState("");
-  const [auditNote, setAuditNote] = useState("");
-  const [auditorId, setAuditorId] = useState("");
-  const [allUsers, setAllUsers]   = useState([]);
+  const TABS = ["Audit Info", "Checklist Items", "Issues", "Summary"];
 
-  // Checklist items: { id, label, status, comment }
-  const [items, setItems] = useState([]);
-  const [newLabel, setNewLabel] = useState("");
+  const [activeTab, setActiveTab] = useState(0);
+  const [form, setForm] = useState({ audit_date: "", audit_note: "" });
+  const [errors, setErrors] = useState({});
 
-  // Issues: { id, name, description }
-  const [issues, setIssues]     = useState([]);
-  const [newIssueName, setNewIssueName]   = useState("");
-  const [newIssueDesc, setNewIssueDesc]   = useState("");
+  const [items, setItems] = useState([{ label: "", status: "compliant", comment: "" }]);
+  const [itemErrors, setItemErrors] = useState([{}]);
+
+  const [issues, setIssues] = useState([{ name: "", priority_level: "medium", due_date: "", file: null }]);
+  const [issueErrors, setIssueErrors] = useState([{}]);
 
   useEffect(() => {
-    if (isOpen) {
-      setTab(0);
-      setAuditDate("");
-      setAuditNote("");
-      setAuditorId("");
-      setItems([]);
-      setIssues([]);
-      setNewLabel("");
-      setNewIssueName("");
-      setNewIssueDesc("");
-    }
+    if (!isOpen) return;
+    setActiveTab(0);
+    setForm({ audit_date: new Date().toISOString().slice(0, 10), audit_note: "" });
+    setErrors({});
+    setItems([{ label: "", status: "compliant", comment: "" }]);
+    setItemErrors([{}]);
+    setIssues([{ name: "", priority_level: "medium", due_date: "", file: null }]);
+    setIssueErrors([{}]);
   }, [isOpen]);
 
-  useEffect(() => {
-    UsersService.list().then((u) => setAllUsers(Array.isArray(u) ? u : u?.data ?? [])).catch(() => {});
-  }, []);
+  function addItem()             { setItems((p) => [...p, { label: "", status: "compliant", comment: "" }]); setItemErrors((p) => [...p, {}]); }
+  function removeItem(idx)       { if (items.length === 1) return; setItems((p) => p.filter((_, i) => i !== idx)); setItemErrors((p) => p.filter((_, i) => i !== idx)); }
+  function updateItem(idx, k, v) {
+    setItems((p) => p.map((it, i) => i === idx ? { ...it, [k]: v } : it));
+    if (k === "label") setItemErrors((p) => p.map((e, i) => i === idx ? { ...e, label: "" } : e));
+  }
 
-  // Checklist helpers
-  const addItem = () => {
-    if (!newLabel.trim()) return;
-    setItems((p) => [...p, { id: Date.now(), label: newLabel.trim(), status: "compliant", comment: "" }]);
-    setNewLabel("");
-  };
-  const removeItem = (id) => setItems((p) => p.filter((x) => x.id !== id));
-  const setItemField = (id, k, v) => setItems((p) => p.map((x) => x.id === id ? { ...x, [k]: v } : x));
+  function addIssue()              { setIssues((p) => [...p, { name: "", priority_level: "medium", due_date: "", file: null }]); setIssueErrors((p) => [...p, {}]); }
+  function removeIssue(idx)        { setIssues((p) => p.filter((_, i) => i !== idx)); setIssueErrors((p) => p.filter((_, i) => i !== idx)); }
+  function updateIssue(idx, k, v)  {
+    setIssues((p) => p.map((iss, i) => i === idx ? { ...iss, [k]: v } : iss));
+    if (k === "name") setIssueErrors((p) => p.map((e, i) => i === idx ? { ...e, name: "" } : e));
+  }
 
-  // Issue helpers
-  const addIssue = () => {
-    if (!newIssueName.trim()) return;
-    setIssues((p) => [...p, { id: Date.now(), name: newIssueName.trim(), description: newIssueDesc.trim() }]);
-    setNewIssueName("");
-    setNewIssueDesc("");
-  };
-  const removeIssue = (id) => setIssues((p) => p.filter((x) => x.id !== id));
+  function validate() {
+    const e = {};
+    if (!form.audit_date) e.audit_date = "Audit date is required.";
+    setErrors(e);
 
-  const canSubmit = auditDate && auditorId;
+    const hasRealItems = items.some((it) => it.label.trim());
+    const ie = items.map((it) => {
+      if (!it.label.trim() && (it.comment || items.length > 1)) return { label: "Item label is required." };
+      return {};
+    });
+    setItemErrors(ie);
 
-  const handleSubmit = async () => {
-    const payload = {
-      audit_date: auditDate,
-      audit_note: auditNote,
-      auditor_id: auditorId,
-      performedChecklist: items.map(({ label, status, comment }, idx) => ({ label, status, comment, position: idx + 1 })),
-      issues: issues.map(({ name, description }) => ({ name, description })),
-    };
-    const res = await dispatch(performPpeComplianceRecord({ auditId, ppeCompId: record.id, payload }));
-    if (!res.error) {
-      toast.success("Audit performed successfully.");
-      onClose();
+    const issE = issues.map((iss) => {
+      const hasData = iss.due_date || iss.file;
+      if (hasData && !iss.name.trim()) return { name: "Issue name is required." };
+      return {};
+    });
+    setIssueErrors(issE);
+
+    const itemsValid  = hasRealItems && ie.every((x) => Object.keys(x).length === 0);
+    const issuesValid = issE.every((x) => Object.keys(x).length === 0);
+
+    if (!itemsValid && !e.audit_date) {
+      if (!hasRealItems || ie.some((x) => Object.keys(x).length > 0)) setActiveTab(1);
     }
-  };
+    if (Object.keys(e).length > 0) setActiveTab(0);
 
-  if (!isOpen || !record) return null;
+    return Object.keys(e).length === 0 && itemsValid && issuesValid;
+  }
 
-  return createPortal(
-    <div className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.6)", zIndex: 10001, backdropFilter: "blur(4px)" }}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden"
-        style={{ background: "var(--bg-surface)", boxShadow: "0 25px 60px rgba(0,0,0,0.3), 0 0 0 1px var(--border)", maxHeight: "92vh" }}>
+  async function handleSubmit() {
+    if (!validate() || !record) return;
 
-        {/* Header */}
-        <div className="relative overflow-hidden flex-shrink-0 px-6 py-5"
-          style={{ background: `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, rgba(139,92,246,0.03) 50%, transparent 100%)`, borderBottom: "1px solid var(--border)" }}>
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none"
-            style={{ background: `radial-gradient(circle, ${ACCENT_LIGHT} 0%, transparent 70%)` }} />
-          <div className="flex items-center gap-3 relative">
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)`, boxShadow: `0 4px 14px ${ACCENT}60` }}>
-              <PlayIcon className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-widest mb-0.5" style={{ color: ACCENT }}>
-                Perform Audit · {PPE_COMPLIANCE_AUDIT_TITLE}
-              </p>
-              <h2 className="text-base font-bold truncate" style={{ color: "var(--text)" }}>
-                {record.audit_number} {record.area_audited ? `· ${record.area_audited}` : ""}
-              </h2>
-            </div>
-            <button onClick={onClose} className="p-2 rounded-xl hover:opacity-70"
-              style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-              <XMarkIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+    const performedChecklist = items
+      .filter((it) => it.label.trim())
+      .map((it, idx) => ({
+        label:    it.label.trim(),
+        status:   it.status,
+        comment:  it.comment.trim() || undefined,
+        position: idx + 1,
+      }));
 
-        {/* Tab pills */}
-        <div className="flex gap-1.5 px-5 pt-4 flex-shrink-0 overflow-x-auto">
-          {PERFORM_TABS.map((t, i) => (
-            <button key={t} onClick={() => setTab(i)}
-              className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all"
-              style={{
-                background: tab === i ? ACCENT : "var(--bg-raised)",
-                color:      tab === i ? "#fff" : "var(--text-muted)",
-                border:     tab === i ? "none" : "1px solid var(--border)",
-              }}>
-              {t}
-              {i === 1 && items.length > 0  && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
-                style={{ background: tab === 1 ? "rgba(255,255,255,.25)" : ACCENT_LIGHT, color: tab === 1 ? "#fff" : ACCENT }}>{items.length}</span>}
-              {i === 2 && issues.length > 0 && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
-                style={{ background: tab === 2 ? "rgba(255,255,255,.25)" : "rgba(239,68,68,.1)", color: tab === 2 ? "#fff" : "#ef4444" }}>{issues.length}</span>}
-            </button>
-          ))}
-        </div>
+    const issuesPayload = issues.filter((iss) => iss.name.trim()).map((iss) => ({
+      name:           iss.name,
+      priority_level: iss.priority_level || undefined,
+      due_date:       iss.due_date       || undefined,
+      file:           iss.file           || undefined,
+    }));
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
+    const payload = {
+      audit_date:         form.audit_date,
+      audit_note:         form.audit_note.trim() || undefined,
+      auditor_id:         record?.auditors?.[0]?.id || currentUser?.id,
+      performedChecklist,
+      issues:             issuesPayload,
+    };
 
-          {actionError && (
-            <div className="mx-5 mt-4 px-3 py-2.5 rounded-xl text-xs flex items-start gap-2"
-              style={{ background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#ef4444" }}>
-              <ExclamationTriangleIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-              <span>{typeof actionError === "string" ? actionError : "An error occurred."}</span>
-            </div>
-          )}
+    const result = await dispatch(performPpeComplianceRecord({ auditId, ppeCompId: record.id, payload }));
+    if (performPpeComplianceRecord.fulfilled.match(result)) {
+      toast.success("Audit performed successfully.");
+      dispatch(fetchPpeComplianceRecords(auditId));
+      onClose();
+    } else {
+      toast.error(result.payload || "Failed to perform audit.");
+    }
+  }
 
-          {/* Tab 0 — Audit Info */}
-          {tab === 0 && (
-            <div className="p-5 flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Audit Date *</label>
-                  <input type="date" value={auditDate} onChange={(e) => setAuditDate(e.target.value)} className="ui-input text-sm" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Auditor *</label>
-                  <select value={auditorId} onChange={(e) => setAuditorId(e.target.value)} className="ui-input text-sm">
-                    <option value="">— Select auditor —</option>
-                    {allUsers.map((u) => (
-                      <option key={u.id} value={u.id}>{displayName(u)}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Audit Note</label>
-                <textarea value={auditNote} onChange={(e) => setAuditNote(e.target.value)} rows={4}
-                  placeholder="Overall observations, context, summary…" className="ui-input text-sm resize-none" />
-              </div>
-            </div>
-          )}
+  const allItemsFilled = items.filter((it) => it.label.trim());
 
-          {/* Tab 1 — Checklist Items */}
-          {tab === 1 && (
-            <div className="p-5 flex flex-col gap-4">
-              {/* Add item */}
-              <div className="flex gap-2">
-                <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addItem(); } }}
-                  placeholder="Add checklist item…" className="ui-input text-sm flex-1" />
-                <button onClick={addItem} disabled={!newLabel.trim()}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40 flex-shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)` }}>
-                  <PlusIcon className="h-4 w-4" /> Add
-                </button>
-              </div>
-
-              {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10">
-                  <ClipboardDocumentListIcon className="h-10 w-10 mb-3" style={{ color: "var(--text-muted)", opacity: 0.4 }} />
-                  <p className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>No items yet</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Add checklist items above.</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {items.map((item) => (
-                    <div key={item.id} className="rounded-xl p-3 flex flex-col gap-2"
-                      style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-                      <div className="flex items-center gap-2">
-                        <p className="flex-1 text-sm font-semibold" style={{ color: "var(--text)" }}>{item.label}</p>
-                        <select value={item.status} onChange={(e) => setItemField(item.id, "status", e.target.value)}
-                          className="ui-input text-xs py-1 px-2">
-                          {PERFORM_STATUSES.map((s) => <option key={s} value={s}>{PERFORM_STATUS_LABELS[s]}</option>)}
-                        </select>
-                        <button onClick={() => removeItem(item.id)} className="p-1 hover:opacity-70" style={{ color: "#ef4444" }}>
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <input value={item.comment} onChange={(e) => setItemField(item.id, "comment", e.target.value)}
-                        placeholder="Comment (optional)…" className="ui-input text-xs" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab 2 — Issues */}
-          {tab === 2 && (
-            <div className="p-5 flex flex-col gap-4">
-              {/* Add issue */}
-              <div className="flex flex-col gap-2 p-3 rounded-xl"
-                style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
-                <input value={newIssueName} onChange={(e) => setNewIssueName(e.target.value)}
-                  placeholder="Issue name…" className="ui-input text-sm" />
-                <textarea value={newIssueDesc} onChange={(e) => setNewIssueDesc(e.target.value)}
-                  rows={2} placeholder="Description (optional)…" className="ui-input text-sm resize-none" />
-                <button onClick={addIssue} disabled={!newIssueName.trim()}
-                  className="self-end flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-                  style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)` }}>
-                  <PlusIcon className="h-4 w-4" /> Add Issue
-                </button>
-              </div>
-
-              {issues.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <ShieldCheckIcon className="h-10 w-10 mb-3" style={{ color: "var(--text-muted)", opacity: 0.4 }} />
-                  <p className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>No issues recorded</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {issues.map((issue) => (
-                    <div key={issue.id} className="flex items-start gap-3 rounded-xl px-4 py-3"
-                      style={{ background: "var(--bg-raised)", border: "1px solid var(--border)", borderLeft: "3px solid #ef4444" }}>
-                      <ExclamationTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: "#ef4444" }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{issue.name}</p>
-                        {issue.description && (
-                          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>{issue.description}</p>
-                        )}
-                      </div>
-                      <button onClick={() => removeIssue(issue.id)} className="p-1 hover:opacity-70 flex-shrink-0" style={{ color: "#ef4444" }}>
-                        <XMarkIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab 3 — Summary */}
-          {tab === 3 && (
-            <div className="p-5 flex flex-col gap-4">
-              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                <div className="px-4 py-2.5" style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)` }}>
-                  <p className="text-xs font-bold text-white uppercase tracking-widest">Summary</p>
-                </div>
-                <div className="p-4 grid grid-cols-2 gap-3">
-                  <Field label="Audit Date" value={auditDate || "—"} />
-                  <Field label="Auditor" value={displayName(allUsers.find((u) => String(u.id) === String(auditorId))) || "—"} />
-                  <Field label="Checklist Items" value={`${items.length} item${items.length !== 1 ? "s" : ""}`} />
-                  <Field label="Issues"          value={`${issues.length} issue${issues.length !== 1 ? "s" : ""}`} />
-                  {auditNote && <Field label="Audit Note" value={auditNote} className="col-span-2" />}
-                </div>
-              </div>
-              {!canSubmit && (
-                <div className="px-3 py-2.5 rounded-xl text-xs flex items-start gap-2"
-                  style={{ background: "rgba(245,158,11,.08)", border: "1px solid rgba(245,158,11,.3)", color: "#8b5cf6" }}>
-                  <ExclamationTriangleIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                  <span>Please fill in Audit Date and Auditor before submitting.</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-between px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
-          <button onClick={() => setTab((t) => Math.max(0, t - 1))} disabled={tab === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-30 hover:opacity-80"
-            style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-            <ChevronLeftIcon className="h-4 w-4" /> Back
+  return (
+    <ModalShell isOpen={isOpen} onClose={onClose} title="Perform Audit" width="max-w-2xl">
+      {/* Tab bar */}
+      <div className="flex overflow-x-auto flex-shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
+        {TABS.map((tab, idx) => (
+          <button key={tab} onClick={() => setActiveTab(idx)}
+            className="px-5 py-3 text-xs font-semibold whitespace-nowrap transition-all border-b-2"
+            style={{
+              borderBottomColor: activeTab === idx ? ACCENT : "transparent",
+              color:             activeTab === idx ? ACCENT : "var(--text-muted)",
+              background:        "transparent",
+            }}>
+            {tab}
           </button>
-          {tab < PERFORM_TABS.length - 1 ? (
-            <button onClick={() => setTab((t) => t + 1)}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)` }}>
-              Next <ChevronRightIcon className="h-4 w-4" />
-            </button>
-          ) : (
-            <button onClick={handleSubmit} disabled={!canSubmit || actionLoading}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-              style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)` }}>
-              {actionLoading ? <><Spinner size={4} />Submitting…</> : "Submit Audit"}
-            </button>
-          )}
-        </div>
+        ))}
       </div>
-    </div>,
-    document.body
+
+      <div className="p-6 overflow-y-auto flex-1">
+
+        {/* ── Tab 0: Audit Info ── */}
+        {activeTab === 0 && (
+          <div className="flex flex-col gap-6">
+            {/* Banner */}
+            <div className="relative rounded-2xl overflow-hidden p-5"
+              style={{ background: `linear-gradient(135deg, ${ACCENT}22 0%, ${ACCENT}06 100%)`, border: `1px solid ${ACCENT}33` }}>
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none"
+                style={{ background: `radial-gradient(circle, ${ACCENT}22, transparent 70%)` }} />
+              <div className="flex items-start gap-4 relative">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, boxShadow: `0 6px 18px ${ACCENT}55` }}>
+                  <ShieldCheckIcon className="h-7 w-7 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: ACCENT }}>Performing Audit</p>
+                  <p className="text-base font-bold" style={{ color: "var(--text)" }}>{record?.area_audited || "—"}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Audit #{record?.audit_number}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <Field label="Audit Date" required error={errors.audit_date}>
+                <input type="date" value={form.audit_date}
+                  onChange={(e) => { setForm((f) => ({ ...f, audit_date: e.target.value })); setErrors({}); }}
+                  className="ui-input text-sm" />
+              </Field>
+              <Field label="Audit Note">
+                <textarea value={form.audit_note} onChange={(e) => setForm((f) => ({ ...f, audit_note: e.target.value }))}
+                  placeholder="General observations, findings, or notes about this audit…"
+                  rows={4} className="ui-input text-sm resize-none" />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 1: Checklist Items ── */}
+        {activeTab === 1 && (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                Checklist Items
+                <span className="ml-2 text-[11px] font-normal" style={{ color: "var(--text-muted)" }}>
+                  Add items assessed during this audit.
+                </span>
+              </p>
+              <button onClick={addItem}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:opacity-80"
+                style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                <PlusIcon className="h-3.5 w-3.5" /> Add Item
+              </button>
+            </div>
+
+            {items.map((item, idx) => (
+              <div key={idx} className="rounded-xl p-4 flex flex-col gap-3"
+                style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: ACCENT_LIGHT, color: ACCENT }}>{idx + 1}</span>
+                  <input value={item.label} onChange={(e) => updateItem(idx, "label", e.target.value)}
+                    placeholder="Checklist item label…" className="ui-input text-sm flex-1" />
+                  {items.length > 1 && (
+                    <button onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:opacity-70 flex-shrink-0"
+                      style={{ color: "#ef4444" }}>
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                {itemErrors[idx]?.label && (
+                  <p className="text-[11px]" style={{ color: "#ef4444" }}>{itemErrors[idx].label}</p>
+                )}
+
+                {/* Status toggle buttons */}
+                <div className="flex gap-1.5 flex-wrap">
+                  {PERFORM_STATUSES.map((s) => (
+                    <button key={s} type="button" onClick={() => updateItem(idx, "status", s)}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all"
+                      style={{
+                        background: item.status === s
+                          ? (s === "compliant" ? ACCENT : s === "partial" ? "#f59e0b" : "#ef4444")
+                          : "var(--bg-surface)",
+                        color: item.status === s ? "#fff" : "var(--text-muted)",
+                        border: `1px solid ${item.status === s
+                          ? (s === "compliant" ? ACCENT : s === "partial" ? "#f59e0b" : "#ef4444")
+                          : "var(--border)"}`,
+                      }}>
+                      {PERFORM_STATUS_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea value={item.comment} onChange={(e) => updateItem(idx, "comment", e.target.value)}
+                  placeholder="Comment (optional)…" rows={2} className="ui-input text-xs resize-none" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Tab 2: Issues ── */}
+        {activeTab === 2 && (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>Issues Found
+                <span className="ml-2 text-[11px] font-normal" style={{ color: "var(--text-muted)" }}>Optional</span>
+              </p>
+              <button onClick={addIssue}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:opacity-80"
+                style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                <PlusIcon className="h-3.5 w-3.5" /> Add Issue
+              </button>
+            </div>
+
+            {issues.map((iss, idx) => (
+              <div key={idx} className="rounded-xl p-4 flex flex-col gap-3"
+                style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center gap-2">
+                  <input value={iss.name} onChange={(e) => updateIssue(idx, "name", e.target.value)}
+                    placeholder="Issue name…" className="ui-input text-sm flex-1" />
+                  <button onClick={() => removeIssue(idx)} className="p-1.5 rounded-lg hover:opacity-70 flex-shrink-0"
+                    style={{ color: "#ef4444" }}>
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                {issueErrors[idx]?.name && (
+                  <p className="text-[11px]" style={{ color: "#ef4444" }}>{issueErrors[idx].name}</p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>Priority</label>
+                    <select value={iss.priority_level} onChange={(e) => updateIssue(idx, "priority_level", e.target.value)}
+                      className="ui-input text-sm">
+                      {PRIORITY_LEVELS.map((p) => (
+                        <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>Due Date</label>
+                    <input type="date" value={iss.due_date} onChange={(e) => updateIssue(idx, "due_date", e.target.value)}
+                      className="ui-input text-sm" />
+                  </div>
+                </div>
+                <Field label="Supporting Document">
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ border: "2px dashed var(--border)", background: "var(--bg-surface)" }}>
+                    <PaperClipIcon className="h-4 w-4 flex-shrink-0" style={{ color: iss.file ? ACCENT : "var(--text-muted)" }} />
+                    <span className="text-xs truncate" style={{ color: iss.file ? ACCENT : "var(--text-muted)" }}>
+                      {iss.file ? iss.file.name : "Attach file (optional)"}
+                    </span>
+                    {iss.file && (
+                      <span onClick={(e) => { e.preventDefault(); updateIssue(idx, "file", null); }}
+                        className="ml-auto flex-shrink-0 hover:opacity-70">
+                        <XMarkIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                      </span>
+                    )}
+                    <input type="file" className="hidden"
+                      onChange={(e) => updateIssue(idx, "file", e.target.files?.[0] || null)} />
+                  </label>
+                </Field>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Tab 3: Summary ── */}
+        {activeTab === 3 && (() => {
+          const compliantCount    = allItemsFilled.filter((i) => i.status === "compliant").length;
+          const partialCount      = allItemsFilled.filter((i) => i.status === "partial").length;
+          const nonCompliantCount = allItemsFilled.filter((i) => i.status === "non_compliant").length;
+          const totalItems        = allItemsFilled.length;
+          const filledIssues      = issues.filter((i) => i.name.trim());
+          const complianceRate    = totalItems > 0 ? Math.round((compliantCount / totalItems) * 100) : 0;
+
+          return (
+            <div className="flex flex-col gap-0 -mx-6 -mt-6">
+
+              {/* Hero banner */}
+              <div className="relative overflow-hidden px-6 py-6 flex-shrink-0"
+                style={{ background: `linear-gradient(140deg, ${ACCENT} 0%, ${ACCENT_DARK} 55%, ${ACCENT_DEEP} 100%)` }}>
+                <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full pointer-events-none"
+                  style={{ background: "rgba(255,255,255,0.07)" }} />
+                <div className="absolute bottom-0 left-8 w-20 h-20 rounded-full pointer-events-none"
+                  style={{ background: "rgba(255,255,255,0.04)" }} />
+
+                <div className="relative flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+                    <ShieldCheckIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-0.5">
+                      Audit Summary — {PPE_COMPLIANCE_AUDIT_TITLE}
+                    </p>
+                    <p className="text-lg font-black text-white leading-tight truncate">
+                      {record?.area_audited || "—"}
+                    </p>
+                    <p className="text-[11px] text-white/70 mt-0.5">
+                      #{record?.audit_number} &nbsp;·&nbsp; {formatDate(form.audit_date)}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 flex flex-col items-center gap-0.5">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+                      <span className="text-lg font-black text-white leading-none">{complianceRate}%</span>
+                    </div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Compliant</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stat tiles */}
+              <div className="grid grid-cols-3 gap-0 border-b" style={{ borderColor: "var(--border)" }}>
+                {[
+                  { label: "Compliant",     value: compliantCount,    color: "#16a34a", bg: "rgba(22,163,74,0.07)",  icon: <CheckCircleIcon className="h-5 w-5" /> },
+                  { label: "Partial",       value: partialCount,      color: "#f59e0b", bg: "rgba(245,158,11,0.07)", icon: <ExclamationTriangleIcon className="h-5 w-5" /> },
+                  { label: "Non-Compliant", value: nonCompliantCount, color: "#ef4444", bg: "rgba(239,68,68,0.07)",  icon: <XMarkIcon className="h-5 w-5" /> },
+                ].map(({ label, value, color, bg, icon }, i) => (
+                  <div key={label} className="flex flex-col items-center justify-center gap-2 py-5"
+                    style={{ background: bg, borderRight: i < 2 ? "1px solid var(--border)" : "none" }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{ background: `${color}18`, color }}>{icon}</div>
+                    <div className="text-center">
+                      <p className="text-2xl font-black leading-none" style={{ color }}>{value}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Content */}
+              <div className="p-6 flex flex-col gap-4">
+
+                {/* Info tiles */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Total Items",   value: totalItems,          icon: <ClipboardDocumentListIcon className="h-4 w-4" /> },
+                    { label: "Issues Raised", value: filledIssues.length, icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
+                    { label: "Audit Date",    value: formatDate(form.audit_date), icon: <CalendarDaysIcon className="h-4 w-4" /> },
+                  ].map(({ label, value, icon }) => (
+                    <div key={label} className="flex flex-col gap-2 rounded-xl px-3.5 py-3"
+                      style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                        style={{ background: ACCENT_LIGHT, color: ACCENT }}>{icon}</div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</p>
+                        <p className="text-sm font-bold mt-0.5" style={{ color: "var(--text)" }}>{value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Compliance progress bar */}
+                {totalItems > 0 && (
+                  <div className="rounded-xl px-4 py-3.5"
+                    style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                        Compliance Breakdown
+                      </p>
+                      <span className="text-xs font-bold" style={{ color: ACCENT }}>{totalItems} items</span>
+                    </div>
+                    <div className="flex rounded-full overflow-hidden h-2.5" style={{ background: "var(--bg-surface)" }}>
+                      {compliantCount > 0 && (
+                        <div style={{ width: `${(compliantCount / totalItems) * 100}%`, background: "#16a34a" }} />
+                      )}
+                      {partialCount > 0 && (
+                        <div style={{ width: `${(partialCount / totalItems) * 100}%`, background: "#f59e0b" }} />
+                      )}
+                      {nonCompliantCount > 0 && (
+                        <div style={{ width: `${(nonCompliantCount / totalItems) * 100}%`, background: "#ef4444" }} />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2">
+                      {[
+                        { label: "Compliant",     count: compliantCount,    color: "#16a34a" },
+                        { label: "Partial",       count: partialCount,      color: "#f59e0b" },
+                        { label: "Non-Compliant", count: nonCompliantCount, color: "#ef4444" },
+                      ].map(({ label, count, color }) => (
+                        <div key={label} className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            {label} <span className="font-bold" style={{ color }}>{count}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Issues preview */}
+                {filledIssues.length > 0 && (
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                    <div className="flex items-center justify-between px-4 py-2.5"
+                      style={{ background: "rgba(239,68,68,0.06)", borderBottom: "1px solid var(--border)" }}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#ef4444" }} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#ef4444" }}>Issues to Log</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>{filledIssues.length}</span>
+                    </div>
+                    {filledIssues.map((iss, idx) => (
+                      <div key={idx} className="flex items-center gap-3 px-4 py-2.5"
+                        style={{ borderBottom: idx < filledIssues.length - 1 ? "1px solid var(--border)" : "none" }}>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[9px] font-black"
+                          style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>{idx + 1}</div>
+                        <p className="flex-1 text-xs font-medium truncate" style={{ color: "var(--text)" }}>{iss.name}</p>
+                        {iss.priority_level && <PriorityBadge priority={iss.priority_level} />}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Audit note */}
+                {form.audit_note && (
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                    <div className="flex items-center gap-2 px-4 py-2.5"
+                      style={{ background: ACCENT_LIGHT, borderBottom: "1px solid var(--border)" }}>
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: ACCENT }}>Audit Note</p>
+                    </div>
+                    <p className="px-4 py-3 text-sm leading-relaxed" style={{ color: "var(--text)" }}>{form.audit_note}</p>
+                  </div>
+                )}
+
+                {/* Confirm callout */}
+                <div className="flex items-start gap-3 rounded-xl px-4 py-3"
+                  style={{ background: ACCENT_LIGHT, border: `1px solid ${ACCENT}25` }}>
+                  <CheckCircleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: ACCENT }} />
+                  <p className="text-xs leading-relaxed" style={{ color: ACCENT }}>
+                    Review the summary above, then submit to record this audit. All checklist items and issues will be saved permanently.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 pt-1">
+                  <button onClick={() => setActiveTab(2)}
+                    className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-opacity"
+                    style={{ background: "var(--bg-raised)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                    <ChevronLeftIcon className="h-4 w-4" /> Back
+                  </button>
+                  <button onClick={handleSubmit} disabled={actionLoading}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-60 transition-opacity"
+                    style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 60%, ${ACCENT_DEEP} 100%)`, color: "#fff", boxShadow: `0 6px 20px ${ACCENT}50` }}>
+                    {actionLoading
+                      ? <><Spinner size={4} /> Submitting…</>
+                      : <><CheckBadgeIcon className="h-5 w-5" /> Submit Audit</>}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
+
+      </div>
+
+      {/* Bottom nav (not on Summary tab) */}
+      {activeTab !== TABS.length - 1 && (
+        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
+          <button onClick={() => setActiveTab((t) => Math.max(0, t - 1))} disabled={activeTab === 0}
+            className="flex items-center gap-1 text-sm font-semibold disabled:opacity-30 hover:opacity-80"
+            style={{ color: "var(--text-muted)" }}>
+            <ChevronLeftIcon className="h-4 w-4" /> Prev
+          </button>
+          <button onClick={() => setActiveTab((t) => Math.min(TABS.length - 1, t + 1))}
+            className="flex items-center gap-1 text-sm font-semibold hover:opacity-80"
+            style={{ color: ACCENT }}>
+            Next <ChevronRightIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </ModalShell>
   );
 }
 
 // ─── Detail Drawer ────────────────────────────────────────────────────────────
 
-function DetailDrawer({ isOpen, record, onClose, onEdit, onReassign, onPerform }) {
+function DetailDrawer({ isOpen, record, auditId, onClose, onEdit, onReassign, onPerform }) {
   const { hasPermission: can } = useAuth();
+  const [performedDetail, setPerformedDetail] = useState(null);
+  useEffect(() => { if (!isOpen) setPerformedDetail(null); }, [isOpen]);
 
   if (!isOpen || !record) return null;
 
@@ -1865,12 +2089,13 @@ function DetailDrawer({ isOpen, record, onClose, onEdit, onReassign, onPerform }
                       const issueCount = (p.performed_ppe_compliance_issues ?? p.issues ?? []).length;
                       const itemCount  = (p.performed_ppe_compliance_items  ?? p.items  ?? []).length;
                       return (
-                        <div key={p.id} className="flex items-start gap-4">
+                        <div key={p.id} className="flex items-start gap-4 cursor-pointer group"
+                          onClick={() => setPerformedDetail(p)}>
                           <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 z-10"
                             style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, boxShadow: `0 3px 12px ${ACCENT}44` }}>
                             <CheckBadgeIcon className="h-5 w-5 text-white" />
                           </div>
-                          <div className="flex-1 py-1.5 rounded-2xl px-4"
+                          <div className="flex-1 py-1.5 rounded-2xl px-4 transition-all group-hover:shadow-md"
                             style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
                             <div className="flex items-start justify-between gap-2">
                               <div>
@@ -1881,12 +2106,16 @@ function DetailDrawer({ isOpen, record, onClose, onEdit, onReassign, onPerform }
                                   {p.auditor ? displayName(p.auditor) : "—"} · {itemCount} item{itemCount !== 1 ? "s" : ""}
                                 </p>
                               </div>
-                              {issueCount > 0 && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
-                                  style={{ background: "rgba(239,68,68,.1)", color: "#ef4444" }}>
-                                  {issueCount} issue{issueCount !== 1 ? "s" : ""}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                {issueCount > 0 && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                    style={{ background: "rgba(239,68,68,.1)", color: "#ef4444" }}>
+                                    {issueCount} issue{issueCount !== 1 ? "s" : ""}
+                                  </span>
+                                )}
+                                <ChevronRightIcon className="h-4 w-4 opacity-40 group-hover:opacity-80 transition-opacity"
+                                  style={{ color: "var(--text-muted)" }} />
+                              </div>
                             </div>
                             {p.audit_note && (
                               <p className="text-xs mt-1.5 leading-relaxed line-clamp-2"
@@ -1921,6 +2150,12 @@ function DetailDrawer({ isOpen, record, onClose, onEdit, onReassign, onPerform }
           )}
         </div>
       </div>
+      <PerformedDetailModal
+        isOpen={!!performedDetail}
+        performed={performedDetail}
+        auditId={auditId}
+        onClose={() => setPerformedDetail(null)}
+      />
     </>,
     document.body
   );
@@ -2072,8 +2307,8 @@ export default function PpeCompliancePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)`, boxShadow: `0 4px 16px ${ACCENT}50` }}>
-            <ShieldCheckIcon className="h-6 w-6 text-white" />
+            style={{ background: ACCENT_LIGHT }}>
+            <ShieldCheckIcon className="h-6 w-6" style={{ color: ACCENT }} />
           </div>
           <div>
             <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>{PPE_COMPLIANCE_AUDIT_TITLE}</h1>
@@ -2085,7 +2320,7 @@ export default function PpeCompliancePage() {
         {canUpdate && (
           <button onClick={() => { setEditRecord(null); setSetupOpen(true); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 flex-shrink-0"
-            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 65%, ${ACCENT_DEEP} 100%)`, color: "#fff", boxShadow: `0 4px 16px ${ACCENT}55` }}>
+            style={{ background: ACCENT, color: "#fff", boxShadow: `0 4px 14px ${ACCENT}44` }}>
             <PlusIcon className="h-4 w-4" /> New Record
           </button>
         )}
@@ -2093,7 +2328,7 @@ export default function PpeCompliancePage() {
 
       {/* ── Filters ── */}
       <div className="rounded-2xl p-4 flex flex-wrap items-end gap-3"
-        style={{ background: "var(--bg-raised)", border: `1px solid ${ACCENT}28`, borderLeft: `3px solid ${ACCENT}` }}>
+        style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
         <div className="relative w-48">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
             style={{ color: "var(--text-muted)" }} />
@@ -2117,7 +2352,7 @@ export default function PpeCompliancePage() {
         {filtersActive && (
           <button onClick={() => { dispatch(clearPpeComplianceFilters()); setAuditNumberInput(""); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold hover:opacity-80"
-            style={{ color: ACCENT, border: `1px solid ${ACCENT}50`, background: ACCENT_LIGHT }}>
+            style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}>
             <ArrowPathIcon className="h-3.5 w-3.5" /> Clear
           </button>
         )}
@@ -2286,6 +2521,7 @@ export default function PpeCompliancePage() {
       <DetailDrawer
         isOpen={!!drawerRecord}
         record={drawerRecord}
+        auditId={activeHsaId}
         onClose={() => setDrawerRecord(null)}
         onEdit={() => { setEditRecord(drawerRecord); setSetupOpen(true); }}
         onReassign={() => setReassignRec(drawerRecord)}
