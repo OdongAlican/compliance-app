@@ -58,7 +58,7 @@ const items = [
   {
     id: 8,
     title: 'CAPA Tracking',
-    formPath: '/form/capa',
+    formPath: '/health-and-safety/capa-tracking',
     icon: FaClipboardList,
     color: 'blue',
   },

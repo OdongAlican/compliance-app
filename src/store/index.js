@@ -31,6 +31,7 @@ import epReducer                     from './slices/epSlice';
 import ppeComplianceReducer          from './slices/ppeComplianceSlice';
 import csReducer                     from './slices/contractorSafetySlice';
 import mrmReducer                    from './slices/mrmSlice';
+import capaReducer                   from './slices/capaTrackingSlice';
 
 const store = configureStore({
   reducer: {
@@ -56,6 +57,7 @@ const store = configureStore({
     ppeCompliance:            ppeComplianceReducer,
     cs:                       csReducer,
     mrm:                      mrmReducer,
+    capa:                     capaReducer,
   },
   // Redux Toolkit adds redux-thunk and (in development) the Immer proxy by default.
   // The devTools flag is automatically false in production builds.
