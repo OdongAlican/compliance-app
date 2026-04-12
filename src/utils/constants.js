@@ -86,7 +86,7 @@ export const ROUTES = {
   FUEL:        '/form/fuel',
   TOOL:        '/form/tool',
   PPE:         '/form/ppe',
-  PPE_COMP:    '/form/ppe-com',
+  PPE_COMP:    '/health-and-safety/ppe-compliance',
   VEHICLE:     '/form/vehicle',
   SCIENCE_LAB: '/form/science-laboratory',
   SWIMMING:    '/form/swimming-pool',
