@@ -44,7 +44,7 @@ const items = [
   {
     id: 6,
     title: 'Contractor Safety',
-    formPath: '/form/contractor-safety',
+    formPath: '/health-and-safety/contractor-safety',
     icon: FaUsers,
     color: 'teal',
   },
