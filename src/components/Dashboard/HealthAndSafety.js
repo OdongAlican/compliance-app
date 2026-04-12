@@ -37,7 +37,7 @@ const items = [
   {
     id: 5,
     title: 'PPE Compliance',
-    formPath: '/form/ppe-com',
+    formPath: '/health-and-safety/ppe-compliance',
     icon: FaFirstAid,
     color: 'purple',
   },
