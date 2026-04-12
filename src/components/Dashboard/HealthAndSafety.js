@@ -51,7 +51,7 @@ const items = [
   {
     id: 7,
     title: 'Management Review meeting',
-    formPath: '/form/management',
+    formPath: '/health-and-safety/management-review-meeting',
     icon: FaListAlt,
     color: 'amber',
   },

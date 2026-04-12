@@ -73,6 +73,7 @@ import TcPage               from '../components/HealthAndSafety/TrainingAndCompe
 import EpPage               from '../components/HealthAndSafety/EmergencyPreparedness';
 import PpeCompliancePage    from '../components/HealthAndSafety/PPECompliance';
 import CsPage               from '../components/HealthAndSafety/ContractorSafety';
+import MrmPage              from '../components/HealthAndSafety/ManagementReviewMeeting';
 
 // ── Param wrappers ────────────────────────────────────────────────────────
 function HazardReportExecuteWrapper() {
@@ -141,6 +142,7 @@ export default function AppRoutes() {
       <Route path="/health-and-safety/emergency-preparedness" element={<Layout><EpPage /></Layout>} />
       <Route path="/health-and-safety/ppe-compliance" element={<Layout><PpeCompliancePage /></Layout>} />
       <Route path="/health-and-safety/contractor-safety" element={<Layout><CsPage /></Layout>} />
+      <Route path="/health-and-safety/management-review-meeting" element={<Layout><MrmPage /></Layout>} />
       <Route path="/form/checklist"   element={<Layout><ChecklistInterface /></Layout>} />
       <Route path="/form/workplace"   element={<Layout><WorkPlaceInterface /></Layout>} />
       <Route path="/form/emergency"   element={<Layout><EmergencyInterface /></Layout>} />
