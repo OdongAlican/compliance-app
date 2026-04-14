@@ -2890,9 +2890,10 @@ export default function ChecklistPage() {
     : (catalogAudit?.id ?? 1);
 
   const canUpdate    = hasPermission("health_and_safety_audit_checklists.update");
-  const canDelete    = hasPermission("health_and_safety_audit_checklists.update");
-  const canPerform   = hasPermission("health_and_safety_audit_checklists.update");
-  const canIssues    = hasPermission("performed_health_and_safety_audit_checklist_issues.update"); // eslint-disable-line no-unused-vars
+  const canCreate    = hasPermission("health_and_safety_audit_checklists.create");
+  const canDelete    = hasPermission("health_and_safety_audit_checklists.destroy");
+  const canPerform   = hasPermission("health_and_safety_audit_checklists.perform");
+  const canIssues    = hasPermission("performed_health_and_safety_audit_checklist_issues.corrective_action"); // eslint-disable-line no-unused-vars
   const canTemplates = hasPermission("health_and_safety_audits.update");
 
   // Modal state
@@ -3032,7 +3033,7 @@ export default function ChecklistPage() {
               <Cog6ToothIcon className="h-4 w-4" /> Templates
             </button>
           )}
-          {canUpdate && (
+          {canCreate && (
             <button onClick={() => setSetupModal({ open: true, checklist: null })}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90"
               style={{ background: ACCENT, color: "#fff" }}>
@@ -3113,7 +3114,7 @@ export default function ChecklistPage() {
                     <ClipboardDocumentCheckIcon className="h-12 w-12 mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
                     <p className="text-sm font-semibold mb-1" style={{ color: "var(--text)" }}>No checklists found</p>
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {canUpdate ? "Click \"New Checklist\" to create one." : "No records match your filters."}
+                      {canCreate ? "Click \"New Checklist\" to create one." : "No records match your filters."}
                     </p>
                   </td>
                 </tr>

@@ -34,11 +34,6 @@ import {
   WrenchScrewdriverIcon,
   EllipsisVerticalIcon,
   ClipboardDocumentListIcon,
-  XCircleIcon,
-  UserGroupIcon,
-  InformationCircleIcon,
-  ChartBarIcon,
-  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import {
@@ -69,7 +64,6 @@ import {
   selectEpActionLoading,
   selectEpFilters,
   selectEpIssuesByPerformed,
-  selectEpActionError,
 } from "../../../store/slices/epSlice";
 import useAuth from "../../../hooks/useAuth";
 import UsersService from "../../../services/users.service";
@@ -753,7 +747,7 @@ function PerformedDetailModal({ isOpen, onClose, performed, auditId }) {
               ) : (
                 <div className="flex flex-col gap-3">
                   {issues.map((issue) =>
-                    can("performed_emergency_preparedness_issues.update") ? (
+                    (can("performed_emergency_preparedness_issues.corrective_action") || can("performed_emergency_preparedness_issues.priority_and_due_date") || can("performed_emergency_preparedness_issues.assign_contractor") || can("performed_emergency_preparedness_issues.execute")) ? (
                       <EpIssueCard key={issue.id} issue={issue} auditId={auditId} performedId={performed.id} />
                     ) : (
                       <div key={issue.id}
@@ -2111,7 +2105,10 @@ function ActionMenu({ record, onView, onEdit, onDelete, onPerform, onReassign })
   const triggerRef      = useRef(null);
   const menuRef         = useRef(null);
   const { hasPermission } = useAuth();
-  const canUpdate = hasPermission("emergency_preparednesses.update");
+  const canEdit    = hasPermission("emergency_preparednesses.update");
+  const canDelete  = hasPermission("emergency_preparednesses.destroy");
+  const canPerform = hasPermission("emergency_preparednesses.perform");
+  const canReassign = hasPermission("emergency_preparednesses.reassign_auditors");
 
   useEffect(() => {
     function handler(e) {
@@ -2135,12 +2132,10 @@ function ActionMenu({ record, onView, onEdit, onDelete, onPerform, onReassign })
 
   const items = [
     { label: "View Details",        icon: <EyeIcon className="h-4 w-4" />,               action: onView,     show: true },
-    ...(canUpdate ? [
-      { label: "Start Audit",       icon: <ShieldExclamationIcon className="h-4 w-4" />, action: onPerform,  show: true },
-      { label: "Edit",              icon: <PencilSquareIcon className="h-4 w-4" />,       action: onEdit,     show: true },
-      { label: "Reassign Auditors", icon: <UsersIcon className="h-4 w-4" />,              action: onReassign, show: true },
-    ] : []),
-    { label: "Delete",              icon: <TrashIcon className="h-4 w-4" />,              action: onDelete,   danger: true, show: true },
+    { label: "Start Audit",        icon: <ShieldExclamationIcon className="h-4 w-4" />, action: onPerform,  show: canPerform  },
+    { label: "Edit",               icon: <PencilSquareIcon className="h-4 w-4" />,       action: onEdit,     show: canEdit     },
+    { label: "Reassign Auditors",  icon: <UsersIcon className="h-4 w-4" />,              action: onReassign, show: canReassign },
+    { label: "Delete",             icon: <TrashIcon className="h-4 w-4" />,              action: onDelete,   danger: true, show: canDelete  },
   ].filter((i) => i.show);
 
   return (
@@ -2176,7 +2171,8 @@ function ActionMenu({ record, onView, onEdit, onDelete, onPerform, onReassign })
 export default function EpPage() {
   const dispatch        = useAppDispatch();
   const { hasPermission: can } = useAuth();
-  const canUpdate       = can("emergency_preparednesses.update");
+  const canCreate  = can("emergency_preparednesses.create");
+  const canPerform = can("emergency_preparednesses.perform");
 
   const catalog        = useAppSelector(selectEpCatalog);
   const catalogLoading = useAppSelector(selectEpCatalogLoading);
@@ -2187,7 +2183,7 @@ export default function EpPage() {
   const actionLoading  = useAppSelector(selectEpActionLoading);
 
   /* ── Find the EP-specific HSA audit by title ── */
-  const catalogAudit = catalog.find((a) => a.title === EP_AUDIT_TITLE) ?? null;
+  // const catalogAudit = catalog.find((a) => a.title === EP_AUDIT_TITLE) ?? null;
 
   const [activeHsaId, setActiveHsaId] = useState(null);
 
@@ -2263,7 +2259,7 @@ export default function EpPage() {
             </p>
           </div>
         </div>
-        {canUpdate && (
+        {canCreate && (
           <button onClick={() => { setEditTarget(null); setSetupOpen(true); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 flex-shrink-0"
             style={{ background: ACCENT, color: "#fff", boxShadow: `0 4px 14px ${ACCENT}44` }}>
@@ -2469,7 +2465,7 @@ export default function EpPage() {
         onClose={() => setDrawerRecord(null)}
         record={drawerRecord}
         auditId={activeHsaId}
-        canPerform={canUpdate}
+        canPerform={canPerform}
         onStartAudit={() => { setPerformTarget(drawerRecord); setDrawerRecord(null); }}
       />
     </div>

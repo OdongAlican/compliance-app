@@ -2221,7 +2221,10 @@ function ActionMenu({ report, onView, onEdit, onDelete, onPerform, onReassign })
   const triggerRef        = useRef(null);
   const menuRef           = useRef(null);
   const { hasPermission } = useAuth();
-  const canUpdate = hasPermission("workplace_inspection_reports.update");
+  const canEdit    = hasPermission("workplace_inspection_reports.update");
+  const canDelete  = hasPermission("workplace_inspection_reports.destroy");
+  const canPerform = hasPermission("workplace_inspection_reports.perform");
+  const canReassign = hasPermission("workplace_inspection_reports.reassign_auditors");
 
   useEffect(() => {
     function handler(e) {
@@ -2245,12 +2248,10 @@ function ActionMenu({ report, onView, onEdit, onDelete, onPerform, onReassign })
 
   const items = [
     { label: "View Details", icon: <EyeIcon className="h-4 w-4" />, action: onView, show: true },
-    ...(canUpdate ? [
-      { label: "Start Audit",        icon: <ClipboardDocumentCheckIcon className="h-4 w-4" />, action: onPerform, show: true },
-      { label: "Edit",               icon: <PencilSquareIcon className="h-4 w-4" />,            action: onEdit,    show: true },
-      { label: "Reassign Auditors",  icon: <UsersIcon className="h-4 w-4" />,                   action: onReassign,show: true },
-    ] : []),
-    { label: "Delete", icon: <TrashIcon className="h-4 w-4" />, action: onDelete, danger: true, show: true },
+    { label: "Start Audit",        icon: <ClipboardDocumentCheckIcon className="h-4 w-4" />, action: onPerform, show: canPerform  },
+    { label: "Edit",               icon: <PencilSquareIcon className="h-4 w-4" />,            action: onEdit,    show: canEdit     },
+    { label: "Reassign Auditors",  icon: <UsersIcon className="h-4 w-4" />,                   action: onReassign,show: canReassign },
+    { label: "Delete", icon: <TrashIcon className="h-4 w-4" />, action: onDelete, danger: true, show: canDelete  },
   ].filter((i) => i.show);
 
   return (
@@ -2285,7 +2286,9 @@ function ActionMenu({ report, onView, onEdit, onDelete, onPerform, onReassign })
 export default function WirPage() {
   const dispatch       = useAppDispatch();
   const { hasPermission } = useAuth();
-  const canUpdate      = hasPermission("workplace_inspection_reports.update");
+  const canUpdate     = hasPermission("workplace_inspection_reports.update");
+  const canCreate     = hasPermission("workplace_inspection_reports.create");
+  const canPerform    = hasPermission("workplace_inspection_reports.perform");
 
   const catalog        = useAppSelector(selectWirCatalog);
   const catalogLoading = useAppSelector(selectWirCatalogLoading);
@@ -2380,18 +2383,22 @@ export default function WirPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {canUpdate && (
+          {(canUpdate || canCreate) && (
             <>
-              <button onClick={() => setTemplateOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80"
-                style={{ background: "var(--bg-raised)", border: "1px solid var(--border)", color: "var(--text)" }}>
-                <Squares2X2Icon className="h-4 w-4" /> Templates
-              </button>
-              <button onClick={() => { setEditTarget(null); setSetupOpen(true); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90"
-                style={{ background: ACCENT, color: "#fff" }}>
-                <PlusIcon className="h-4 w-4" /> New Report
-              </button>
+              {canUpdate && (
+                <button onClick={() => setTemplateOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80"
+                  style={{ background: "var(--bg-raised)", border: "1px solid var(--border)", color: "var(--text)" }}>
+                  <Squares2X2Icon className="h-4 w-4" /> Templates
+                </button>
+              )}
+              {canCreate && (
+                <button onClick={() => { setEditTarget(null); setSetupOpen(true); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90"
+                  style={{ background: ACCENT, color: "#fff" }}>
+                  <PlusIcon className="h-4 w-4" /> New Report
+                </button>
+              )}
             </>
           )}
         </div>
@@ -2557,7 +2564,7 @@ export default function WirPage() {
         onClose={() => setDrawerReport(null)}
         report={drawerReport}
         auditId={auditId}
-        canPerform={!!canUpdate}
+        canPerform={!!canPerform}
         onStartInspection={() => { setPerformTarget(drawerReport); setDrawerReport(null); }}
       />
     </div>

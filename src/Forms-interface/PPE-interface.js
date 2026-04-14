@@ -47,7 +47,7 @@ export default function PPEInterface() {
 
   const canCreate = hasPermission("ppe_inspections.create");
   const canUpdate = hasPermission("ppe_inspections.update");
-  const canDelete = hasPermission("ppe_inspections.delete");
+  const canDelete = hasPermission("ppe_inspections.destroy");
 
   const [setupModal,    setSetupModal]    = useState({ open: false, setup: null });
   const [reassignModal, setReassignModal] = useState({ open: false, mode: null, setupId: null });

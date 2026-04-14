@@ -66,7 +66,7 @@ export default function VehicleInspectionDashboard() {
 
   const canCreate = hasPermission("vehicle_inspections.create");
   const canUpdate = hasPermission("vehicle_inspections.update");
-  const canDelete = hasPermission("vehicle_inspections.delete");
+  const canDelete = hasPermission("vehicle_inspections.destroy");
 
   const [setupModal, setSetupModal] = useState({ open: false, setup: null });
   const [reassignModal, setReassignModal] = useState({ open: false, mode: null, setupId: null });

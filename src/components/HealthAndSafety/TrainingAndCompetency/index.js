@@ -33,7 +33,6 @@ import {
   CalendarDaysIcon,
   CheckBadgeIcon,
   WrenchScrewdriverIcon,
-  BellAlertIcon,
   EllipsisVerticalIcon,
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
@@ -46,7 +45,6 @@ import {
   deleteTcRecord,
   reassignTcAuditors,
   performTcRecord,
-  fetchTcIssues,
   updateTcCorrectiveAction,
   updateTcPriorityDueDate,
   assignTcContractor,
@@ -65,11 +63,9 @@ import {
   selectTcRecordsLoading,
   selectTcActionLoading,
   selectTcFilters,
-  selectTcIssuesByPerformed,
 } from "../../../store/slices/tcSlice";
 import useAuth from "../../../hooks/useAuth";
 import UsersService from "../../../services/users.service";
-import { HsaParentService } from "../../../services/healthAndSafetyAudit.service";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -924,6 +920,7 @@ function SetupModal({ isOpen, onClose, record, auditId }) {
       setForm({ ...EMPTY, date: new Date().toISOString().slice(0, 10) });
       setAuditors([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, record, isEdit]);
 
   function set(k, v) { setForm((p) => ({ ...p, [k]: v })); setErrors((e) => ({ ...e, [k]: "" })); }
@@ -2093,7 +2090,10 @@ function ActionMenu({ record, onView, onEdit, onDelete, onPerform, onReassign })
   const triggerRef      = useRef(null);
   const menuRef         = useRef(null);
   const { hasPermission } = useAuth();
-  const canUpdate = hasPermission("training_and_competencies.update");
+  const canEdit    = hasPermission("training_and_competencies.update");
+  const canDelete  = hasPermission("training_and_competencies.destroy");
+  const canPerform = hasPermission("training_and_competencies.perform");
+  const canReassign = hasPermission("training_and_competencies.reassign_auditors");
 
   useEffect(() => {
     function handler(e) {
@@ -2117,12 +2117,10 @@ function ActionMenu({ record, onView, onEdit, onDelete, onPerform, onReassign })
 
   const items = [
     { label: "View Details",      icon: <EyeIcon className="h-4 w-4" />,              action: onView,     show: true },
-    ...(canUpdate ? [
-      { label: "Start Audit",     icon: <AcademicCapIcon className="h-4 w-4" />,      action: onPerform,  show: true },
-      { label: "Edit",            icon: <PencilSquareIcon className="h-4 w-4" />,     action: onEdit,     show: true },
-      { label: "Reassign Auditors",icon: <UsersIcon className="h-4 w-4" />,           action: onReassign, show: true },
-    ] : []),
-    { label: "Delete",            icon: <TrashIcon className="h-4 w-4" />,            action: onDelete,   danger: true, show: true },
+    { label: "Start Audit",       icon: <AcademicCapIcon className="h-4 w-4" />,      action: onPerform,  show: canPerform  },
+    { label: "Edit",              icon: <PencilSquareIcon className="h-4 w-4" />,     action: onEdit,     show: canEdit     },
+    { label: "Reassign Auditors", icon: <UsersIcon className="h-4 w-4" />,            action: onReassign, show: canReassign },
+    { label: "Delete",            icon: <TrashIcon className="h-4 w-4" />,            action: onDelete,   danger: true, show: canDelete  },
   ].filter((i) => i.show);
 
   return (
@@ -2157,7 +2155,8 @@ function ActionMenu({ record, onView, onEdit, onDelete, onPerform, onReassign })
 export default function TcPage() {
   const dispatch        = useAppDispatch();
   const { hasPermission } = useAuth();
-  const canUpdate       = hasPermission("training_and_competencies.update");
+  const canCreate  = hasPermission("training_and_competencies.create");
+  const canPerform = hasPermission("training_and_competencies.perform");
 
   const catalog        = useAppSelector(selectTcCatalog);
   const catalogLoading = useAppSelector(selectTcCatalogLoading);
@@ -2167,7 +2166,7 @@ export default function TcPage() {
   const filters        = useAppSelector(selectTcFilters);
   const actionLoading  = useAppSelector(selectTcActionLoading);
 
-  const catalogAudit = catalog.find((a) => a.title === TC_AUDIT_TITLE) ?? null;
+  // const catalogAudit = catalog.find((a) => a.title === TC_AUDIT_TITLE) ?? null;
 
   const [auditId,        setAuditId]        = useState(null);
   const [drawerRecord,   setDrawerRecord]   = useState(null);
@@ -2242,7 +2241,7 @@ export default function TcPage() {
             </p>
           </div>
         </div>
-        {canUpdate && (
+        {canCreate && (
           <button onClick={() => { setEditTarget(null); setSetupOpen(true); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 flex-shrink-0"
             style={{ background: ACCENT, color: "#fff", boxShadow: `0 4px 14px ${ACCENT}44` }}>
@@ -2439,7 +2438,7 @@ export default function TcPage() {
         onClose={() => setDrawerRecord(null)}
         record={drawerRecord}
         auditId={auditId}
-        canPerform={!!canUpdate}
+        canPerform={!!canPerform}
         onStartAudit={() => { setPerformTarget(drawerRecord); setDrawerRecord(null); }}
       />
     </div>

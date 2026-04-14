@@ -67,7 +67,7 @@ export default function ScienceLabInterface() {
 
   const canCreate = hasPermission("science_lab_inspections.create");
   const canUpdate = hasPermission("science_lab_inspections.update");
-  const canDelete = hasPermission("science_lab_inspections.delete");
+  const canDelete = hasPermission("science_lab_inspections.destroy");
 
   const [setupModal, setSetupModal] = useState({ open: false, setup: null });
   const [reassignModal, setReassignModal] = useState({ open: false, mode: null, setupId: null });

@@ -34,11 +34,6 @@ import {
   WrenchScrewdriverIcon,
   EllipsisVerticalIcon,
   ClipboardDocumentListIcon,
-  XCircleIcon,
-  UserGroupIcon,
-  InformationCircleIcon,
-  ChartBarIcon,
-  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import {
@@ -758,7 +753,7 @@ function PerformedDetailModal({ isOpen, onClose, performed, auditId }) {
               ) : (
                 <div className="flex flex-col gap-3">
                   {issues.map((issue) =>
-                    can("performed_management_review_meeting_issues.update") ? (
+                    (can("performed_management_review_meeting_issues.corrective_action") || can("performed_management_review_meeting_issues.priority_and_due_date") || can("performed_management_review_meeting_issues.assign_contractor") || can("performed_management_review_meeting_issues.execute")) ? (
                       <MrmIssueCard key={issue.id} issue={issue} auditId={auditId} performedId={performed.id} />
                     ) : (
                       <div key={issue.id}
@@ -1381,7 +1376,7 @@ function ReassignModal({ isOpen, onClose, record, auditId }) {
 
 // ─── Perform Modal ────────────────────────────────────────────────────────────
 
-const PERFORM_TABS = ["Audit Info", "Checklist Items", "Issues", "Summary"];
+// const PERFORM_TABS = ["Audit Info", "Checklist Items", "Issues", "Summary"];
 
 function PerformModal({ isOpen, onClose, record, auditId }) {
   const dispatch      = useAppDispatch();
@@ -2058,7 +2053,7 @@ function DetailDrawer({ isOpen, record, auditId, onClose, onEdit, onReassign, on
                       style={{ background: ACCENT_LIGHT, color: ACCENT }}>{performed.length}</span>
                   )}
                 </div>
-                {can("management_review_meetings.update") && (
+                {can("management_review_meetings.perform") && (
                   <button onClick={onPerform}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold hover:opacity-90"
                     style={{ background: ACCENT, color: "#fff", boxShadow: `0 2px 10px ${ACCENT}66` }}>
@@ -2074,7 +2069,7 @@ function DetailDrawer({ isOpen, record, auditId, onClose, onEdit, onReassign, on
                     <CalendarDaysIcon className="h-6 w-6" style={{ color: ACCENT }} />
                   </div>
                   <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>No Audits Yet</p>
-                  {can("management_review_meetings.update") && (
+                  {can("management_review_meetings.perform") && (
                     <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                       Click "Perform Audit" to record the first audit.
                     </p>
@@ -2134,18 +2129,22 @@ function DetailDrawer({ isOpen, record, auditId, onClose, onEdit, onReassign, on
           </div>
 
           {/* Action buttons */}
-          {can("management_review_meetings.update") && (
+          {(can("management_review_meetings.update") || can("management_review_meetings.reassign_auditors")) && (
             <div className="flex gap-2 px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border)" }}>
-              <button onClick={onEdit}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90"
-                style={{ background: "var(--bg-raised)", color: "var(--text)", border: "1px solid var(--border)" }}>
-                <PencilSquareIcon className="h-4 w-4" /> Edit
-              </button>
-              <button onClick={onReassign}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90"
-                style={{ background: "var(--bg-raised)", color: "var(--text)", border: "1px solid var(--border)" }}>
-                <UsersIcon className="h-4 w-4" /> Reassign
-              </button>
+              {can("management_review_meetings.update") && (
+                <button onClick={onEdit}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90"
+                  style={{ background: "var(--bg-raised)", color: "var(--text)", border: "1px solid var(--border)" }}>
+                  <PencilSquareIcon className="h-4 w-4" /> Edit
+                </button>
+              )}
+              {can("management_review_meetings.reassign_auditors") && (
+                <button onClick={onReassign}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90"
+                  style={{ background: "var(--bg-raised)", color: "var(--text)", border: "1px solid var(--border)" }}>
+                  <UsersIcon className="h-4 w-4" /> Reassign
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -2169,7 +2168,10 @@ function ActionMenu({ record, onView, onEdit, onDelete, onReassign, onPerform })
   const triggerRef      = useRef(null);
   const menuRef         = useRef(null);
   const { hasPermission } = useAuth();
-  const canUpdate = hasPermission("management_review_meetings.update");
+  const canEdit    = hasPermission("management_review_meetings.update");
+  const canDelete  = hasPermission("management_review_meetings.destroy");
+  const canPerform = hasPermission("management_review_meetings.perform");
+  const canReassign = hasPermission("management_review_meetings.reassign_auditors");
 
   useEffect(() => {
     function handler(e) {
@@ -2193,12 +2195,10 @@ function ActionMenu({ record, onView, onEdit, onDelete, onReassign, onPerform })
 
   const items = [
     { label: "View Details",      icon: <EyeIcon          className="h-4 w-4" />, action: onView,     show: true },
-    ...(canUpdate ? [
-      { label: "Start Audit",     icon: <PlayIcon         className="h-4 w-4" />, action: onPerform,  show: true },
-      { label: "Edit",            icon: <PencilSquareIcon className="h-4 w-4" />, action: onEdit,     show: true },
-      { label: "Reassign Auditors",icon: <UsersIcon       className="h-4 w-4" />, action: onReassign, show: true },
-    ] : []),
-    { label: "Delete",            icon: <TrashIcon        className="h-4 w-4" />, action: onDelete,   danger: true, show: true },
+    { label: "Start Audit",       icon: <PlayIcon         className="h-4 w-4" />, action: onPerform,  show: canPerform  },
+    { label: "Edit",              icon: <PencilSquareIcon className="h-4 w-4" />, action: onEdit,     show: canEdit     },
+    { label: "Reassign Auditors", icon: <UsersIcon        className="h-4 w-4" />, action: onReassign, show: canReassign },
+    { label: "Delete",            icon: <TrashIcon        className="h-4 w-4" />, action: onDelete,   danger: true, show: canDelete  },
   ].filter((i) => i.show);
 
   return (
@@ -2236,7 +2236,7 @@ const COLS = ["#", "Audit No.", "Area Audited", "Date", "Auditors", "Status", "P
 export default function PpeCompliancePage() {
   const dispatch = useAppDispatch();
   const { hasPermission: can } = useAuth();
-  const canUpdate = can("management_review_meetings.update");
+  const canCreate = can("management_review_meetings.create");
 
   const catalog         = useAppSelector(selectMrmCatalog);
   const catalogLoading  = useAppSelector(selectMrmCatalogLoading);
@@ -2317,7 +2317,7 @@ export default function PpeCompliancePage() {
             </p>
           </div>
         </div>
-        {canUpdate && (
+        {canCreate && (
           <button onClick={() => { setEditRecord(null); setSetupOpen(true); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 flex-shrink-0"
             style={{ background: ACCENT, color: "#fff", boxShadow: `0 4px 14px ${ACCENT}44` }}>

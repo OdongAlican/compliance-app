@@ -66,7 +66,7 @@ export default function CanteenInterface() {
 
   const canCreate = hasPermission("canteen_inspections.create");
   const canUpdate = hasPermission("canteen_inspections.update");
-  const canDelete = hasPermission("canteen_inspections.delete");
+  const canDelete = hasPermission("canteen_inspections.destroy");
 
   const [users, setUsers] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);

@@ -118,6 +118,17 @@ export const forceLogout = (reason = "Session expired. Please sign in again.") =
     window.location.replace("/login");
 };
 
+/**
+ * forceForbidden
+ *
+ * Dispatches a custom DOM event so the React app can handle a 403 gracefully
+ * (navigate to access-denied) without coupling the axios layer to React Router.
+ * The App component listens for this event and calls navigate('/access-denied').
+ */
+export const forceForbidden = () => {
+    window.dispatchEvent(new CustomEvent("app:forbidden"));
+};
+
 // ---------------------------------------------------------------------------
 // 4. PUBLIC ROUTES — skips token injection on these paths
 // ---------------------------------------------------------------------------
@@ -310,6 +321,7 @@ instance.interceptors.response.use(
 
         // ---- 403 Forbidden ----
         if (status === 403) {
+            forceForbidden();
             return Promise.reject(
                 normalizeError(error, {
                     type: "FORBIDDEN",

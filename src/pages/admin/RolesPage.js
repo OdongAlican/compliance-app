@@ -10,8 +10,8 @@
  *  - Permission-gated via hasPermission(PERMISSIONS.ROLES_*)
  */
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, ArrowPathIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
-import { XMarkIcon } from '@heroicons/react/20/solid';
+import { PlusIcon, ArrowPathIcon, ShieldCheckIcon, MagnifyingGlassIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import useAuth from '../../hooks/useAuth';
 import { PERMISSIONS } from '../../utils/constants';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -42,69 +42,131 @@ function groupPermissions(permissions) {
 }
 
 // ── Role card ─────────────────────────────────────────────────────────────────
-function RoleCard({ role, allPermissions, canEdit, canDelete, onEdit, onPermissions, onDelete }) {
-  const perms = role.permissions ?? [];
+function RoleDetailPanel({ role, canEdit, canDelete, onEdit, onPermissions, onDelete }) {
+  const perms  = role.permissions ?? [];
+  const groups = groupPermissions(perms);
 
   return (
-    <div className="ui-card flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)' }}>
-            <ShieldCheckIcon className="h-5 w-5" style={{ color: 'var(--accent)' }} />
+    <div className="flex flex-col gap-4" style={{ animation: 'slideUp .2s ease' }}>
+      {/* Header card */}
+      <div className="ui-card p-5 md:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black flex-shrink-0"
+              style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}
+            >
+              {role.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h2 className="text-xl font-black" style={{ color: 'var(--text)' }}>{role.name}</h2>
+              {role.description && (
+                <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{role.description}</p>
+              )}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)' }}
+                >
+                  <ShieldCheckIcon className="h-3 w-3" />
+                  {perms.length} permission{perms.length !== 1 ? 's' : ''}
+                </span>
+                {(role.users_count > 0) && (
+                  <span
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+                    style={{ background: 'color-mix(in srgb, #3fb950 12%, transparent)', color: '#3fb950' }}
+                  >
+                    <UsersIcon className="h-3 w-3" />
+                    {role.users_count} user{role.users_count !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>{role.name}</h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {perms.length} permission{perms.length !== 1 ? 's' : ''}
-              {role.users_count > 0 && ` · ${role.users_count} user${role.users_count !== 1 ? 's' : ''}`}
-            </p>
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg-raised)' }}
+              >
+                Edit
+              </button>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={onPermissions}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)' }}
+              >
+                Permissions
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                style={{ background: 'color-mix(in srgb, var(--danger) 10%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}
+              >
+                Delete
+              </button>
+            )}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {canEdit && (
-            <button type="button" onClick={() => onEdit(role)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-              style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-              Edit
-            </button>
-          )}
-          {canEdit && (
-            <button type="button" onClick={() => onPermissions(role)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)' }}>
-              Permissions
-            </button>
-          )}
-          {canDelete && (
-            <button type="button" onClick={() => onDelete(role)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-              style={{ background: 'color-mix(in srgb, var(--danger) 10%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
-              Delete
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Description */}
-      {role.description && (
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{role.description}</p>
-      )}
-
-      {/* Permission chips */}
+      {/* Permissions detail */}
       {perms.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {perms.map((p) => (
-            <span key={p.id ?? p.key}
-              className="px-2 py-0.5 rounded-full text-xs font-mono"
-              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)' }}>
-              {p.key}
+        <div className="ui-card p-5 md:p-6">
+          <h3 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <ShieldCheckIcon className="h-4 w-4" style={{ color: 'var(--accent)' }} />
+            Assigned Permissions
+            <span
+              className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)' }}
+            >
+              {perms.length}
             </span>
-          ))}
+          </h3>
+          <div className="flex flex-col gap-5">
+            {Object.keys(groups).sort().map((ns) => (
+              <div key={ns}>
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-2.5" style={{ color: 'var(--text-muted)' }}>
+                  {ns}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {groups[ns].map((p) => (
+                    <span
+                      key={p.id ?? p.key}
+                      className="px-2.5 py-1 rounded-lg text-xs font-mono"
+                      style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)' }}
+                    >
+                      {p.key.split('.').slice(1).join('.') || p.key}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
-        <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>No permissions assigned</p>
+        <div className="ui-card flex flex-col items-center justify-center px-6 py-12 gap-3">
+          <ShieldCheckIcon className="h-8 w-8 opacity-25" style={{ color: 'var(--text-muted)' }} />
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No permissions assigned to this role.</p>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={onPermissions}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)' }}
+            >
+              Assign Permissions
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -352,37 +414,50 @@ export default function RolesPage() {
   const dispatch = useAppDispatch();
   const { hasPermission } = useAuth();
 
-  const canView   = hasPermission(PERMISSIONS.ROLES_VIEW);
+  const canView   = hasPermission(PERMISSIONS.ROLES_INDEX);
   const canCreate = hasPermission(PERMISSIONS.ROLES_CREATE);
   const canEdit   = hasPermission(PERMISSIONS.ROLES_UPDATE);
-  const canDelete = hasPermission(PERMISSIONS.ROLES_DELETE);
+  const canDelete = hasPermission(PERMISSIONS.ROLES_DESTROY);
 
-  // ── Redux state ─────────────────────────────────────────────────────────
   const roles          = useAppSelector(selectRoles);
   const allPermissions = useAppSelector(selectAllPermissions);
   const loading        = useAppSelector(selectRolesLoading);
   const error          = useAppSelector(selectRolesError);
   const permError      = useAppSelector(selectPermissionsError);
 
-  // ── Local modal state ────────────────────────────────────────────────────
   const [formModal, setFormModal]       = useState({ open: false, role: null });
   const [permModal, setPermModal]       = useState({ open: false, role: null });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteError, setDeleteError]   = useState('');
 
+  // Two-column layout state
+  const [selectedRoleId, setSelectedRoleId] = useState(null);
+  const [roleSearch, setRoleSearch]         = useState('');
+
+  // Derived: always reads fresh from Redux store (auto-updates after mutations)
+  const selectedRole  = roles.find((r) => r.id === selectedRoleId) ?? null;
+  const filteredRoles = React.useMemo(() => {
+    if (!roleSearch.trim()) return roles;
+    const q = roleSearch.toLowerCase();
+    return roles.filter((r) => r.name.toLowerCase().includes(q) || (r.description ?? '').toLowerCase().includes(q));
+  }, [roles, roleSearch]);
+
   useEffect(() => {
     if (canView) dispatch(fetchRolesAndPermissions());
   }, [canView]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-select first role after load
+  useEffect(() => {
+    if (!selectedRoleId && roles.length > 0) setSelectedRoleId(roles[0].id);
+  }, [roles.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleFormSaved = (saved) => {
     setFormModal({ open: false, role: null });
-    // State updated by Redux extraReducers (createRoleThunk / updateRoleThunk)
     void saved;
   };
 
   const handlePermissionsUpdated = (updated) => {
     setPermModal({ open: false, role: null });
-    // State updated by Redux extraReducers (setPermissionsThunk)
     void updated;
   };
 
@@ -392,6 +467,8 @@ export default function RolesPage() {
     const result = await dispatch(deleteRoleThunk(deleteTarget.id));
     if (deleteRoleThunk.rejected.match(result)) {
       setDeleteError(result.payload || 'Delete failed.');
+    } else if (selectedRoleId === deleteTarget.id) {
+      setSelectedRoleId(null);
     }
     setDeleteTarget(null);
   };
@@ -409,68 +486,203 @@ export default function RolesPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen" style={{ color: 'var(--text)' }}>
+    <div className="min-h-screen" style={{ color: 'var(--text)' }}>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Roles & Permissions</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Manage system roles and the permissions assigned to each · {roles.length} role{roles.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => { dispatch(clearRolesError()); dispatch(fetchRolesAndPermissions()); }} disabled={loading}
-            className="p-2 rounded-xl transition-opacity disabled:opacity-50"
-            style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg-raised)' }}
-            title="Refresh">
-            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          {canCreate && (
-            <button type="button" onClick={() => setFormModal({ open: true, role: null })}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--accent)', color: '#fff' }}>
-              <PlusIcon className="h-4 w-4" />
-              New Role
+      {/* ── Hero header ── */}
+      <div
+        className="relative overflow-hidden px-6 md:px-10 pt-9 pb-8"
+        style={{
+          background: 'linear-gradient(135deg, color-mix(in srgb, #3fb950 10%, var(--bg)) 0%, var(--bg) 65%)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div
+          className="absolute -top-20 -right-20 w-64 h-64 rounded-full pointer-events-none"
+          style={{ background: '#3fb950', opacity: '0.04' }}
+        />
+        <div className="relative max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="ui-section text-[11px] mb-2">Access Control</p>
+            <h1 className="text-3xl font-black tracking-tight gradient-text mb-2 leading-tight">
+              Roles &amp; Permissions
+            </h1>
+            <p className="text-[15px]" style={{ color: 'var(--text-muted)' }}>
+              {roles.length} role{roles.length !== 1 ? 's' : ''} &middot; {allPermissions.length} system permissions
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => { dispatch(clearRolesError()); dispatch(fetchRolesAndPermissions()); }}
+              disabled={loading}
+              className="p-2.5 rounded-xl transition-all disabled:opacity-40 hover:opacity-80"
+              style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-muted)' }}
+              title="Refresh"
+            >
+              <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-          )}
+            {canCreate && (
+              <button
+                type="button"
+                onClick={() => setFormModal({ open: true, role: null })}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+                style={{ background: '#3fb950', color: '#fff', boxShadow: '0 4px 14px color-mix(in srgb, #3fb950 38%, transparent)' }}
+              >
+                <PlusIcon className="h-4 w-4" /> New Role
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Error */}
       {(error || permError || deleteError) && (
-        <div className="mb-4 px-4 py-3 rounded-xl text-sm"
-          style={{ background: 'color-mix(in srgb, var(--danger) 12%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
-          {error || permError || deleteError}
+        <div className="max-w-7xl mx-auto px-6 md:px-10 pt-4">
+          <div
+            className="px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'color-mix(in srgb, var(--danger) 12%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}
+          >
+            {error || permError || deleteError}
+          </div>
         </div>
       )}
 
-      {/* Content */}
-      {loading ? (
-        <div className="py-16"><LoadingSpinner message="Loading roles…" /></div>
-      ) : roles.length === 0 ? (
-        <div className="ui-card flex flex-col items-center justify-center gap-3 py-16">
-          <ShieldCheckIcon className="h-10 w-10 opacity-30" style={{ color: 'var(--text-muted)' }} />
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            No roles yet.{canCreate && ' Click "New Role" to create one.'}
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-          {roles.map((role) => (
-            <RoleCard
-              key={role.id}
-              role={role}
-              allPermissions={allPermissions}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              onEdit={(r) => setFormModal({ open: true, role: r })}
-              onPermissions={(r) => setPermModal({ open: true, role: r })}
-              onDelete={(r) => { setDeleteError(''); setDeleteTarget(r); }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Body */}
+      <div className="max-w-7xl mx-auto px-6 md:px-10 py-6">
+        {loading && !roles.length ? (
+          <div className="py-16"><LoadingSpinner message="Loading roles…" /></div>
+        ) : roles.length === 0 ? (
+          <div className="ui-card flex flex-col items-center justify-center gap-4 py-20">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: 'var(--bg-raised)' }}
+            >
+              <ShieldCheckIcon className="h-8 w-8 opacity-30" style={{ color: 'var(--text-muted)' }} />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>No roles yet</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                {canCreate ? 'Click "New Role" to get started.' : 'No roles have been created.'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5" style={{ animation: 'slideUp .3s ease' }}>
+
+            {/* ── Roles sidebar ── */}
+            <div className="lg:col-span-2 ui-card overflow-hidden p-0 flex flex-col">
+              {/* Search + count */}
+              <div
+                className="px-4 py-3.5 flex items-center gap-2"
+                style={{ borderBottom: '1px solid var(--border)' }}
+              >
+                <div className="relative flex-1">
+                  <MagnifyingGlassIcon
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                    style={{ color: 'var(--text-muted)' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search roles…"
+                    value={roleSearch}
+                    onChange={(e) => setRoleSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  />
+                </div>
+                <span
+                  className="text-xs font-semibold px-2 py-1 rounded-lg flex-shrink-0"
+                  style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}
+                >
+                  {filteredRoles.length}
+                </span>
+              </div>
+
+              {/* Role list */}
+              <div className="overflow-y-auto" style={{ minHeight: '200px', maxHeight: 'calc(100vh - 320px)' }}>
+                {filteredRoles.length === 0 ? (
+                  <p className="py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {roleSearch ? 'No matching roles.' : 'No roles yet.'}
+                  </p>
+                ) : filteredRoles.map((role) => {
+                  const isSelected = selectedRoleId === role.id;
+                  const pCount     = role.permissions?.length ?? 0;
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => setSelectedRoleId(role.id)}
+                      className="w-full text-left px-4 py-4 flex items-center gap-3 transition-all"
+                      style={{
+                        borderBottom: '1px solid var(--border)',
+                        borderLeft: `3px solid ${isSelected ? 'var(--accent)' : 'transparent'}`,
+                        background: isSelected ? 'color-mix(in srgb, var(--accent) 7%, transparent)' : 'transparent',
+                      }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black"
+                        style={{
+                          background: isSelected ? 'color-mix(in srgb, var(--accent) 18%, transparent)' : 'var(--bg-raised)',
+                          color: isSelected ? 'var(--accent)' : 'var(--text-muted)',
+                        }}
+                      >
+                        {role.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="font-semibold text-sm truncate"
+                          style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}
+                        >
+                          {role.name}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                          {pCount} permission{pCount !== 1 ? 's' : ''}
+                          {role.users_count > 0 && ` · ${role.users_count} user${role.users_count !== 1 ? 's' : ''}`}
+                        </p>
+                      </div>
+                      <ChevronRightIcon
+                        className="h-4 w-4 flex-shrink-0 transition-opacity"
+                        style={{ color: 'var(--accent)', opacity: isSelected ? 1 : 0.3 }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Role detail panel ── */}
+            <div className="lg:col-span-3">
+              {selectedRole ? (
+                <RoleDetailPanel
+                  key={selectedRole.id}
+                  role={selectedRole}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  onEdit={() => setFormModal({ open: true, role: selectedRole })}
+                  onPermissions={() => setPermModal({ open: true, role: selectedRole })}
+                  onDelete={() => { setDeleteError(''); setDeleteTarget(selectedRole); }}
+                />
+              ) : (
+                <div
+                  className="ui-card flex flex-col items-center justify-center py-20 gap-4"
+                  style={{ minHeight: '300px' }}
+                >
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'var(--bg-raised)' }}
+                  >
+                    <ShieldCheckIcon className="h-8 w-8 opacity-30" style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Select a role to view its details and permissions.
+                  </p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
       <RoleFormModal
