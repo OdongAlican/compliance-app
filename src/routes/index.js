@@ -36,6 +36,7 @@ import IncidentInvestigationForm from '../components/Dashboard/IncidentManagemen
 import UserManagement from '../components/Users/UserManagement';
 import UserDashboard  from '../components/Users/UserDashboard';
 import RolesPage      from '../pages/admin/RolesPage';
+import ProfilePage    from '../pages/admin/ProfilePage';
 
 // ── Hazard & Risk ─────────────────────────────────────────────────────────
 import HazardRiskInterface from '../components/HazardRiskManagement/HazardRiskInterface';
@@ -114,6 +115,7 @@ export default function AppRoutes() {
 
       {/* ── Protected — Users & Roles ── */}
       <Route path="/user-management" element={<Layout><UserDashboard /></Layout>} />
+      <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
       <Route element={<PermissionRoute permission="users.index" />}>
         <Route path="/user-management/users" element={<Layout><UserManagement /></Layout>} />
       </Route>

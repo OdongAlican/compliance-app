@@ -59,6 +59,10 @@ const authSlice = createSlice({
     clearAuthError(state) {
       state.error = null;
     },
+    // Patch user fields in-place after a successful profile update
+    patchUser(state, action) {
+      if (state.user) state.user = { ...state.user, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
     // ── loginThunk ──
@@ -106,7 +110,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuthError } = authSlice.actions;
+export const { clearAuthError, patchUser } = authSlice.actions;
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
 export const selectUser            = (state) => state.auth.user;
