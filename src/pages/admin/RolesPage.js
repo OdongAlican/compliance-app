@@ -210,63 +210,123 @@ function RoleFormModal({ isOpen, role, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="ui-card w-full max-w-md" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-md flex flex-col rounded-2xl overflow-hidden"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-lg)',
+          animation: 'slideUp .2s ease',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold">{isEdit ? 'Edit Role' : 'Create Role'}</h2>
-          <button type="button" onClick={onClose}
-            className="p-1 rounded-lg transition-opacity hover:opacity-70"
-            style={{ color: 'var(--text-muted)' }}>
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+        <div className="flex-shrink-0 px-6 pt-6 pb-5" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)' }}
+              >
+                <ShieldCheckIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-black" style={{ color: 'var(--text)' }}>
+                  {isEdit ? 'Edit Role' : 'Create Role'}
+                </h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {isEdit ? `Editing "${role.name}"` : 'Add a new role to the system'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg flex-shrink-0 transition-all hover:opacity-70"
+              style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          </div>
+
+          {error && (
+            <div
+              className="mt-4 px-4 py-2.5 rounded-xl text-sm"
+              style={{ background: 'color-mix(in srgb, var(--danger) 10%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}
+            >
+              {error}
+            </div>
+          )}
         </div>
 
-        {error && (
-          <p className="mb-4 px-3 py-2 rounded-lg text-sm"
-            style={{ background: 'color-mix(in srgb, var(--danger) 12%, transparent)', color: 'var(--danger)' }}>
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-              Role Name *
-            </label>
-            <input
-              type="text" value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Safety Officer"
-              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
-              style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text)' }}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-              Description
-            </label>
-            <textarea
-              value={desc} onChange={(e) => setDesc(e.target.value)}
-              placeholder="Optional description…" rows={3}
-              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none"
-              style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text)' }}
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              Cancel
-            </button>
-            <button type="submit" disabled={saving}
-              className="px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
-              style={{ background: 'var(--accent)', color: '#fff' }}>
-              {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Role'}
-            </button>
+        {/* Body */}
+        <form id="role-form" onSubmit={handleSubmit}>
+          <div className="px-6 py-5 flex flex-col gap-5">
+            <div>
+              <label className="block text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Role Name <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Safety Officer"
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                onFocus={(e) => { e.currentTarget.style.border = '1px solid var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent)'; }}
+                onBlur={(e)  => { e.currentTarget.style.border = '1px solid var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Description
+              </label>
+              <textarea
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                placeholder="Optional — describe the purpose of this role…"
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition-all"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                onFocus={(e) => { e.currentTarget.style.border = '1px solid var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent)'; }}
+                onBlur={(e)  => { e.currentTarget.style.border = '1px solid var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+              />
+            </div>
           </div>
         </form>
+
+        {/* Footer */}
+        <div
+          className="flex-shrink-0 px-6 py-4 flex justify-end gap-2.5"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg-raised)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="role-form"
+            disabled={saving}
+            className="px-5 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+            style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent)' }}
+          >
+            {saving ? (
+              <>
+                <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                Saving…
+              </>
+            ) : isEdit ? 'Save Changes' : 'Create Role'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -323,84 +383,234 @@ function PermissionsModal({ isOpen, role, allPermissions, onClose, onUpdated }) 
     setSaving(false);
   };
 
+  const nsKeys = Object.keys(groups).sort();
+  const totalPerms = allPermissions.length;
+
+  const toggleNs = (ns) => {
+    const nsKeys_ = groups[ns].map((p) => p.key);
+    const allOn   = nsKeys_.every((k) => selected.has(k));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      nsKeys_.forEach((k) => allOn ? next.delete(k) : next.add(k));
+      return next;
+    });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="ui-card w-full max-w-lg" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-lg font-bold">Manage Permissions</h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Role: <span className="font-semibold" style={{ color: 'var(--accent)' }}>{role.name}</span>
-            </p>
-          </div>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:opacity-70"
-            style={{ color: 'var(--text-muted)' }}>
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </div>
-
-        {error && (
-          <p className="mb-4 px-3 py-2 rounded-lg text-sm"
-            style={{ background: 'color-mix(in srgb, var(--danger) 12%, transparent)', color: 'var(--danger)' }}>
-            {error}
-          </p>
-        )}
-        {success && (
-          <p className="mb-4 px-3 py-2 rounded-lg text-sm"
-            style={{ background: 'color-mix(in srgb, var(--success) 12%, transparent)', color: 'var(--success)' }}>
-            {success}
-          </p>
-        )}
-
-        <div className="flex flex-col gap-5 mb-6">
-          {Object.keys(groups).sort().map((ns) => (
-            <div key={ns}>
-              <p className="text-xs font-bold uppercase tracking-wider mb-2"
-                style={{ color: 'var(--text-muted)' }}>{ns}</p>
-              <div className="flex flex-col gap-2">
-                {groups[ns].map((perm) => (
-                  <label key={perm.id ?? perm.key}
-                    className="flex items-start gap-3 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(perm.key)}
-                      onChange={() => toggle(perm.key)}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text)' }}>{perm.key}</span>
-                      {perm.description && (
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{perm.description}</p>
-                      )}
-                    </div>
-                  </label>
-                ))}
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full sm:max-w-2xl flex flex-col overflow-hidden sm:rounded-2xl"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-lg)',
+          borderRadius: '1.25rem',
+          maxHeight: '90vh',
+          animation: 'slideUp .22s ease',
+        }}
+      >
+        {/* ── Sticky header ── */}
+        <div className="flex-shrink-0 px-6 pt-6 pb-5" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black flex-shrink-0"
+                style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}
+              >
+                {role.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-base font-black" style={{ color: 'var(--text)' }}>Manage Permissions</h2>
+                <p className="text-xs mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
+                  <span>Role:</span>
+                  <span
+                    className="font-bold px-2 py-0.5 rounded-full text-[11px]"
+                    style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)' }}
+                  >
+                    {role.name}
+                  </span>
+                  <span className="opacity-50">·</span>
+                  <span>{totalPerms} available</span>
+                </p>
               </div>
             </div>
-          ))}
-          {allPermissions.length === 0 && (
-            <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>
-              No permissions defined yet.
-            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg flex-shrink-0 transition-all hover:opacity-70"
+              style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Inline feedback banners */}
+          {error && (
+            <div
+              className="mt-4 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2"
+              style={{ background: 'color-mix(in srgb, var(--danger) 10%, transparent)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 20%, transparent)' }}
+            >
+              {error}
+            </div>
+          )}
+          {success && (
+            <div
+              className="mt-4 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2"
+              style={{ background: 'color-mix(in srgb, var(--success) 10%, transparent)', color: 'var(--success)', border: '1px solid color-mix(in srgb, var(--success) 20%, transparent)' }}
+            >
+              {success}
+            </div>
           )}
         </div>
 
-        <div className="flex justify-between items-center pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {selected.size} permission{selected.size !== 1 ? 's' : ''} selected
-          </p>
-          <div className="flex gap-3">
-            <button type="button" onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm"
-              style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              Close
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {totalPerms === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <ShieldCheckIcon className="h-10 w-10 opacity-20" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No permissions defined yet.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              {nsKeys.map((ns) => {
+                const nsPerms   = groups[ns];
+                const checkedNs = nsPerms.filter((p) => selected.has(p.key)).length;
+                const allOn     = checkedNs === nsPerms.length;
+
+                return (
+                  <div key={ns}>
+                    {/* Namespace header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                          style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}
+                        >
+                          {ns}
+                        </span>
+                        <span
+                          className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: checkedNs > 0 ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'var(--bg-raised)',
+                            color: checkedNs > 0 ? 'var(--accent)' : 'var(--text-muted)',
+                          }}
+                        >
+                          {checkedNs}/{nsPerms.length}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleNs(ns)}
+                        className="text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
+                        style={{
+                          background: allOn ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'var(--bg-raised)',
+                          color: allOn ? 'var(--accent)' : 'var(--text-muted)',
+                          border: `1px solid ${allOn ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'var(--border)'}`,
+                        }}
+                      >
+                        {allOn ? 'Deselect all' : 'Select all'}
+                      </button>
+                    </div>
+
+                    {/* Permission rows */}
+                    <div className="flex flex-col gap-1.5">
+                      {nsPerms.map((perm) => {
+                        const isOn = selected.has(perm.key);
+                        return (
+                          <button
+                            key={perm.id ?? perm.key}
+                            type="button"
+                            onClick={() => toggle(perm.key)}
+                            className="w-full text-left px-4 py-3 rounded-xl flex items-start gap-3 transition-all"
+                            style={{
+                              background: isOn
+                                ? 'color-mix(in srgb, var(--accent) 8%, transparent)'
+                                : 'var(--bg-raised)',
+                              border: `1px solid ${isOn ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'var(--border)'}`,
+                            }}
+                          >
+                            {/* Custom checkbox indicator */}
+                            <div
+                              className="mt-0.5 w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
+                              style={{
+                                background: isOn ? 'var(--accent)' : 'transparent',
+                                border: `2px solid ${isOn ? 'var(--accent)' : 'var(--border)'}`,
+                              }}
+                            >
+                              {isOn && (
+                                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none">
+                                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span
+                                className="text-xs font-mono font-bold block"
+                                style={{ color: isOn ? 'var(--accent)' : 'var(--text)' }}
+                              >
+                                {perm.key.split('.').slice(1).join('.') || perm.key}
+                              </span>
+                              {perm.description && (
+                                <span className="text-xs mt-0.5 block" style={{ color: 'var(--text-muted)' }}>
+                                  {perm.description}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Sticky footer ── */}
+        <div
+          className="flex-shrink-0 px-6 py-4 flex items-center justify-between gap-4"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className="text-sm font-black px-2.5 py-1 rounded-lg"
+              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)' }}
+            >
+              {selected.size}
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              permission{selected.size !== 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--bg-raised)' }}
+            >
+              Cancel
             </button>
-            <button type="button" onClick={handleSave} disabled={saving}
-              className="px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
-              style={{ background: 'var(--accent)', color: '#fff' }}>
-              {saving ? 'Saving…' : 'Save Permissions'}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+              style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent)' }}
+            >
+              {saving ? (
+                <>
+                  <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                'Save Permissions'
+              )}
             </button>
           </div>
         </div>
