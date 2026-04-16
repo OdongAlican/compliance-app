@@ -11,7 +11,7 @@
  *    `ppe_inspection_issue_attachments` (read-only here).
  *  - New files can only be uploaded via issue create or repairCompletion.
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
     XMarkIcon,
@@ -22,6 +22,9 @@ import {
     PlusIcon,
     TrashIcon,
     UserIcon,
+    WrenchScrewdriverIcon,
+    CalendarDaysIcon,
+    CheckBadgeIcon,
     ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
@@ -29,6 +32,8 @@ import {
     PpePerformService,
     PpeChecklistItemService,
     PpeIssueService,
+    PpeAttachmentService,
+    PpeRepairAttachmentService,
 } from "../../services/ppe.service";
 import { Spinner, Field } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
@@ -81,12 +86,106 @@ function SectionCard({ children, className = "" }) {
     );
 }
 
+/* ── AttachmentList ───────────────────────────────────────────────────── */
+function AttachmentList({ performId, issueId, kind = "issue" }) {
+    const svc = kind === "repair" ? PpeRepairAttachmentService : PpeAttachmentService;
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [deleting, setDeleting] = useState(null);
+    const fileRef = useRef(null);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await svc.list(performId, issueId);
+            setItems(Array.isArray(res) ? res : res.data ?? []);
+        } catch { /* silent */ } finally { setLoading(false); }
+    }, [performId, issueId, svc]);
+
+    useEffect(() => { load(); }, [load]);
+
+    async function handleUpload(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+            await svc.upload(performId, issueId, file);
+            toast.success("File uploaded.");
+            load();
+        } catch { toast.error("Upload failed."); }
+        finally { setUploading(false); e.target.value = ""; }
+    }
+
+    async function handleDelete(id) {
+        setDeleting(id);
+        try {
+            await svc.remove(performId, issueId, id);
+            setItems((p) => p.filter((a) => a.id !== id));
+            toast.success("Attachment removed.");
+        } catch { toast.error("Delete failed."); }
+        finally { setDeleting(null); }
+    }
+
+    return (
+        <div>
+            {loading ? (
+                <div className="flex justify-center py-3"><Spinner size={4} /></div>
+            ) : items.length === 0 ? (
+                <p className="text-xs py-2" style={{ color: "var(--text-muted)" }}>No attachments yet.</p>
+            ) : (
+                <div className="flex flex-col gap-1.5 mb-2">
+                    {items.map((a) => (
+                        <div
+                            key={a.id}
+                            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg"
+                            style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                        >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <PaperClipIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+                                <a
+                                    href={a.file_url ?? a.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs truncate hover:underline"
+                                    style={{ color: "var(--accent)" }}
+                                >
+                                    {a.file_name ?? a.file_path ?? `Attachment #${a.id}`}
+                                </a>
+                            </div>
+                            <button
+                                onClick={() => handleDelete(a.id)}
+                                disabled={deleting === a.id}
+                                className="flex-shrink-0"
+                                style={{ color: "var(--danger)", opacity: deleting === a.id ? 0.5 : 1 }}
+                            >
+                                {deleting === a.id ? <Spinner size={3} /> : <TrashIcon className="h-3.5 w-3.5" />}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            <input type="file" ref={fileRef} className="hidden" onChange={handleUpload} />
+            <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
+                style={{ border: "1px dashed var(--border)", color: "var(--text-muted)", background: "transparent" }}
+            >
+                {uploading ? <Spinner size={3} /> : <PaperClipIcon className="h-3.5 w-3.5" />}
+                Attach file
+            </button>
+        </div>
+    );
+}
+
 /* ── IssueCard ────────────────────────────────────────────────────────── */
 function IssueCard({ issue, performId, onDeleted, onUpdated }) {
     const [expanded, setExpanded] = useState(false);
     const [activeSection, setActiveSection] = useState(null);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [attachTab, setAttachTab] = useState("issue");
 
     const [caText, setCaText] = useState(issue.corrective_action ?? "");
     const [priority, setPriority] = useState(issue.priority_level ?? "low");
@@ -187,9 +286,6 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
         ? `${issue.contractor.firstname} ${issue.contractor.lastname}`
         : null;
 
-    /* Embedded read-only attachments from API response — PPE-specific field */
-    const attachments = issue.ppe_inspection_issue_attachments ?? [];
-
     return (
         <div
             className="rounded-xl overflow-hidden"
@@ -202,7 +298,8 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                 onClick={() => setExpanded((p) => !p)}
             >
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: "var(--danger)" }} />
                         <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                             {issue.title}
                         </span>
@@ -214,30 +311,8 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                         )}
                     </div>
                     {issue.description && (
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{issue.description}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{issue.description}</p>
                     )}
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                        {issue.corrective_action && (
-                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                                ✔ CA set
-                            </span>
-                        )}
-                        {issue.due_date && (
-                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                                📅 {issue.due_date}
-                            </span>
-                        )}
-                        {contractorName && (
-                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                                <UserIcon className="h-3 w-3 inline mr-0.5" />{contractorName}
-                            </span>
-                        )}
-                        {attachments.length > 0 && (
-                            <span className="text-[11px]" style={{ color: "var(--accent)" }}>
-                                <PaperClipIcon className="h-3 w-3 inline mr-0.5" />{attachments.length}
-                            </span>
-                        )}
-                    </div>
                 </div>
                 {expanded
                     ? <ChevronUpIcon className="h-4 w-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
@@ -250,30 +325,74 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                     className="flex flex-col gap-3 px-4 py-4"
                     style={{ borderTop: "1px solid var(--border)" }}
                 >
+                    {/* Meta info */}
+                    <div className="grid grid-cols-2 gap-2 pt-3">
+                        {issue.corrective_action && (
+                            <div className="col-span-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "var(--text-muted)" }}>
+                                    Corrective Action
+                                </p>
+                                <p className="text-xs" style={{ color: "var(--text)" }}>{issue.corrective_action}</p>
+                            </div>
+                        )}
+                        {issue.due_date && (
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "var(--text-muted)" }}>
+                                    Due Date
+                                </p>
+                                <p className="text-xs" style={{ color: "var(--text)" }}>{issue.due_date}</p>
+                            </div>
+                        )}
+                        {contractorName && (
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "var(--text-muted)" }}>
+                                    Contractor
+                                </p>
+                                <p className="text-xs" style={{ color: "var(--text)" }}>{contractorName}</p>
+                            </div>
+                        )}
+                        {issue.repair_completion_date && (
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "var(--text-muted)" }}>
+                                    Repair Completed
+                                </p>
+                                <p className="text-xs" style={{ color: "var(--text)" }}>{issue.repair_completion_date}</p>
+                            </div>
+                        )}
+                        {issue.reject_reason && (
+                            <div className="col-span-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "var(--danger)" }}>
+                                    Reject Reason
+                                </p>
+                                <p className="text-xs" style={{ color: "var(--text)" }}>{issue.reject_reason}</p>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Action buttons */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                         {[
-                            { key: "ca", label: "Corrective Action" },
-                            { key: "priority", label: "Priority / Due Date" },
-                            { key: "contractor", label: "Contractor" },
-                            { key: "repair", label: "Repair Completion" },
-                            { key: "status", label: "Repair Status" },
-                            ...(attachments.length > 0 ? [{ key: "attach", label: `Attachments (${attachments.length})` }] : []),
-                        ].map(({ key, label }) => (
+                            { key: "ca", label: "Corrective Action", icon: ClipboardDocumentListIcon },
+                            { key: "priority", label: "Priority / Due Date", icon: CalendarDaysIcon },
+                            { key: "contractor", label: "Assign Contractor", icon: UserIcon },
+                            { key: "repair", label: "Repair Completion", icon: WrenchScrewdriverIcon },
+                            { key: "status", label: "Set Repair Status", icon: CheckBadgeIcon },
+                            { key: "attach", label: "Attachments", icon: PaperClipIcon },
+                        ].map(({ key, label, icon: Icon }) => (
                             <button
                                 key={key}
                                 onClick={() => toggleSection(key)}
-                                className="text-[11px] font-semibold px-3 py-1.5 rounded-lg"
+                                className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
                                 style={{
-                                    background: activeSection === key
-                                        ? "color-mix(in srgb,var(--accent) 15%,transparent)"
-                                        : "var(--bg)",
+                                    border: `1px solid ${activeSection === key ? "var(--accent)" : "var(--border)"}`,
                                     color: activeSection === key ? "var(--accent)" : "var(--text-muted)",
-                                    border: activeSection === key
-                                        ? "1px solid color-mix(in srgb,var(--accent) 30%,transparent)"
-                                        : "1px solid var(--border)",
+                                    background: activeSection === key
+                                        ? "color-mix(in srgb,var(--accent) 8%,transparent)"
+                                        : "transparent",
+                                    transition: "all 0.15s",
                                 }}
                             >
+                                <Icon className="h-3.5 w-3.5" />
                                 {label}
                             </button>
                         ))}
@@ -513,29 +632,36 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                         </SectionCard>
                     )}
 
-                    {/* Read-only attachments (embedded in issue object) */}
-                    {activeSection === "attach" && attachments.length > 0 && (
+                    {/* Attachments */}
+                    {activeSection === "attach" && (
                         <SectionCard>
-                            <p className="text-xs font-bold mb-3" style={{ color: "var(--text)" }}>
-                                Issue Attachments
-                            </p>
-                            <div className="flex flex-col gap-1.5">
-                                {attachments.map((a, idx) => (
-                                    <a
-                                        key={a.id ?? idx}
-                                        href={a.file_url ?? a.url ?? "#"}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:opacity-80"
-                                        style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                            <div className="flex gap-2 mb-3">
+                                {[
+                                    { key: "issue", label: "Issue Attachments" },
+                                    { key: "repair", label: "Repair Attachments" },
+                                ].map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setAttachTab(key)}
+                                        className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                                        style={{
+                                            border: `1px solid ${attachTab === key ? "var(--accent)" : "var(--border)"}`,
+                                            color: attachTab === key ? "var(--accent)" : "var(--text-muted)",
+                                            background: attachTab === key
+                                                ? "color-mix(in srgb,var(--accent) 8%,transparent)"
+                                                : "transparent",
+                                        }}
                                     >
-                                        <PaperClipIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
-                                        <span className="text-xs truncate flex-1" style={{ color: "var(--accent)" }}>
-                                            {a.file_name ?? a.filename ?? `Attachment #${a.id ?? idx + 1}`}
-                                        </span>
-                                    </a>
+                                        {label}
+                                    </button>
                                 ))}
                             </div>
+                            <AttachmentList
+                                key={attachTab}
+                                performId={performId}
+                                issueId={issue.id}
+                                kind={attachTab}
+                            />
                         </SectionCard>
                     )}
 

@@ -87,10 +87,6 @@ export const Sidebar = ({ sidebarToggle, setSidebarToggle, isMinimized, setIsMin
       )}
 
       <aside
-        style={{
-          background: 'var(--bg-surface)',
-          borderRight: '1px solid var(--border)',
-        }}
         className={`
           fixed inset-y-0 left-0 z-40
           flex flex-col

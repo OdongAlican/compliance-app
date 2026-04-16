@@ -167,7 +167,7 @@ export default function AppRoutes() {
       <Route element={<PermissionRoute permission="vehicle_inspections.index" />}>
         <Route path="/form/vehicle" element={<Layout><VehicleInspectionDashboard /></Layout>} />
       </Route>
-      <Route element={<PermissionRoute permission="science_laboratory_inspections.index" />}>
+      <Route element={<PermissionRoute permission="science_lab_inspections.index" />}>
         <Route path="/form/science-laboratory" element={<Layout><ScienceLabInterface /></Layout>} />
       </Route>
       <Route element={<PermissionRoute permission="swimming_pool_inspections.index" />}>

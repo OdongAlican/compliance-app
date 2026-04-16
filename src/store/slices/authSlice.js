@@ -73,7 +73,9 @@ const authSlice = createSlice({
       })
       .addCase(loginThunk.fulfilled, (state, action) => {
         state.loading         = false;
-        state.user            = action.payload;
+        // Defensive unwrap: if API shape is { token, user } extract the nested
+        // user; otherwise accept the payload as-is (already a user object).
+        state.user            = action.payload?.user ?? action.payload;
         state.isAuthenticated = true;
       })
       .addCase(loginThunk.rejected, (state, action) => {

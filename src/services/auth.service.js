@@ -17,7 +17,9 @@ const AuthService = {
   login: async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
     TokenService.saveAuthResponse(data);
-    return data;
+    // Return just the user object so the Redux slice shape always matches
+    // what hydrateAuth restores (TokenService.getUser stores only the user).
+    return data.user ?? data;
   },
 
   /** Client-side only — clears sessionStorage, no API call. */

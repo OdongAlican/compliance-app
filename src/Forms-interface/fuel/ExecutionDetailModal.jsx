@@ -4,12 +4,7 @@
  * Two tabs:
  *  1. Checklists — view & update item results
  *  2. Issues     — full issue lifecycle (corrective action, priority,
- *                  contractor, repair, read-only attachments)
- *
- * NOTE: Fuel has no separate attachment API routes.
- *  - Issue attachments are embedded in the issue object as
- *    `fuel_inspection_issue_attachments` (read-only here).
- *  - New files can only be uploaded via issue create or repairCompletion.
+ *                  contractor, repair, issue/repair attachments)
  */
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -32,6 +27,8 @@ import {
     FuelPerformService,
     FuelChecklistItemService,
     FuelIssueService,
+    FuelAttachmentService,
+    FuelRepairAttachmentService,
 } from "../../services/fuel.service";
 import { Spinner, Field } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
@@ -84,12 +81,110 @@ function SectionCard({ children, className = "" }) {
     );
 }
 
+/* ── AttachmentList ─────────────────────────────────────────────────── */
+function AttachmentList({ performId, issueId, kind = "issue" }) {
+    const [attachments, setAttachments] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState(null);
+
+    const svc = kind === "repair" ? FuelRepairAttachmentService : FuelAttachmentService;
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await svc.list(performId, issueId);
+            setAttachments(res.data?.data ?? res.data ?? []);
+        } catch {
+            toast.error("Failed to load attachments.");
+        } finally {
+            setLoading(false);
+        }
+    }, [performId, issueId, svc]);
+
+    useEffect(() => { load(); }, [load]);
+
+    async function handleDelete(id) {
+        setDeleting(id);
+        try {
+            await svc.remove(performId, issueId, id);
+            setAttachments((prev) => prev.filter((a) => a.id !== id));
+        } catch {
+            toast.error("Failed to delete attachment.");
+        } finally {
+            setDeleting(null);
+        }
+    }
+
+    async function handleUpload(e) {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        for (const file of files) {
+            try {
+                const res = await svc.upload(performId, issueId, file);
+                const att = res.data?.data ?? res.data ?? res;
+                setAttachments((prev) => [...prev, att]);
+            } catch {
+                toast.error(`Failed to upload ${file.name}.`);
+            }
+        }
+        e.target.value = "";
+    }
+
+    if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
+
+    return (
+        <div className="flex flex-col gap-2">
+            {attachments.length === 0 ? (
+                <p className="text-xs py-2" style={{ color: "var(--text-muted)" }}>No attachments yet.</p>
+            ) : (
+                <div className="flex flex-col gap-1.5">
+                    {attachments.map((a) => (
+                        <div
+                            key={a.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                            style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                        >
+                            <PaperClipIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+                            <a
+                                href={a.file_path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs truncate flex-1 hover:underline"
+                                style={{ color: "var(--accent)" }}
+                            >
+                                {a.file_name}
+                            </a>
+                            <button
+                                onClick={() => handleDelete(a.id)}
+                                disabled={deleting === a.id}
+                                className="flex-shrink-0"
+                                style={{ color: "var(--danger)" }}
+                            >
+                                {deleting === a.id ? <Spinner size={3} /> : <XMarkIcon className="h-3.5 w-3.5" />}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            <label
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer hover:opacity-80 text-xs"
+                style={{ background: "var(--bg)", border: "1px dashed var(--border)", color: "var(--text-muted)" }}
+            >
+                <PaperClipIcon className="h-3.5 w-3.5" />
+                Upload file…
+                <input type="file" multiple className="hidden" onChange={handleUpload} />
+            </label>
+        </div>
+    );
+}
+
 /* ── IssueCard ────────────────────────────────────────────────────────── */
 function IssueCard({ issue, performId, onDeleted, onUpdated }) {
     const [expanded, setExpanded] = useState(false);
     const [activeSection, setActiveSection] = useState(null);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [attachTab, setAttachTab] = useState("issue");
 
     const [caText, setCaText] = useState(issue.corrective_action ?? "");
     const [priority, setPriority] = useState(issue.priority_level ?? "low");
@@ -190,9 +285,6 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
         ? `${issue.contractor.firstname} ${issue.contractor.lastname}`
         : null;
 
-    /* Embedded read-only attachments from API response */
-    const attachments = issue.fuel_inspection_issue_attachments ?? [];
-
     return (
         <div
             className="rounded-xl overflow-hidden"
@@ -288,9 +380,7 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                             { key: "contractor", label: "Assign Contractor", icon: UserIcon },
                             { key: "repair", label: "Repair Completion", icon: WrenchScrewdriverIcon },
                             { key: "status", label: "Set Repair Status", icon: CheckBadgeIcon },
-                            ...(attachments.length > 0
-                                ? [{ key: "attach", label: `Attachments (${attachments.length})`, icon: PaperClipIcon }]
-                                : []),
+                            { key: "attach", label: "Attachments", icon: PaperClipIcon },
                         ].map(({ key, label, icon: Icon }) => (
                             <button
                                 key={key}
@@ -538,29 +628,26 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                         </SectionCard>
                     )}
 
-                    {/* Read-only attachments (embedded in issue object) */}
-                    {activeSection === "attach" && attachments.length > 0 && (
+                    {/* Attachments (issue + repair tabs) */}
+                    {activeSection === "attach" && (
                         <SectionCard>
-                            <p className="text-xs font-bold mb-3" style={{ color: "var(--text)" }}>
-                                Issue Attachments
-                            </p>
-                            <div className="flex flex-col gap-1.5">
-                                {attachments.map((a, idx) => (
-                                    <a
-                                        key={a.id ?? idx}
-                                        href={a.file_url ?? a.url ?? "#"}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:opacity-80"
-                                        style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                            <div className="flex gap-2 mb-3">
+                                {["issue", "repair"].map((t) => (
+                                    <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setAttachTab(t)}
+                                        className="px-3 py-1 rounded-full text-[11px] font-semibold"
+                                        style={attachTab === t
+                                            ? { background: "var(--accent)", color: "#fff" }
+                                            : { background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }
+                                        }
                                     >
-                                        <PaperClipIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
-                                        <span className="text-xs truncate flex-1" style={{ color: "var(--accent)" }}>
-                                            {a.file_name ?? a.filename ?? `Attachment #${a.id ?? idx + 1}`}
-                                        </span>
-                                    </a>
+                                        {t === "issue" ? "Issue" : "Repair"}
+                                    </button>
                                 ))}
                             </div>
+                            <AttachmentList performId={performId} issueId={issue.id} kind={attachTab} />
                         </SectionCard>
                     )}
 
