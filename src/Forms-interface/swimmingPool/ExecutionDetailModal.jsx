@@ -776,8 +776,8 @@ function ChecklistSection({ performId }) {
     async function saveChecklist(pc) {
         const pcLocal = localResults[pc.id] ?? {};
         const items = (pc.performed_swimming_pool_checklist_items ?? []).map((pci) => ({
-            id: pci.id,
-            value: pcLocal[pci.id]?.value ?? pci.status ?? "satisfactory",
+            checklist_item_template_id: pci.checklist_item_template_id,
+            status: pcLocal[pci.id]?.value ?? pci.status ?? "satisfactory",
             comment: pcLocal[pci.id]?.comment ?? pci.comment ?? undefined,
         }));
         setSaving((s) => ({ ...s, [pc.id]: true }));
@@ -892,7 +892,7 @@ function ChecklistSection({ performId }) {
                                     <>
                                         <div className="flex flex-col divide-y" style={{ "--tw-divide-opacity": 1 }}>
                                             {items.map((pci, idx) => {
-                                                const l = pcLocal[pci.id] ?? { value: pci.value ?? "satisfactory", comment: pci.comment ?? "" };
+                                                const l = pcLocal[pci.id] ?? { value: pci.status ?? "satisfactory", comment: pci.comment ?? "" };
                                                 const label = pci.checklist_item_template?.label ?? labelMap[pci.checklist_item_template_id] ?? pci.label ?? `Item #${pci.id}`;
                                                 const itemColor = STATUS_ITEM_COLOR[l.value] ?? STATUS_ITEM_COLOR.not_applicable;
                                                 return (
