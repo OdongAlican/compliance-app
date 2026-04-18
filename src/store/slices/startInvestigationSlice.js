@@ -120,7 +120,7 @@ const startInvestigationSlice = createSlice({
       .addCase(createStartInvestigation.fulfilled, (state, action) => {
         state.actionLoading = false;
         state.items.unshift(action.payload);
-        if (state.meta) state.meta.total_count = (state.meta.total_count ?? 0) + 1;
+        if (state.meta) state.meta.total = (state.meta.total ?? 0) + 1;
       })
       .addCase(createStartInvestigation.rejected, (state, action) => {
         state.actionLoading = false;
@@ -153,7 +153,7 @@ const startInvestigationSlice = createSlice({
         state.actionLoading = false;
         state.items = state.items.filter((r) => r.id !== action.payload);
         if (state.meta)
-          state.meta.total_count = Math.max(0, (state.meta.total_count ?? 1) - 1);
+          state.meta.total = Math.max(0, (state.meta.total ?? 1) - 1);
       })
       .addCase(deleteStartInvestigation.rejected, (state, action) => {
         state.actionLoading = false;

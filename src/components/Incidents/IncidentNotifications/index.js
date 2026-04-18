@@ -51,6 +51,7 @@ import {
   assignIncidentSupervisors,
   setIncidentNotificationFilters,
   clearIncidentNotificationErrors,
+  patchIncidentNotificationWitnessCount,
   selectIncidentNotifications,
   selectIncidentNotificationsMeta,
   selectIncidentNotificationsLoading,
@@ -1335,7 +1336,10 @@ function DetailDrawer({ record, onClose, canEdit, onUpdate }) {
       }
       setWModal(false);
       setEditWitness(null);
-      loadWitnesses();
+      const res = await WitnessStatementService.list(record.id);
+      const list = Array.isArray(res) ? res : (res.data ?? []);
+      setWitnesses(list);
+      dispatch(patchIncidentNotificationWitnessCount({ id: record.id, witness_statements: list.map((w) => ({ id: w.id })) }));
     } catch (err) {
       setWError(err.response?.data?.message ?? 'Failed to save witness statement');
     } finally {
@@ -1350,7 +1354,10 @@ function DetailDrawer({ record, onClose, canEdit, onUpdate }) {
       await WitnessStatementService.remove(record.id, deleteW.id);
       toast.success('Witness statement deleted');
       setDeleteW(null);
-      loadWitnesses();
+      const res = await WitnessStatementService.list(record.id);
+      const list = Array.isArray(res) ? res : (res.data ?? []);
+      setWitnesses(list);
+      dispatch(patchIncidentNotificationWitnessCount({ id: record.id, witness_statements: list.map((w) => ({ id: w.id })) }));
     } catch (err) {
       toast.error(err.response?.data?.message ?? 'Failed to delete');
     } finally {
@@ -1825,7 +1832,7 @@ export default function IncidentNotificationsPage() {
               Incident Notifications
             </h1>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {meta?.total_count ?? '—'} total records
+              {meta?.total ?? meta?.total_count ?? '—'} total records
             </p>
           </div>
         </div>

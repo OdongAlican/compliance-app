@@ -83,6 +83,8 @@ const EMPTY_PROPERTY = { type_of_property: '', description: '', nature_of_damage
 const EMPTY_DESC = { narrative: '', file: null };
 const EMPTY_ACTION = { description: '', user_id: '', action_date: '', action_time: '', _user: null };
 
+const PURPLE = '#7c3aed';
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function formatDate(d) {
@@ -240,35 +242,52 @@ function FieldError({ msg }) {
 // ── Inline user picker (single-user) ──────────────────────────────────────
 
 function UserPicker({ value, onChange, placeholder = 'Search user…' }) {
-  const [q, setQ]         = useState('');
-  const [opts, setOpts]   = useState([]);
-  const [open, setOpen]   = useState(false);
-  const timer             = useRef(null);
+  const [q, setQ]             = useState('');
+  const [opts, setOpts]       = useState([]);
+  const [open, setOpen]       = useState(false);
+  const [loading, setLoading] = useState(false);
+  const timer                 = useRef(null);
+  const loaded                = useRef(false);
+  const wrapRef               = useRef(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
 
   async function search(query) {
+    setLoading(true);
     try {
-      const res = await (await import('../../../services/users.service')).default.list({ q: query, per_page: 20 });
+      const res = await (await import('../../../services/users.service')).default.list({ q: query, per_page: 10 });
       const list = Array.isArray(res) ? res : (res.data ?? []);
       setOpts(list);
     } catch (_) { setOpts([]); }
+    finally { setLoading(false); }
+  }
+
+  function openDropdown() {
+    if (wrapRef.current) {
+      const r = wrapRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    if (!loaded.current) { loaded.current = true; search(''); }
+    setOpen(true);
   }
 
   function handleType(val) {
     setQ(val);
     clearTimeout(timer.current);
-    if (val.length >= 1) {
-      timer.current = setTimeout(() => search(val), 300);
-      setOpen(true);
-    } else { setOpen(false); }
+    timer.current = setTimeout(() => search(val), 300);
+    openDropdown();
   }
 
   if (value) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
         style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-        <span className="flex-1 text-sm" style={{ color: 'var(--text)' }}>{displayName(value)}</span>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+          style={{ background: PURPLE }}>
+          {((value.firstname?.[0] ?? '') + (value.lastname?.[0] ?? '')).toUpperCase() || '?'}
+        </div>
+        <span className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{displayName(value)}</span>
         <button type="button" onClick={() => onChange(null)}
-          className="p-0.5 hover:opacity-75" style={{ color: 'var(--text-muted)' }}>
+          className="p-0.5 rounded hover:opacity-75 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
           <XMarkIcon className="h-4 w-4" />
         </button>
       </div>
@@ -276,27 +295,49 @@ function UserPicker({ value, onChange, placeholder = 'Search user…' }) {
   }
 
   return (
-    <div className="relative">
-      <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 pointer-events-none"
-        style={{ color: 'var(--text-muted)' }} />
-      <input type="text" className="ui-input w-full pl-9"
-        placeholder={placeholder} value={q}
-        onChange={(e) => handleType(e.target.value)}
-        onFocus={() => q && setOpen(true)} />
-      {open && opts.length > 0 && (
+    <div ref={wrapRef}>
+      <div className="relative">
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+          style={{ color: 'var(--text-muted)' }} />
+        <input type="text" className="ui-input w-full pl-9 pr-3"
+          placeholder={placeholder} value={q}
+          onChange={(e) => handleType(e.target.value)}
+          onFocus={openDropdown} />
+      </div>
+      {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 mt-1 z-20 rounded-lg py-1 shadow-lg"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            {opts.map((u) => (
-              <button key={u.id} type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:opacity-75"
-                style={{ color: 'var(--text)' }}
-                onClick={() => { onChange(u); setQ(''); setOpen(false); }}>
-                {displayName(u)}
-                {u.email && <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>{u.email}</span>}
-              </button>
-            ))}
+          <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
+          <div className="fixed z-[80] rounded-xl shadow-xl overflow-y-auto"
+            style={{
+              top: dropPos.top, left: dropPos.left, width: dropPos.width,
+              maxHeight: 260, background: 'var(--bg-raised)', border: '1px solid var(--border)',
+            }}>
+            {loading ? (
+              <div className="flex items-center gap-2 px-4 py-3">
+                <ArrowPathIcon className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+              </div>
+            ) : opts.length === 0 ? (
+              <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>No users found</p>
+            ) : (
+              <div className="py-1">
+                {opts.map((u) => (
+                  <button key={u.id} type="button"
+                    className="w-full text-left flex items-center gap-3 px-4 py-2.5 hover:opacity-75"
+                    style={{ color: 'var(--text)' }}
+                    onMouseDown={(e) => { e.preventDefault(); onChange(u); setQ(''); setOpen(false); }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                      style={{ background: PURPLE }}>
+                      {((u.firstname?.[0] ?? '') + (u.lastname?.[0] ?? '')).toUpperCase() || '?'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                      {u.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -307,18 +348,20 @@ function UserPicker({ value, onChange, placeholder = 'Search user…' }) {
 // ── Incident picker (for step 0) ───────────────────────────────────────────
 
 function IncidentPicker({ value, onChange }) {
-  const [opts, setOpts]   = useState([]);
-  const [q, setQ]         = useState('');
-  const [open, setOpen]   = useState(false);
+  const [opts, setOpts]       = useState([]);
+  const [q, setQ]             = useState('');
+  const [open, setOpen]       = useState(false);
   const [loading, setLoading] = useState(false);
-  const timer = useRef(null);
+  const timer                 = useRef(null);
+  const wrapRef               = useRef(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
 
   useEffect(() => { loadOpts(''); }, []); // eslint-disable-line
 
   async function loadOpts(query) {
     setLoading(true);
     try {
-      const params = { per_page: 50 };
+      const params = { per_page: 10 };
       if (query) params['filter[incident_type]'] = query;
       const res = await IncidentNotificationService.list(params);
       const list = Array.isArray(res) ? res : (res.data ?? []);
@@ -327,22 +370,40 @@ function IncidentPicker({ value, onChange }) {
     finally { setLoading(false); }
   }
 
+  function openDropdown() {
+    if (wrapRef.current) {
+      const r = wrapRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    setOpen(true);
+  }
+
   function handleType(val) {
     setQ(val);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => loadOpts(val), 400);
-    setOpen(true);
+    openDropdown();
   }
 
   if (value) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
         style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-        <span className="flex-1 text-sm" style={{ color: 'var(--text)' }}>
-          {value.incident_type ?? `Incident #${value.id}`} — {value.location}
-        </span>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'rgba(124,58,237,.12)' }}>
+          <ClipboardDocumentCheckIcon className="h-4 w-4" style={{ color: PURPLE }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
+            {value.incident_type ?? `Incident #${value.id}`}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {value.location} · {formatDate(value.date_of_incident)}
+          </p>
+        </div>
         <button type="button" onClick={() => onChange(null)}
-          className="p-0.5 hover:opacity-75" style={{ color: 'var(--text-muted)' }}>
+          className="p-1 rounded-lg hover:opacity-75 flex-shrink-0"
+          style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
           <XMarkIcon className="h-4 w-4" />
         </button>
       </div>
@@ -350,37 +411,152 @@ function IncidentPicker({ value, onChange }) {
   }
 
   return (
-    <div className="relative">
-      <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 pointer-events-none"
-        style={{ color: 'var(--text-muted)' }} />
-      <input type="text" className="ui-input w-full pl-9"
-        placeholder="Search incident notifications…"
-        value={q} onChange={(e) => handleType(e.target.value)}
-        onFocus={() => setOpen(true)} />
+    <div ref={wrapRef}>
+      <div className="relative">
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+          style={{ color: 'var(--text-muted)' }} />
+        <input type="text" className="ui-input w-full pl-9 pr-3"
+          placeholder="Search incident notifications…"
+          value={q} onChange={(e) => handleType(e.target.value)}
+          onFocus={openDropdown} />
+      </div>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 mt-1 z-20 rounded-lg py-1 shadow-lg max-h-48 overflow-y-auto"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+          <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
+          <div className="fixed z-[80] rounded-xl shadow-xl overflow-y-auto"
+            style={{
+              top: dropPos.top, left: dropPos.left, width: dropPos.width,
+              maxHeight: 320, background: 'var(--bg-raised)', border: '1px solid var(--border)',
+            }}>
             {loading ? (
-              <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+              <div className="flex items-center gap-2 px-4 py-3">
+                <ArrowPathIcon className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+              </div>
             ) : opts.length === 0 ? (
-              <p className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>No incidents found</p>
-            ) : opts.map((item) => (
-              <button key={item.id} type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:opacity-75"
-                style={{ color: 'var(--text)' }}
-                onClick={() => { onChange(item); setQ(''); setOpen(false); }}>
-                <span className="font-medium">{item.incident_type ?? `#${item.id}`}</span>
-                <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {item.location} · {formatDate(item.date_of_incident)}
-                </span>
-              </button>
-            ))}
+              <div className="flex items-center gap-2 px-4 py-4">
+                <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No incidents found</p>
+              </div>
+            ) : (
+              <div className="py-1.5">
+                {opts.map((item) => (
+                  <button key={item.id} type="button"
+                    className="w-full text-left flex items-center gap-3 px-4 py-3 hover:opacity-75"
+                    style={{ color: 'var(--text)', borderBottom: '1px solid var(--border)' }}
+                    onMouseDown={(e) => { e.preventDefault(); onChange(item); setQ(''); setOpen(false); }}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(124,58,237,.1)' }}>
+                      <ClipboardDocumentCheckIcon className="h-4 w-4" style={{ color: PURPLE }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                        {item.incident_type ?? `#${item.id}`}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {item.location} · {formatDate(item.date_of_incident)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}
     </div>
+  );
+}
+
+// ── Step card & file upload — module-level so React never remounts on re-render ──
+
+function StepCard({ index, total, label, onRemove, children }) {
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+      <div className="flex items-center justify-between px-4 py-3"
+        style={{ background: 'rgba(124,58,237,.06)', borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+            style={{ background: PURPLE }}>{index + 1}</span>
+          <span className="text-sm font-semibold" style={{ color: PURPLE }}>{label} #{index + 1}</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>of {total}</span>
+        </div>
+        {total > 1 && (
+          <button type="button" onClick={onRemove}
+            className="p-1.5 rounded-lg hover:opacity-75"
+            style={{ border: '1px solid rgba(239,68,68,.3)', color: 'var(--danger)' }}>
+            <TrashIcon className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      <div className="p-5 space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function FileUploadZone({ value, onChange }) {
+  const fileRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) onChange(f);
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (value) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
+        style={{ background: 'rgba(124,58,237,.06)', border: '1px solid rgba(124,58,237,.25)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'rgba(124,58,237,.15)' }}>
+          <DocumentTextIcon className="h-5 w-5" style={{ color: PURPLE }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{value.name}</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatSize(value.size)}</p>
+        </div>
+        <button type="button" onClick={() => onChange(null)}
+          className="p-1.5 rounded-lg hover:opacity-75 flex-shrink-0"
+          style={{ border: '1px solid rgba(239,68,68,.3)', color: 'var(--danger)' }}>
+          <XMarkIcon className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => fileRef.current?.click()}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+      className="w-full rounded-xl px-4 py-8 flex flex-col items-center gap-3 transition-all"
+      style={{
+        border: `2px dashed ${dragging ? PURPLE : 'var(--border)'}`,
+        background: dragging ? 'rgba(124,58,237,.05)' : 'var(--bg-surface)',
+      }}
+    >
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+        style={{ background: 'rgba(124,58,237,.1)' }}>
+        <CloudArrowUpIcon className="h-6 w-6" style={{ color: PURPLE }} />
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Drop a file or click to browse</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>PDF, images, documents — max 20 MB</p>
+      </div>
+      <input ref={fileRef} type="file" className="hidden"
+        onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+    </button>
   );
 }
 
@@ -448,14 +624,32 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
     if (s === 0 && !selectedIncident) errs.incident = 'Incident is required';
     if (s === 1) {
       people.forEach((p, i) => {
-        if (!p.user_id && !p._user) errs[`person_${i}_user`] = 'User required';
-        if (p.injury_sustained === 'yes' && !p.nature_of_injury?.trim())
+        const hasUser = !!(p._user || p.user_id);
+        if (hasUser && p.injury_sustained === 'yes' && !p.nature_of_injury?.trim())
           errs[`person_${i}_injury`] = 'Describe the nature of injury';
+      });
+    }
+    if (s === 2) {
+      properties.forEach((prop, i) => {
+        const hasAnyData = prop.type_of_property?.trim() || prop.description?.trim() || prop.nature_of_damage?.trim();
+        if (hasAnyData) {
+          if (!prop.type_of_property?.trim()) errs[`prop_${i}_type`] = 'Type of property is required';
+          if (!prop.nature_of_damage?.trim()) errs[`prop_${i}_damage`] = 'Nature of damage is required';
+        }
       });
     }
     if (s === 3) {
       descriptions.forEach((d, i) => {
         if (!d.narrative?.trim()) errs[`desc_${i}`] = 'Narrative required';
+      });
+    }
+    if (s === 4) {
+      actions.forEach((a, i) => {
+        const hasAnyData = a.description?.trim() || a._user || a.user_id;
+        if (hasAnyData) {
+          if (!a.description?.trim()) errs[`action_${i}_desc`] = 'Description is required';
+          if (!a._user && !a.user_id) errs[`action_${i}_user`] = 'User is required';
+        }
       });
     }
     setErrors(errs);
@@ -496,7 +690,8 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
     formData.append('incident_investigation_id', selectedIncident.id);
     formData.append('notes', notes);
 
-    people.forEach((p, i) => {
+    const filledPeople = people.filter((p) => p._user?.id || p.user_id);
+    filledPeople.forEach((p, i) => {
       const uid = p._user?.id ?? p.user_id;
       formData.append(`people_injured[${i}][user_id]`, uid);
       formData.append(`people_injured[${i}][injury_sustained]`, p.injury_sustained);
@@ -504,22 +699,25 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
         formData.append(`people_injured[${i}][nature_of_injury]`, p.nature_of_injury);
     });
 
-    properties.forEach((prop, i) => {
+    const filledProperties = properties.filter((p) => p.type_of_property?.trim());
+    filledProperties.forEach((prop, i) => {
       formData.append(`properties_involved[${i}][type_of_property]`, prop.type_of_property);
-      formData.append(`properties_involved[${i}][description]`, prop.description);
+      formData.append(`properties_involved[${i}][description]`, prop.description ?? '');
       formData.append(`properties_involved[${i}][nature_of_damage]`, prop.nature_of_damage);
     });
 
-    descriptions.forEach((d, i) => {
+    const filledDescs = descriptions.filter((d) => d.narrative?.trim());
+    filledDescs.forEach((d, i) => {
       formData.append(`incident_descriptions[${i}][narrative]`, d.narrative);
       if (d.file) formData.append(`incident_descriptions[${i}][file]`, d.file);
     });
 
-    actions.forEach((a, i) => {
+    const filledActions = actions.filter((a) => a._user?.id || a.user_id);
+    filledActions.forEach((a, i) => {
       formData.append(`actions_taken[${i}][description]`, a.description);
       formData.append(`actions_taken[${i}][user_id]`, a._user?.id ?? a.user_id);
-      formData.append(`actions_taken[${i}][action_date]`, a.action_date);
-      formData.append(`actions_taken[${i}][action_time]`, a.action_time);
+      formData.append(`actions_taken[${i}][action_date]`, a.action_date ?? '');
+      formData.append(`actions_taken[${i}][action_time]`, a.action_time ?? '');
     });
 
     onSave(formData);
@@ -527,103 +725,11 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
 
   if (!open) return null;
 
-  const PURPLE = '#7c3aed';
-
-  /* ── Reusable step card shell ── */
-  function StepCard({ index, total, label, onRemove, children }) {
-    return (
-      <div className="rounded-2xl overflow-hidden"
-        style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-        <div className="flex items-center justify-between px-4 py-2.5"
-          style={{ background: 'rgba(124,58,237,.06)', borderBottom: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-              style={{ background: PURPLE }}>{index + 1}</span>
-            <span className="text-xs font-semibold" style={{ color: PURPLE }}>{label} #{index + 1}</span>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>of {total}</span>
-          </div>
-          {total > 1 && (
-            <button type="button" onClick={onRemove}
-              className="p-1 rounded-lg hover:opacity-75"
-              style={{ border: '1px solid rgba(239,68,68,.3)', color: 'var(--danger)' }}>
-              <TrashIcon className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="p-4 space-y-3">{children}</div>
-      </div>
-    );
-  }
-
-  /* ── File upload zone ── */
-  function FileUploadZone({ value, onChange }) {
-    const fileRef = useRef(null);
-    const [dragging, setDragging] = useState(false);
-
-    function handleDrop(e) {
-      e.preventDefault();
-      setDragging(false);
-      const f = e.dataTransfer.files?.[0];
-      if (f) onChange(f);
-    }
-
-    function formatSize(bytes) {
-      if (bytes < 1024) return `${bytes} B`;
-      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
-
-    if (value) {
-      return (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-          style={{ background: 'rgba(124,58,237,.06)', border: '1px solid rgba(124,58,237,.25)' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(124,58,237,.15)' }}>
-            <DocumentTextIcon className="h-5 w-5" style={{ color: PURPLE }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{value.name}</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatSize(value.size)}</p>
-          </div>
-          <button type="button" onClick={() => onChange(null)}
-            className="p-1.5 rounded-lg hover:opacity-75 flex-shrink-0"
-            style={{ border: '1px solid rgba(239,68,68,.3)', color: 'var(--danger)' }}>
-            <XMarkIcon className="h-4 w-4" />
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={handleDrop}
-        className="w-full rounded-2xl px-4 py-6 flex flex-col items-center gap-2 transition-all"
-        style={{
-          border: `2px dashed ${dragging ? PURPLE : 'var(--border)'}`,
-          background: dragging ? 'rgba(124,58,237,.05)' : 'var(--bg-surface)',
-        }}
-      >
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: 'rgba(124,58,237,.1)' }}>
-          <CloudArrowUpIcon className="h-5 w-5" style={{ color: PURPLE }} />
-        </div>
-        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Drop a file or click to browse</p>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>PDF, images, documents — max 20 MB</p>
-        <input ref={fileRef} type="file" className="hidden"
-          onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
-      </button>
-    );
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div className="ui-card w-full max-w-2xl"
-        style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="ui-card w-full max-w-3xl"
+        style={{ maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
 
         {/* ── Modal header ── */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4"
@@ -786,11 +892,12 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
               {properties.map((prop, i) => (
                 <StepCard key={i} index={i} total={properties.length} label="Property" onRemove={() => removeProperty(i)}>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>TYPE OF PROPERTY</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>TYPE OF PROPERTY <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input type="text" className="ui-input w-full"
                       placeholder="e.g. Vehicle, Equipment, Building…"
                       value={prop.type_of_property}
                       onChange={(e) => updateProperty(i, 'type_of_property', e.target.value)} />
+                    <FieldError msg={errors[`prop_${i}_type`]} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>DESCRIPTION</label>
@@ -800,11 +907,12 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
                       onChange={(e) => updateProperty(i, 'description', e.target.value)} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>NATURE OF DAMAGE</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>NATURE OF DAMAGE <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input type="text" className="ui-input w-full"
                       placeholder="Describe the damage…"
                       value={prop.nature_of_damage}
                       onChange={(e) => updateProperty(i, 'nature_of_damage', e.target.value)} />
+                    <FieldError msg={errors[`prop_${i}_damage`]} />
                   </div>
                 </StepCard>
               ))}
@@ -856,15 +964,17 @@ function InvestigationModal({ open, record, onClose, onSave, saving, saveError }
               {actions.map((a, i) => (
                 <StepCard key={i} index={i} total={actions.length} label="Action" onRemove={() => removeAction(i)}>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>DESCRIPTION</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>DESCRIPTION <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input type="text" className="ui-input w-full"
                       placeholder="What action was taken?"
                       value={a.description}
                       onChange={(e) => updateAction(i, 'description', e.target.value)} />
+                    <FieldError msg={errors[`action_${i}_desc`]} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>ASSIGNED TO</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>ASSIGNED TO <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <UserPicker value={a._user} onChange={(u) => updateAction(i, '_user', u)} placeholder="Search user…" />
+                    <FieldError msg={errors[`action_${i}_user`]} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -1528,7 +1638,7 @@ export default function StartInvestigationsPage() {
               Start Incident Investigations
             </h1>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {meta?.total_count ?? '—'} total records
+              {meta?.total ?? meta?.total_count ?? '—'} total records
             </p>
           </div>
         </div>
