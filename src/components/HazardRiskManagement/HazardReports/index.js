@@ -136,7 +136,7 @@ function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
 
 const TABLE_COLS = [
   '#', 'Location', 'Hazard Type', 'Date',
-  'Safety Officers', 'Supervisors', 'Injured', '',
+  'Safety Officers', 'Supervisors', 'Reporter', 'Injured', '',
 ];
 
 function TableSkeleton({ cols }) {
@@ -281,13 +281,14 @@ function DeleteConfirmModal({ open, report, onConfirm, onCancel, loading }) {
 
 // ── Hazard Report Create/Edit Modal ────────────────────────────────────────
 
-const STEPS = ['Basic Info', 'Safety Officers', 'Supervisors', 'Review'];
+const STEPS = ['Basic Info', 'Reporter', 'Safety Officers', 'Supervisors', 'Review'];
 
 const EMPTY_FORM = {
   location: '',
   hazard_type: '',
   report_date: '',
   other: '',
+  reporter: null,
 };
 
 const EMPTY_PEOPLE = { safety_officers: [], supervisors: [] };
@@ -324,6 +325,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
         hazard_type: report.hazard_type ?? '',
         report_date: report.report_date ?? '',
         other:       report.other ?? '',
+        reporter:    report.reporter ?? null,
       });
       setPeople({
         safety_officers: report.safety_officers ?? [],
@@ -341,11 +343,12 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
       if (!form.location.trim())    errs.location    = 'Location is required';
       if (!form.hazard_type.trim()) errs.hazard_type = 'Hazard type is required';
     }
-    if (s === 1) {
+    // s === 1 (Reporter) — optional, no validation
+    if (s === 2) {
       if (!people.safety_officers.length)
         errs.safety_officers = 'At least one safety officer is required';
     }
-    if (s === 2) {
+    if (s === 3) {
       if (!people.supervisors.length)
         errs.supervisors = 'At least one supervisor is required';
     }
@@ -365,12 +368,16 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
       errs.supervisors = 'At least one supervisor is required';
     if (Object.keys(errs).length) {
       setErrors(errs);
-      setStep(errs.safety_officers ? 1 : 2);
+      setStep(errs.safety_officers ? 2 : 3);
       return;
     }
 
     const payload = {
-      ...form,
+      location:           form.location,
+      hazard_type:        form.hazard_type,
+      report_date:        form.report_date || undefined,
+      other:              form.other || undefined,
+      reporter_id:        form.reporter?.id ?? null,
       safety_officer_ids: people.safety_officers.map((u) => u.id),
       supervisor_ids:     people.supervisors.map((u) => u.id),
     };
@@ -498,8 +505,82 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 1: Safety Officers ── */}
+        {/* ── Step 1: Reporter ── */}
         {step === 1 && (
+          <div className="flex flex-col gap-5">
+            <div
+              className="flex items-start gap-3 p-4 rounded-xl"
+              style={{
+                background: 'color-mix(in srgb,var(--accent) 8%,transparent)',
+                border: '1px solid color-mix(in srgb,var(--accent) 25%,transparent)',
+              }}
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                style={{ background: 'var(--accent)', color: '#fff' }}
+              >
+                2
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                  Assign Reporter
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Search by name — select the user who is reporting this hazard. This field is optional.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                Reporter <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <UserMultiSelect
+                value={form.reporter ? [form.reporter] : []}
+                onChange={(arr) => setForm({ ...form, reporter: arr[arr.length - 1] ?? null })}
+                showChips={false}
+              />
+            </div>
+
+            {form.reporter && (
+              <div
+                className="flex items-center gap-3 p-4 rounded-xl"
+                style={{
+                  background: 'color-mix(in srgb,#3fb950 8%,transparent)',
+                  border: '1px solid color-mix(in srgb,#3fb950 30%,transparent)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: '#3fb950', color: '#fff' }}
+                >
+                  {(form.reporter.firstname ?? form.reporter.email ?? '#')[0]?.toUpperCase()}
+                  {(form.reporter.lastname ?? '')[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                    {displayName(form.reporter)}
+                  </p>
+                  <p className="text-xs" style={{ color: '#3fb950' }}>
+                    ✓ Assigned &middot; Reporter
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, reporter: null })}
+                  className="p-1 rounded hover:opacity-70 flex-shrink-0"
+                  style={{ color: 'var(--text-muted)' }}
+                  title="Remove"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 2: Safety Officers ── */}
+        {step === 2 && (
           <div className="flex flex-col gap-5">
             {/* Canteen-style info banner */}
             <div
@@ -513,7 +594,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
                 style={{ background: 'var(--accent)', color: '#fff' }}
               >
-                2
+                3
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -588,8 +669,8 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 2: Supervisors ── */}
-        {step === 2 && (
+        {/* ── Step 3: Supervisors ── */}
+        {step === 3 && (
           <div className="flex flex-col gap-5">
             {/* Canteen-style info banner */}
             <div
@@ -603,7 +684,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
                 style={{ background: 'var(--accent)', color: '#fff' }}
               >
-                3
+                4
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -678,8 +759,8 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 3: Review ── */}
-        {step === 3 && (
+        {/* ── Step 4: Review ── */}
+        {step === 4 && (
           <div className="space-y-4">
             {/* All-steps-complete banner */}
             <div
@@ -708,6 +789,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
                 </div>
                 <ReviewRow label="Hazard Type" value={form.hazard_type} />
                 <ReviewRow label="Report Date" value={form.report_date || 'Auto-set by server'} />
+                <ReviewRow label="Reporter" value={form.reporter ? displayName(form.reporter) : 'Not assigned'} />
                 <div className="col-span-2">
                   <ReviewRow label="Additional Notes" value={form.other} />
                 </div>
@@ -1337,6 +1419,26 @@ function DetailDrawer({ report, onClose, onEdit, canEdit, onInjuredChanged }) {
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{report.other}</p>
                 </div>
               )}
+              <div
+                className="col-span-2 p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Reporter</p>
+                {report.reporter ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+                      style={{ background: 'color-mix(in srgb,var(--accent) 15%,transparent)', color: 'var(--accent)' }}
+                    >
+                      {(report.reporter.firstname ?? report.reporter.email ?? '#')[0]?.toUpperCase()}
+                      {(report.reporter.lastname ?? '')[0]?.toUpperCase()}
+                    </div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{displayName(report.reporter)}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>— Not assigned</p>
+                )}
+              </div>
             </div>
           </section>
 
@@ -1651,6 +1753,11 @@ export default function HazardReportsPage() {
                       style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
                       <NameList arr={r.supervisors} />
+                    </td>
+                    <td className="ui-td" style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.reporter
+                        ? <span>{displayName(r.reporter)}</span>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                     </td>
                     <td className="ui-td">
                       {r.injured_people?.length ? (
