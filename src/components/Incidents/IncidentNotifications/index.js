@@ -287,21 +287,21 @@ function UserSearchPanel({
   const [opts, setOpts]       = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen]       = useState(false);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
   const debounceRef           = useRef(null);
   const inputRef              = useRef(null);
+  const wrapRef               = useRef(null);
 
-  // Clear results when panel becomes irrelevant (e.g. single & already selected)
   useEffect(() => { return () => clearTimeout(debounceRef.current); }, []);
 
   async function fetchUsers(q) {
     setLoading(true);
     try {
-      const params = { per_page: 25 };
-      if (q)          params.q                = q;
-      if (roleFilter) params['filter[role]']  = roleFilter;
+      const params = { per_page: 10 };
+      if (q)          params.q               = q;
+      if (roleFilter) params['filter[role]'] = roleFilter;
       const res  = await (await import('../../../services/users.service')).default.list(params);
       const list = Array.isArray(res) ? res : (res.data ?? []);
-      // filter out already-selected
       const selectedIds = Array.isArray(selected)
         ? selected.map((u) => u.id)
         : selected ? [selected.id] : [];
@@ -313,23 +313,30 @@ function UserSearchPanel({
     }
   }
 
+  function measureAndOpen() {
+    if (wrapRef.current) {
+      const r = wrapRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    setOpen(true);
+    fetchUsers(query);
+  }
+
   function handleInput(val) {
     setQuery(val);
     clearTimeout(debounceRef.current);
-    if (val.length >= 1) {
+    if (!open) {
+      if (wrapRef.current) {
+        const r = wrapRef.current.getBoundingClientRect();
+        setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+      }
       setOpen(true);
-      debounceRef.current = setTimeout(() => fetchUsers(val), 300);
-    } else {
-      setOpen(false);
-      setOpts([]);
     }
+    debounceRef.current = setTimeout(() => fetchUsers(val), 300);
   }
 
   function openDropdown() {
-    if (!open) {
-      setOpen(true);
-      if (!opts.length) fetchUsers(query);
-    }
+    if (!open) measureAndOpen();
   }
 
   function pick(u) {
@@ -361,7 +368,7 @@ function UserSearchPanel({
 
       {/* Search input */}
       {(!single || !selected) && (
-        <div className="relative">
+        <div ref={wrapRef} className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 pointer-events-none"
             style={{ color: 'var(--text-muted)' }} />
           {loading && (
@@ -376,35 +383,45 @@ function UserSearchPanel({
             value={query}
             onChange={(e) => handleInput(e.target.value)}
             onFocus={openDropdown}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
           />
 
-          {/* Dropdown */}
+          {/* Dropdown — fixed-position to escape modal overflow clipping */}
           {open && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-              <div className="absolute left-0 right-0 mt-1 z-20 rounded-xl overflow-hidden shadow-lg"
-                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+              <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
+              <div
+                className="fixed z-[80] rounded-xl overflow-hidden shadow-xl"
+                style={{
+                  top: dropPos.top,
+                  left: dropPos.left,
+                  width: dropPos.width,
+                  background: 'var(--bg-raised)',
+                  border: '1px solid var(--border)',
+                }}
+              >
                 {loading ? (
-                  <div className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Searching…
+                  <div className="px-4 py-3 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin flex-shrink-0" /> Searching…
                   </div>
                 ) : opts.length === 0 ? (
                   <div className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {query.length >= 1 ? 'No results found' : 'Start typing to search'}
+                    No results found
                   </div>
                 ) : (
-                  <ul className="max-h-52 overflow-y-auto py-1">
+                  <ul style={{ maxHeight: 260, overflowY: 'auto' }} className="py-1">
                     {opts.map((u) => (
                       <li key={u.id}>
                         <button
                           type="button"
-                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:opacity-80 text-left"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:opacity-80 text-left transition-opacity"
                           style={{ background: 'transparent' }}
-                          onClick={() => pick(u)}
+                          onMouseDown={(e) => { e.preventDefault(); pick(u); }}
                         >
-                          {/* Avatar initials */}
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                            style={{ background: accentColor }}>
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
+                            style={{ background: accentColor }}
+                          >
                             {((u.firstname?.[0] ?? '') + (u.lastname?.[0] ?? '')).toUpperCase() ||
                               (u.email?.[0] ?? '?').toUpperCase()}
                           </div>
@@ -419,8 +436,10 @@ function UserSearchPanel({
                             )}
                           </div>
                           {u.role && (
-                            <span className="text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0"
-                              style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0"
+                              style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)' }}
+                            >
                               {typeof u.role === 'object' ? (u.role.name ?? u.role.description ?? '') : u.role}
                             </span>
                           )}
