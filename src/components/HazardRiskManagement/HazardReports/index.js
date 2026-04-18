@@ -35,6 +35,7 @@ import {
   deleteHazardReport,
   setHazardReportFilters,
   clearHazardReportErrors,
+  patchHazardReportItem,
   selectHazardReports,
   selectHazardReportsMeta,
   selectHazardReportsLoading,
@@ -836,16 +837,106 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
   );
 }
 
+// ── Delete Injured Person Confirm Modal ───────────────────────────────────
+
+function DeleteInjuredPersonModal({ open, person, onConfirm, onCancel, loading }) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.65)' }}
+    >
+      <div className="ui-card w-full max-w-sm p-6 space-y-4">
+
+        {/* Warning banner */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: 'rgba(220,38,38,0.08)',
+            border: '1px solid rgba(220,38,38,0.25)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: '#dc2626', color: '#fff' }}
+          >
+            <ExclamationTriangleIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              Remove injured person record?
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        {/* Person details */}
+        {person && (
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+          >
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wider mb-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Record to remove
+            </p>
+            <p className="text-sm font-bold" style={{ color: '#dc2626' }}>
+              {person.name}
+            </p>
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1"
+              style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}
+            >
+              {person.injury_type}
+            </span>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div
+          className="flex justify-end gap-3 pt-1"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
+            style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#dc2626' }}
+          >
+            {loading ? 'Removing…' : 'Remove Record'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Injured People Manager (used inside the detail drawer) ─────────────────
 
 const EMPTY_INJURY = { name: '', injury_type: '', injury_description: '', action_taken: '' };
 
-function InjuredPeopleManager({ reportId }) {
+function InjuredPeopleManager({ reportId, onInjuredChanged }) {
   const [people,    setPeople]    = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [formState, setFormState] = useState(null); // null=hidden, object=add/edit
   const [saving,    setSaving]    = useState(false);
   const [fieldErrs, setFieldErrs] = useState({});
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting,     setDeleting]     = useState(false);
 
   useEffect(() => {
     if (!reportId) return;
@@ -876,12 +967,16 @@ function InjuredPeopleManager({ reportId }) {
       if (formState.id) {
         const raw = await InjuredPersonService.update(reportId, formState.id, formState);
         const updated = raw.data ?? raw;
-        setPeople((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        const next = people.map((p) => (p.id === updated.id ? updated : p));
+        setPeople(next);
+        onInjuredChanged?.(next);
         toast.success('Record updated.');
       } else {
         const raw = await InjuredPersonService.create(reportId, formState);
         const created = raw.data ?? raw;
-        setPeople((prev) => [created, ...prev]);
+        const next = [created, ...people];
+        setPeople(next);
+        onInjuredChanged?.(next);
         toast.success('Person added.');
       }
       setFormState(null);
@@ -893,13 +988,18 @@ function InjuredPeopleManager({ reportId }) {
   }
 
   async function removeInjury(id) {
-    if (!window.confirm('Remove this injured person record?')) return;
+    setDeleting(true);
     try {
       await InjuredPersonService.remove(reportId, id);
-      setPeople((prev) => prev.filter((p) => p.id !== id));
+      const next = people.filter((p) => p.id !== id);
+      setPeople(next);
+      onInjuredChanged?.(next);
       toast.success('Removed.');
+      setDeleteTarget(null);
     } catch {
       toast.error('Delete failed.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -1060,7 +1160,7 @@ function InjuredPeopleManager({ reportId }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeInjury(p.id)}
+                    onClick={() => setDeleteTarget(p)}
                     className="p-1.5 rounded-lg hover:opacity-75"
                     style={{ color: 'var(--danger)' }}
                     title="Remove"
@@ -1092,18 +1192,32 @@ function InjuredPeopleManager({ reportId }) {
           </div>
         </div>
       ))}
+
+      <DeleteInjuredPersonModal
+        open={!!deleteTarget}
+        person={deleteTarget}
+        onConfirm={() => removeInjury(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+        loading={deleting}
+      />
     </div>
   );
 }
 
 // ── Detail Drawer ──────────────────────────────────────────────────────────
 
-function DetailDrawer({ report, onClose, onEdit, canEdit }) {
+function DetailDrawer({ report, onClose, onEdit, canEdit, onInjuredChanged }) {
+  const [localInjuredPeople, setLocalInjuredPeople] = useState(report?.injured_people ?? []);
+
+  useEffect(() => {
+    setLocalInjuredPeople(report?.injured_people ?? []);
+  }, [report]);
+
   if (!report) return null;
 
   const officerCount    = report.safety_officers?.length  ?? 0;
   const supervisorCount = report.supervisors?.length      ?? 0;
-  const injuredCount    = report.injured_people?.length   ?? 0;
+  const injuredCount    = localInjuredPeople.length;
 
   return (
     <>
@@ -1292,7 +1406,13 @@ function DetailDrawer({ report, onClose, onEdit, canEdit }) {
 
           {/* Injured people management */}
           <section>
-            <InjuredPeopleManager reportId={report.id} />
+            <InjuredPeopleManager
+              reportId={report.id}
+              onInjuredChanged={(people) => {
+                setLocalInjuredPeople(people);
+                onInjuredChanged?.(report.id, people);
+              }}
+            />
           </section>
         </div>
       </div>
@@ -1392,6 +1512,7 @@ export default function HazardReportsPage() {
     if (deleteHazardReport.fulfilled.match(result)) {
       toast.success('Report deleted.');
       setDeleteTarget(null);
+      dispatch(fetchHazardReports(filters));
     }
   }
 
@@ -1579,6 +1700,9 @@ export default function HazardReportsPage() {
         onClose={() => setDetailReport(null)}
         onEdit={(r) => { setDetailReport(null); setModal({ open: true, report: r }); }}
         canEdit={canWrite}
+        onInjuredChanged={(reportId, people) => {
+          dispatch(patchHazardReportItem({ id: reportId, changes: { injured_people: people } }));
+        }}
       />
       <DeleteConfirmModal
         open={!!deleteTarget}

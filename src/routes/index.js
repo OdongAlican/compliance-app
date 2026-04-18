@@ -130,7 +130,7 @@ export default function AppRoutes() {
       <Route element={<PermissionRoute permission="risk_assessments.index" />}>
         <Route path="/hazard/risk-assessments" element={<Layout><RiskAssessmentsPage /></Layout>} />
       </Route>
-      <Route element={<PermissionRoute permission="performed_risk_assessments.index" />}>
+      <Route element={<PermissionRoute permission="perform_risk_assessments.index" />}>
         <Route path="/hazard/performed-risk-assessments" element={<Layout><PerformedRiskAssessmentsPage /></Layout>} />
       </Route>
       <Route path="/hazard/report"         element={<Layout><HazardRiskInterface /></Layout>} />
