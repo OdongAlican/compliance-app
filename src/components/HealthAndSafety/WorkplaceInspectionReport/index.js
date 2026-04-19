@@ -259,71 +259,146 @@ function TableSkeleton({ cols, rows = 5 }) {
 // ─── Auditor Picker ───────────────────────────────────────────────────────────
 
 function AuditorPicker({ selected, onToggle, label = "Assign Auditors" }) {
-  const [query, setQuery]       = useState("");
-  const [results, setResults]   = useState([]);
+  const [query,     setQuery]     = useState("");
+  const [results,   setResults]   = useState([]);
   const [searching, setSearching] = useState(false);
-  const timer = useRef(null);
+  const [open,      setOpen]      = useState(false);
+  const [dropPos,   setDropPos]   = useState({ top: 0, left: 0, width: 0 });
+  const timer   = useRef(null);
+  const wrapRef = useRef(null);
   const selectedIds = selected.map((u) => u.id);
 
-  useEffect(() => {
-    clearTimeout(timer.current);
-    if (!query.trim()) { setResults([]); return; }
-    timer.current = setTimeout(() => {
-      setSearching(true);
-      UsersService.list({
-        'q[firstname_or_lastname_or_email_cont]': query,
-        'filter[role]': 'auditor',
-        per_page: 20,
+  function fetchAuditors(q) {
+    setSearching(true);
+    UsersService.list({
+      'q[firstname_or_lastname_or_email_cont]': q || undefined,
+      'filter[role]': 'auditor',
+      per_page: 10,
+    })
+      .then((res) => {
+        const body = res.data ?? res ?? {};
+        const data = Array.isArray(body.data) ? body.data : Array.isArray(body) ? body : [];
+        setResults(data);
       })
-        .then((res) => {
-          const body = res.data ?? {};
-          const data = Array.isArray(body.data) ? body.data : Array.isArray(body) ? body : [];
-          setResults(data);
-        })
-        .catch(() => {})
-        .finally(() => setSearching(false));
-    }, 350);
-  }, [query]);
+      .catch(() => setResults([]))
+      .finally(() => setSearching(false));
+  }
+
+  function measureAndOpen() {
+    if (wrapRef.current) {
+      const r = wrapRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    setOpen(true);
+    fetchAuditors(query);
+  }
+
+  function handleInput(val) {
+    setQuery(val);
+    clearTimeout(timer.current);
+    if (!open) {
+      if (wrapRef.current) {
+        const r = wrapRef.current.getBoundingClientRect();
+        setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+      }
+      setOpen(true);
+    }
+    timer.current = setTimeout(() => fetchAuditors(val), 300);
+  }
+
+  function pick(u) {
+    onToggle(u);
+    setQuery("");
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => fetchAuditors(""), 50);
+  }
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{label}</label>
-      <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--text-muted)" }} />
-        <input value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search auditors by name or ID…"
-          className="ui-input text-sm pl-9 w-full" />
-        {searching && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Spinner size={3} /></div>}
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-semibold" style={{ color: "var(--text)" }}>{label}</label>
+        {selected.length > 0 && (
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+            {selected.length} selected
+          </span>
+        )}
       </div>
-      {results.length > 0 && (
-        <div className="rounded-lg overflow-hidden max-h-40 overflow-y-auto"
-          style={{ border: "1px solid var(--border)", background: "var(--bg-raised)" }}>
-          {results.map((u) => {
-            const checked = selectedIds.includes(u.id);
-            return (
-              <button key={u.id} type="button" onClick={() => onToggle(u)}
-                className="w-full flex items-center gap-3 px-3 py-2 text-left hover:opacity-80"
-                style={{ borderBottom: "1px solid var(--border)" }}>
-                <div className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
-                  style={{ background: checked ? ACCENT : "transparent", borderColor: checked ? ACCENT : "var(--border)" }}>
-                  {checked && <CheckBadgeIcon className="h-3 w-3 text-white" />}
+      <div ref={wrapRef} className="relative">
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+          style={{ color: "var(--text-muted)" }} />
+        <input
+          value={query}
+          onChange={(e) => handleInput(e.target.value)}
+          onFocus={() => { if (!open) measureAndOpen(); }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Search auditors by name or email…"
+          className="ui-input text-sm pl-9 pr-9 w-full"
+        />
+        {searching && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Spinner size={3} />
+          </div>
+        )}
+        {open && (
+          <>
+            <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
+            <div
+              className="fixed z-[80] rounded-xl overflow-hidden shadow-xl"
+              style={{
+                top: dropPos.top,
+                left: dropPos.left,
+                width: dropPos.width,
+                background: 'var(--bg-raised)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {searching ? (
+                <div className="px-4 py-3 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <ArrowPathIcon className="h-3.5 w-3.5 animate-spin flex-shrink-0" /> Searching…
                 </div>
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>{displayName(u)}</p>
-                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{u.employee_id || u.email}</p>
+              ) : results.length === 0 ? (
+                <div className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  No auditors found
                 </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+              ) : (
+                <ul style={{ maxHeight: 260, overflowY: 'auto' }}>
+                  {results.map((u) => {
+                    const checked = selectedIds.includes(u.id);
+                    return (
+                      <li key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:opacity-80 transition-opacity text-left"
+                          style={{ background: checked ? ACCENT_LIGHT : 'var(--bg-raised)' }}
+                          onMouseDown={(e) => { e.preventDefault(); pick(u); }}
+                        >
+                          <div className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                            style={{ background: checked ? ACCENT : 'transparent', borderColor: checked ? ACCENT : 'var(--border)' }}>
+                            {checked && <CheckBadgeIcon className="h-3 w-3 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName(u)}</p>
+                            <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{u.employee_id || u.email}</p>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
+      </div>
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-1">
+        <div className="flex flex-wrap gap-1.5">
           {selected.map((u) => (
-            <span key={u.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-              style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+            <span key={u.id}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+              style={{ background: ACCENT_LIGHT, color: ACCENT, border: `1px solid ${ACCENT}40` }}>
               {displayName(u)}
-              <button type="button" onClick={() => onToggle(u)} className="hover:opacity-70 ml-0.5">
+              <button type="button" onClick={() => onToggle(u)} className="hover:opacity-70 flex-shrink-0">
                 <XMarkIcon className="h-3 w-3" />
               </button>
             </span>
