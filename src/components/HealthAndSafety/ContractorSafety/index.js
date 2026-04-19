@@ -408,26 +408,19 @@ function AuditorPicker({ selected, onToggle, label = "Assign Auditors" }) {
 
 // ─── Contractor Picker ────────────────────────────────────────────────────────
 
-function ContractorPicker({ onSelect }) {
+function ContractorPicker({ selected, onSelect }) {
   const [query,     setQuery]     = useState("");
   const [results,   setResults]   = useState([]);
   const [searching, setSearching] = useState(false);
   const [open,      setOpen]      = useState(false);
-  const [dropPos,   setDropPos]   = useState({ top: 0, left: 0, width: 0 });
-  const timer   = useRef(null);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => measureAndOpen());
-    return () => cancelAnimationFrame(id);
-  }, []);
+  const timer = useRef(null);
 
   function fetchContractors(q) {
     setSearching(true);
     UsersService.list({
-      "q[firstname_or_lastname_or_email_cont]": q || undefined,
+      ...(q ? { "q[firstname_or_lastname_or_email_cont]": q } : {}),
       "filter[role]": "contractor",
-      per_page: 10,
+      per_page: 50,
     })
       .then((res) => {
         const body = res.data ?? res ?? {};
@@ -438,98 +431,79 @@ function ContractorPicker({ onSelect }) {
       .finally(() => setSearching(false));
   }
 
-  function measureAndOpen() {
-    if (wrapRef.current) {
-      const r = wrapRef.current.getBoundingClientRect();
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
-    }
+  function handleFocus() {
     setOpen(true);
-    fetchContractors(query);
+    fetchContractors("");
   }
 
-  function handleInput(val) {
+  function handleChange(e) {
+    const val = e.target.value;
     setQuery(val);
     clearTimeout(timer.current);
-    if (!open) {
-      if (wrapRef.current) {
-        const r = wrapRef.current.getBoundingClientRect();
-        setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
-      }
-      setOpen(true);
-    }
     timer.current = setTimeout(() => fetchContractors(val), 300);
   }
 
   function pick(u) {
     onSelect(u);
     setQuery("");
-    clearTimeout(timer.current);
     setOpen(false);
-    setResults([]);
   }
 
   return (
-    <div ref={wrapRef} className="relative">
-      <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+    <div className="relative">
+      <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none z-10"
         style={{ color: "var(--text-muted)" }} />
       <input
         value={query}
-        onChange={(e) => handleInput(e.target.value)}
+        onFocus={handleFocus}
+        onChange={handleChange}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Search contractors…"
+        placeholder={selected ? displayName(selected) : "Search contractors…"}
         className="ui-input text-sm pl-9 pr-9 w-full"
       />
       {searching && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
           <Spinner size={3} />
         </div>
       )}
       {open && (
-        <>
-          <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-[80] rounded-xl overflow-hidden shadow-xl"
-            style={{
-              top: dropPos.top,
-              left: dropPos.left,
-              width: dropPos.width,
-              background: "var(--bg-raised)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            {searching ? (
-              <div className="px-4 py-3 flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                <ArrowPathIcon className="h-3.5 w-3.5 animate-spin flex-shrink-0" /> Searching…
-              </div>
-            ) : results.length === 0 ? (
-              <div className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
-                No contractors found
-              </div>
-            ) : (
-              <ul style={{ maxHeight: 260, overflowY: "auto" }}>
-                {results.map((u) => (
-                  <li key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <button
-                      type="button"
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:opacity-80 transition-opacity text-left"
-                      style={{ background: "var(--bg-raised)" }}
-                      onMouseDown={(e) => { e.preventDefault(); pick(u); }}
-                    >
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                        style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                        {initials(displayName(u))}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold truncate" style={{ color: "var(--text)" }}>{displayName(u)}</p>
-                        {u.email && <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{u.email}</p>}
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </>
+        <div className="absolute z-50 top-full mt-1 left-0 right-0 rounded-xl overflow-hidden shadow-xl"
+          style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+          {searching ? (
+            <div className="px-4 py-3 flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              <ArrowPathIcon className="h-3.5 w-3.5 animate-spin flex-shrink-0" /> Searching…
+            </div>
+          ) : results.length === 0 ? (
+            <div className="px-4 py-3 text-xs" style={{ color: "var(--text-muted)" }}>
+              No contractors found.
+            </div>
+          ) : (
+            <ul style={{ maxHeight: 220, overflowY: "auto" }}>
+              {results.map((u) => (
+                <li key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:opacity-80 transition-opacity text-left"
+                    style={{ background: selected?.id === u.id ? ACCENT_LIGHT : "var(--bg-raised)" }}
+                    onMouseDown={(e) => { e.preventDefault(); pick(u); }}
+                  >
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                      style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                      {initials(displayName(u))}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold truncate" style={{ color: "var(--text)" }}>{displayName(u)}</p>
+                      {u.email && <p className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>{u.email}</p>}
+                    </div>
+                    {selected?.id === u.id && (
+                      <CheckCircleIcon className="h-4 w-4 flex-shrink-0" style={{ color: ACCENT }} />
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );
@@ -537,228 +511,318 @@ function ContractorPicker({ onSelect }) {
 
 // ─── Contractor Safety Issue Card ────────────────────────────────────────────────
 
+const CS_ISSUE_ACTIONS = [
+  { key: "ca",         label: "Corrective Action",  Icon: WrenchScrewdriverIcon },
+  { key: "priority",   label: "Priority / Due Date", Icon: CalendarDaysIcon },
+  { key: "contractor", label: "Assign Contractor",   Icon: UsersIcon },
+  { key: "execute",    label: "Execute / Close",     Icon: CheckCircleIcon },
+];
+
 function CsIssueCard({ issue: initialIssue, auditId, performedId }) {
-  const dispatch      = useAppDispatch();
-  const actionLoading = useAppSelector(selectCsActionLoading);
+  const dispatch = useAppDispatch();
+  const [expanded,      setExpanded]      = useState(false);
+  const [activeSection, setActiveSection] = useState(null);
+  const [issue,         setIssue]         = useState(initialIssue);
+  const [saving,        setSaving]        = useState(false);
+  const [caText,        setCaText]        = useState(initialIssue.corrective_action ?? "");
+  const [priority,      setPriority]      = useState(initialIssue.priority_level ?? "medium");
+  const [dueDate,       setDueDate]       = useState(initialIssue.due_date ?? "");
+  const [contractor,    setContractor]    = useState(initialIssue.contractor ?? null);
+  const [executeForm,   setExecuteForm]   = useState({ completion_date: "", completion_notes: "", file: null });
 
-  const [issue,    setIssue]    = useState(initialIssue);
-  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    setIssue(initialIssue);
+    setCaText(initialIssue.corrective_action ?? "");
+    setPriority(initialIssue.priority_level ?? "medium");
+    setDueDate(initialIssue.due_date ?? "");
+    setContractor(initialIssue.contractor ?? null);
+  }, [initialIssue]);
 
-  const [caOpen,  setCaOpen]  = useState(false);
-  const [caText,  setCaText]  = useState(issue.corrective_action || "");
+  function toggle(s) { setActiveSection((p) => (p === s ? null : s)); }
 
-  const [pdOpen,   setPdOpen]   = useState(false);
-  const [priority, setPriority] = useState(issue.priority_level || "medium");
-  const [dueDate,  setDueDate]  = useState(issue.due_date ? issue.due_date.slice(0, 10) : "");
-
-  const [acOpen,      setAcOpen]      = useState(false);
-  const [contractor,  setContractor]  = useState(issue.contractor || null);
-
-  const [exOpen,    setExOpen]    = useState(false);
-  const [compDate,  setCompDate]  = useState("");
-  const [compNotes, setCompNotes] = useState("");
-  const [compFile,  setCompFile]  = useState(null);
-
-  const isExecuted = !!issue.completion_date;
-
-  async function handleSaveCA() {
+  async function saveCa() {
     if (!caText.trim()) return;
+    setSaving(true);
     const r = await dispatch(updateCsCorrectiveAction({ auditId, performedId, issueId: issue.id, correctiveAction: caText.trim() }));
-    if (updateCsCorrectiveAction.fulfilled.match(r)) { setIssue(r.payload); setCaOpen(false); toast.success("Corrective action saved."); }
-    else toast.error(r.payload || "Failed.");
+    setSaving(false);
+    if (updateCsCorrectiveAction.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, corrective_action: caText.trim() }));
+      toast.success("Corrective action saved."); setActiveSection(null);
+    } else { toast.error(r.payload || "Save failed."); }
   }
 
-  async function handleSavePD() {
-    if (!priority || !dueDate) return toast.error("Priority and due date are required.");
+  async function savePriority() {
+    setSaving(true);
     const r = await dispatch(updateCsPriorityDueDate({ auditId, performedId, issueId: issue.id, priority_level: priority, due_date: dueDate }));
-    if (updateCsPriorityDueDate.fulfilled.match(r)) { setIssue(r.payload); setPdOpen(false); toast.success("Priority updated."); }
-    else toast.error(r.payload || "Failed.");
+    setSaving(false);
+    if (updateCsPriorityDueDate.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, priority_level: priority, due_date: dueDate }));
+      toast.success("Priority updated."); setActiveSection(null);
+    } else { toast.error(r.payload || "Save failed."); }
   }
 
-  async function handleAssignContractor(u) {
-    setContractor(u);
-    const r = await dispatch(assignCsContractor({ auditId, performedId, issueId: issue.id, contractorId: u.id }));
-    if (assignCsContractor.fulfilled.match(r)) { setIssue(r.payload); setAcOpen(false); toast.success("Contractor assigned."); }
-    else { setContractor(issue.contractor || null); toast.error(r.payload || "Failed."); }
+  async function saveContractor() {
+    if (!contractor) return;
+    setSaving(true);
+    const r = await dispatch(assignCsContractor({ auditId, performedId, issueId: issue.id, contractorId: contractor.id }));
+    setSaving(false);
+    if (assignCsContractor.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, contractor }));
+      toast.success("Contractor assigned."); setActiveSection(null);
+    } else { toast.error(r.payload || "Assign failed."); }
   }
 
-  async function handleExecute() {
-    const r = await dispatch(executeCsIssue({ auditId, performedId, issueId: issue.id, completion_date: compDate || undefined, completion_notes: compNotes || undefined, file: compFile || undefined }));
-    if (executeCsIssue.fulfilled.match(r)) { setIssue(r.payload); setExOpen(false); toast.success("Issue closed out."); }
-    else toast.error(r.payload || "Failed.");
+  async function saveExecute() {
+    if (!executeForm.completion_date) { toast.error("Completion date is required."); return; }
+    setSaving(true);
+    const r = await dispatch(executeCsIssue({
+      auditId, performedId, issueId: issue.id,
+      completion_date:  executeForm.completion_date,
+      completion_notes: executeForm.completion_notes || undefined,
+      file:             executeForm.file || undefined,
+    }));
+    setSaving(false);
+    if (executeCsIssue.fulfilled.match(r)) {
+      setIssue((prev) => ({ ...prev, completion_date: executeForm.completion_date }));
+      toast.success("Issue closed out."); setActiveSection(null);
+    } else { toast.error(r.payload || "Execute failed."); }
   }
+
+  const contractorName = issue.contractor ? displayName(issue.contractor) : null;
+  const isClosed = !!issue.completion_date;
+  const priorityAccentMap = { critical: "#ef4444", high: "#f97316", medium: "#f59e0b", low: "#3b82f6" };
+  const priorityAccent = isClosed ? "#10b981" : (priorityAccentMap[issue.priority_level] || "#6b7280");
 
   return (
     <div className="rounded-2xl overflow-hidden"
-      style={{ background: "var(--bg-raised)", border: "1px solid var(--border)" }}>
+      style={{
+        border: "1px solid var(--border)",
+        borderLeft: `3px solid ${priorityAccent}`,
+        background: "var(--bg-raised)",
+        opacity: isClosed ? 0.75 : 1,
+      }}>
 
-      {/* Header row */}
-      <div className="flex items-start gap-3 px-4 py-3 cursor-pointer"
+      {/* ── Header row ── */}
+      <div className="flex items-start justify-between gap-3 px-4 py-3.5 cursor-pointer select-none"
         onClick={() => setExpanded((p) => !p)}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-          style={{ background: isExecuted ? "rgba(22,163,74,.12)" : "rgba(13,148,136,.08)", color: isExecuted ? "#16a34a" : ACCENT }}>
-          {isExecuted
-            ? <CheckCircleIcon className="h-4 w-4" />
-            : <ExclamationTriangleIcon className="h-4 w-4" />}
-        </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold leading-snug" style={{ color: "var(--text)" }}>{issue.name}</p>
-            {isExecuted && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                style={{ background: "rgba(22,163,74,.12)", color: "#16a34a" }}>Closed</span>
-            )}
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            {isClosed
+              ? <CheckCircleIcon className="h-4 w-4 flex-shrink-0" style={{ color: "#10b981" }} />
+              : <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0" style={{ color: priorityAccent }} />
+            }
+            <span className="text-sm font-semibold leading-tight" style={{ color: "var(--text)" }}>{issue.name}</span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             {issue.priority_level && <PriorityBadge priority={issue.priority_level} />}
             {issue.due_date && (
-              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>Due {formatDate(issue.due_date)}</span>
-            )}
-            {issue.contractor && (
-              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>· {displayName(issue.contractor)}</span>
+              <span className="flex items-center gap-1 text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
+                <CalendarDaysIcon className="h-3 w-3" />
+                {formatDate(issue.due_date)}
+              </span>
             )}
           </div>
         </div>
-        <div className="flex-shrink-0 mt-0.5">
-          {expanded
-            ? <ChevronUpIcon className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
-            : <ChevronDownIcon className="h-4 w-4" style={{ color: "var(--text-muted)" }} />}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isClosed && (
+            <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold"
+              style={{ background: "rgba(16,185,129,.12)", color: "#10b981" }}>
+              closed
+            </span>
+          )}
+          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              background: expanded ? ACCENT_LIGHT : "var(--bg)",
+              border: `1px solid ${expanded ? ACCENT : "var(--border)"}`,
+              transition: "all 0.15s",
+            }}>
+            {expanded
+              ? <ChevronUpIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+              : <ChevronDownIcon className="h-3.5 w-3.5" style={{ color: "var(--text-muted)" }} />
+            }
+          </div>
         </div>
       </div>
 
+      {/* ── Expanded body ── */}
       {expanded && (
-        <div className="border-t px-4 pb-4 pt-3 flex flex-col gap-4" style={{ borderColor: "var(--border)" }}>
+        <div className="px-4 pb-4 flex flex-col gap-3" style={{ borderTop: "1px solid var(--border)" }}>
 
-          {!isExecuted && (
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: "Corrective Action",  onClick: () => setCaOpen((p) => !p), active: caOpen,  icon: <WrenchScrewdriverIcon className="h-3.5 w-3.5" /> },
-                { label: "Priority / Due Date", onClick: () => setPdOpen((p) => !p), active: pdOpen, icon: <CalendarDaysIcon className="h-3.5 w-3.5" /> },
-                { label: "Assign Contractor",   onClick: () => setAcOpen((p) => !p), active: acOpen, icon: <UsersIcon className="h-3.5 w-3.5" /> },
-                { label: "Execute & Close",      onClick: () => setExOpen((p) => !p), active: exOpen, icon: <CheckBadgeIcon className="h-3.5 w-3.5" /> },
-              ].map(({ label, onClick, active, icon }) => (
-                <button key={label} onClick={onClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold hover:opacity-80"
-                  style={{ background: active ? ACCENT_LIGHT : "var(--bg-surface)", color: active ? ACCENT : "var(--text-muted)", border: `1px solid ${active ? ACCENT + "44" : "var(--border)"}` }}>
-                  {icon} {label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {caOpen && (
-            <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-              <textarea value={caText} onChange={(e) => setCaText(e.target.value)}
-                rows={3} placeholder="Describe the corrective action…"
-                className="ui-input text-sm resize-none" />
-              <div className="flex gap-2">
-                <button onClick={handleSaveCA} disabled={actionLoading || !caText.trim()}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ background: ACCENT, color: "#fff" }}>Save</button>
-                <button onClick={() => setCaOpen(false)}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80"
-                  style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {pdOpen && (
-            <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-              <div className="flex gap-2">
-                <select value={priority} onChange={(e) => setPriority(e.target.value)} className="ui-input text-sm flex-1">
-                  {PRIORITY_LEVELS.map((p) => (
-                    <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-                  ))}
-                </select>
-                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-                  className="ui-input text-sm flex-1" />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleSavePD} disabled={actionLoading}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ background: ACCENT, color: "#fff" }}>Save</button>
-                <button onClick={() => setPdOpen(false)}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80"
-                  style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {acOpen && (
-            <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-              {contractor && (
-                <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-                  Current: <span style={{ color: "var(--text)" }}>{displayName(contractor)}</span>
-                </p>
-              )}
-              <ContractorPicker onSelect={handleAssignContractor} />
-            </div>
-          )}
-
-          {exOpen && (
-            <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-              <div className="flex gap-2">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>Completion Date</label>
-                  <input type="date" value={compDate} onChange={(e) => setCompDate(e.target.value)} className="ui-input text-sm" />
+          {/* Saved values summary */}
+          {(issue.corrective_action || contractorName) && (
+            <div className="mt-3 rounded-xl p-3.5" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+              {issue.corrective_action && (
+                <div className="mb-2 last:mb-0">
+                  <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1"
+                    style={{ color: ACCENT }}>
+                    <WrenchScrewdriverIcon className="h-3 w-3" /> Corrective Action
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: "var(--text)" }}>{issue.corrective_action}</p>
                 </div>
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>Evidence File</label>
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer hover:opacity-80 transition-opacity"
-                    style={{ border: "2px dashed var(--border)", background: "var(--bg-raised)" }}>
-                    <PaperClipIcon className="h-4 w-4 flex-shrink-0" style={{ color: compFile ? ACCENT : "var(--text-muted)" }} />
-                    <span className="text-xs truncate" style={{ color: compFile ? ACCENT : "var(--text-muted)" }}>
-                      {compFile ? compFile.name : "Attach evidence (optional)"}
-                    </span>
-                    {compFile && (
-                      <span onClick={(e) => { e.preventDefault(); setCompFile(null); }}
-                        className="ml-auto flex-shrink-0 hover:opacity-70">
-                        <XMarkIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+              )}
+              {contractorName && (
+                <div className="mt-2 pt-2" style={{ borderTop: issue.corrective_action ? "1px solid var(--border)" : "none" }}>
+                  <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1"
+                    style={{ color: ACCENT }}>
+                    <UsersIcon className="h-3 w-3" /> Assigned Contractor
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text)" }}>{contractorName}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action chips */}
+          {!isClosed && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {CS_ISSUE_ACTIONS.map(({ key, label, Icon }) => {
+                const isActive = activeSection === key;
+                const chipColor = key === "execute" ? "#ef4444" : ACCENT;
+                return (
+                  <button key={key} onClick={() => toggle(key)}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full"
+                    style={{
+                      border: `1px solid ${isActive ? chipColor : "var(--border)"}`,
+                      color: isActive ? "#fff" : "var(--text-muted)",
+                      background: isActive ? chipColor : "var(--bg)",
+                      boxShadow: isActive ? `0 2px 8px ${chipColor}40` : "none",
+                      transition: "all 0.15s",
+                    }}>
+                    <Icon className="h-3.5 w-3.5" />{label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Corrective Action panel ── */}
+          {activeSection === "ca" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${ACCENT}35`, background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: ACCENT_LIGHT, borderBottom: `1px solid ${ACCENT}25` }}>
+                <WrenchScrewdriverIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                <p className="text-xs font-bold" style={{ color: ACCENT }}>Corrective Action</p>
+              </div>
+              <div className="p-4">
+                <textarea rows={3} value={caText} onChange={(e) => setCaText(e.target.value)}
+                  placeholder="Describe the corrective action…" className="ui-input text-sm resize-none w-full" />
+                <div className="flex justify-end mt-3">
+                  <button onClick={saveCa} disabled={saving || !caText.trim()}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: ACCENT, opacity: saving || !caText.trim() ? 0.5 : 1, boxShadow: `0 2px 10px rgba(13,148,136,0.35)` }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Priority + Due Date panel ── */}
+          {activeSection === "priority" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${ACCENT}35`, background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: ACCENT_LIGHT, borderBottom: `1px solid ${ACCENT}25` }}>
+                <CalendarDaysIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                <p className="text-xs font-bold" style={{ color: ACCENT }}>Priority & Due Date</p>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Priority">
+                    <select value={priority} onChange={(e) => setPriority(e.target.value)} className="ui-input text-sm">
+                      {PRIORITY_LEVELS.map((p) => <option key={p} value={p}>{PRIORITY_STYLES[p].label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Due Date">
+                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="ui-input text-sm" />
+                  </Field>
+                </div>
+                <div className="flex justify-end mt-3">
+                  <button onClick={savePriority} disabled={saving}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: ACCENT, opacity: saving ? 0.5 : 1, boxShadow: `0 2px 10px rgba(13,148,136,0.35)` }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Contractor panel ── */}
+          {activeSection === "contractor" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${ACCENT}35`, background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: ACCENT_LIGHT, borderBottom: `1px solid ${ACCENT}25` }}>
+                <UsersIcon className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                <p className="text-xs font-bold" style={{ color: ACCENT }}>Assign Contractor</p>
+              </div>
+              <div className="p-4">
+                <ContractorPicker selected={contractor} onSelect={setContractor} />
+                <div className="flex justify-end mt-3">
+                  <button onClick={saveContractor} disabled={saving || !contractor}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: ACCENT, opacity: saving || !contractor ? 0.5 : 1, boxShadow: `0 2px 10px rgba(13,148,136,0.35)` }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Execute panel ── */}
+          {activeSection === "execute" && (
+            <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(239,68,68,.25)", background: "var(--bg)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5"
+                style={{ background: "rgba(239,68,68,.06)", borderBottom: "1px solid rgba(239,68,68,.15)" }}>
+                <ExclamationTriangleIcon className="h-3.5 w-3.5" style={{ color: "#ef4444" }} />
+                <p className="text-xs font-bold" style={{ color: "#ef4444" }}>Execute & Close Issue</p>
+              </div>
+              <div className="p-4">
+                <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+                  Completing this form will permanently close this issue. Ensure all details are accurate before proceeding.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <Field label="Completion Date" required>
+                    <input type="date" value={executeForm.completion_date}
+                      onChange={(e) => setExecuteForm((f) => ({ ...f, completion_date: e.target.value }))}
+                      className="ui-input text-sm" />
+                  </Field>
+                  <Field label="Completion Notes">
+                    <textarea rows={2} value={executeForm.completion_notes}
+                      onChange={(e) => setExecuteForm((f) => ({ ...f, completion_notes: e.target.value }))}
+                      placeholder="Closing notes…" className="ui-input text-sm resize-none" />
+                  </Field>
+                  <Field label="Supporting Document">
+                    <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer hover:opacity-80"
+                      style={{ border: "2px dashed var(--border)", background: "var(--bg-surface)" }}>
+                      <PaperClipIcon className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {executeForm.file ? executeForm.file.name : "Click to attach a document (optional)"}
                       </span>
-                    )}
-                    <input type="file" className="hidden" onChange={(e) => setCompFile(e.target.files?.[0] || null)} />
-                  </label>
+                      <input type="file" className="hidden"
+                        onChange={(e) => setExecuteForm((f) => ({ ...f, file: e.target.files[0] || null }))} />
+                    </label>
+                  </Field>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button onClick={saveExecute} disabled={saving || !executeForm.completion_date}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full text-white"
+                    style={{ background: "#ef4444", opacity: saving || !executeForm.completion_date ? 0.5 : 1, boxShadow: "0 2px 10px rgba(239,68,68,0.35)" }}>
+                    {saving ? <Spinner size={3} /> : <CheckCircleIcon className="h-3.5 w-3.5" />} Execute & Close
+                  </button>
                 </div>
               </div>
-              <textarea value={compNotes} onChange={(e) => setCompNotes(e.target.value)}
-                rows={2} placeholder="Completion notes (optional)…"
-                className="ui-input text-sm resize-none" />
-              <div className="flex gap-2">
-                <button onClick={handleExecute} disabled={actionLoading}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ background: ACCENT, color: "#fff" }}>
-                  {actionLoading ? "Saving…" : "Mark Closed"}
-                </button>
-                <button onClick={() => setExOpen(false)}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80"
-                  style={{ background: "var(--bg-raised)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>Cancel</button>
-              </div>
             </div>
           )}
 
-          {issue.corrective_action && (
-            <div className="rounded-xl px-3 py-2.5"
-              style={{ background: ACCENT_LIGHT, border: `1px solid ${ACCENT}33` }}>
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: ACCENT }}>
-                <WrenchScrewdriverIcon className="h-3 w-3 inline mr-1" />Corrective Action
-              </p>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--text)" }}>{issue.corrective_action}</p>
-            </div>
-          )}
-
-          {isExecuted && (
-            <div className="rounded-xl px-3 py-2.5"
-              style={{ background: "rgba(22,163,74,.06)", border: "1px solid rgba(22,163,74,.2)" }}>
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "#16a34a" }}>
-                <CheckBadgeIcon className="h-3 w-3 inline mr-1" />Closed Out
-              </p>
-              {issue.completion_date && (
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  Completed: <span style={{ color: "var(--text)" }}>{formatDate(issue.completion_date)}</span>
-                </p>
-              )}
+          {/* ── Closed state ── */}
+          {isClosed && (
+            <div className="flex items-center gap-2 mt-1">
+              <CheckCircleIcon className="h-4 w-4" style={{ color: "#10b981" }} />
+              <span className="text-xs font-semibold" style={{ color: "#10b981" }}>
+                Closed out on {formatDate(issue.completion_date)}
+              </span>
               {issue.completion_notes && (
-                <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text)" }}>{issue.completion_notes}</p>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>· {issue.completion_notes}</span>
               )}
             </div>
           )}
