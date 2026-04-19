@@ -412,30 +412,46 @@ function AuditorPicker({ selected, onToggle, label = "Assign Auditors" }) {
 // ─── Contractor Picker ────────────────────────────────────────────────────────
 
 function ContractorPicker({ selected, onSelect, label = "Assign Contractor" }) {
-  const [query, setQuery]       = useState("");
-  const [results, setResults]   = useState([]);
-  const [searching, setSearching] = useState(false);
-  const timer = useRef(null);
+  const [query, setQuery]         = useState("");
+  const [results, setResults]     = useState([]);
+  const [open, setOpen]           = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const timer                     = useRef(null);
 
-  useEffect(() => {
+  function fetchContractors(search = "") {
     clearTimeout(timer.current);
-    if (!query.trim()) { setResults([]); return; }
+    const params = { 'filter[role]': 'contractor', per_page: 50 };
+    if (search.trim()) params['q[firstname_or_lastname_or_email_cont]'] = search.trim();
     timer.current = setTimeout(() => {
-      setSearching(true);
-      UsersService.list({
-        'q[firstname_or_lastname_or_email_cont]': query,
-        'filter[role]': 'contractor',
-        per_page: 20,
-      })
+      setLoading(true);
+      UsersService.list(params)
         .then((res) => {
           const body = res.data ?? {};
           const data = Array.isArray(body.data) ? body.data : Array.isArray(body) ? body : [];
           setResults(data);
+          setOpen(true);
         })
         .catch(() => {})
-        .finally(() => setSearching(false));
-    }, 350);
-  }, [query]);
+        .finally(() => setLoading(false));
+    }, search.trim() ? 300 : 0);
+  }
+
+  function handleFocus() {
+    if (!open) fetchContractors("");
+  }
+
+  function handleChange(e) {
+    const val = e.target.value;
+    setQuery(val);
+    fetchContractors(val);
+  }
+
+  function handleSelect(u) {
+    onSelect(u);
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -452,16 +468,20 @@ function ContractorPicker({ selected, onSelect, label = "Assign Contractor" }) {
       )}
       <div className="relative">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--text-muted)" }} />
-        <input value={query} onChange={(e) => setQuery(e.target.value)}
+        <input
+          value={query}
+          onChange={handleChange}
+          onFocus={handleFocus}
           placeholder="Search contractors by name or email…"
-          className="ui-input text-sm pl-9 w-full" />
-        {searching && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Spinner size={3} /></div>}
+          className="ui-input text-sm pl-9 w-full"
+        />
+        {loading && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Spinner size={3} /></div>}
       </div>
-      {results.length > 0 && (
-        <div className="rounded-lg overflow-hidden max-h-40 overflow-y-auto"
+      {open && results.length > 0 && (
+        <div className="rounded-lg overflow-hidden max-h-48 overflow-y-auto"
           style={{ border: "1px solid var(--border)", background: "var(--bg-raised)" }}>
           {results.map((u) => (
-            <button key={u.id} type="button" onClick={() => { onSelect(u); setQuery(""); setResults([]); }}
+            <button key={u.id} type="button" onClick={() => handleSelect(u)}
               className="w-full flex items-center gap-3 px-3 py-2 text-left hover:opacity-80"
               style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
@@ -471,6 +491,9 @@ function ContractorPicker({ selected, onSelect, label = "Assign Contractor" }) {
             </button>
           ))}
         </div>
+      )}
+      {open && !loading && results.length === 0 && (
+        <p className="text-xs px-2" style={{ color: "var(--text-muted)" }}>No contractors found.</p>
       )}
     </div>
   );
@@ -1444,7 +1467,7 @@ function WirIssueCard({ issue: initialIssue, auditId, performedId }) {
   async function saveCa() {
     if (!caText.trim()) return;
     setSaving(true);
-    const r = await dispatch(updateWirCorrectiveAction({ auditId, performedId, issueId: issue.id, corrective_action: caText.trim() }));
+    const r = await dispatch(updateWirCorrectiveAction({ auditId, performedId, issueId: issue.id, correctiveAction: caText.trim() }));
     setSaving(false);
     if (updateWirCorrectiveAction.fulfilled.match(r)) {
       setIssue((prev) => ({ ...prev, corrective_action: caText.trim() }));
@@ -1465,7 +1488,7 @@ function WirIssueCard({ issue: initialIssue, auditId, performedId }) {
   async function saveContractor() {
     if (!contractor) return;
     setSaving(true);
-    const r = await dispatch(assignWirContractor({ auditId, performedId, issueId: issue.id, contractor_id: contractor.id }));
+    const r = await dispatch(assignWirContractor({ auditId, performedId, issueId: issue.id, contractorId: contractor.id }));
     setSaving(false);
     if (assignWirContractor.fulfilled.match(r)) {
       setIssue((prev) => ({ ...prev, contractor }));
