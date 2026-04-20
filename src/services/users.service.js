@@ -13,7 +13,7 @@ const UsersService = {
    * Permission: users.view
    * @param {{ page?, per_page?, filter?: { firstname?, lastname?, email?, staff_id?, role?, role_id?, gender?, phone? } }} params
    */
-  list: (params = {}) => api.get('/users', { params }),
+  list: (params = {}) => api.get('/users', { params, _skipForbidden: true }),
 
   /** GET /users/:id — Permission: users.view */
   getById: (id) => api.get(`/users/${id}`),

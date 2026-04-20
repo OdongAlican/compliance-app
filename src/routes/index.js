@@ -31,6 +31,7 @@ import Capa                   from '../components/Dashboard/Capa';
 import InspectionForm         from '../components/Dashboard/InspectionDashboard';
 import HealthAndSafetyForm    from '../components/Dashboard/HealthAndSafety';
 import IncidentInvestigationForm from '../components/Dashboard/IncidentManagement';
+import AnalyticsPage          from '../pages/analytics/AnalyticsPage';
 
 // ── Users & Admin ─────────────────────────────────────────────────────
 import UserManagement from '../components/Users/UserManagement';
@@ -205,6 +206,8 @@ export default function AppRoutes() {
       <Route path="/form/capa"        element={<Layout><CapaInterface /></Layout>} />
       <Route path="/form/audit"       element={<Layout><RecentAuditInterface /></Layout>} />
       <Route path="/form/management"  element={<Layout><ManagementInterface /></Layout>} />
+
+      <Route path="/analytics" element={<Layout><AnalyticsPage /></Layout>} />
 
     </Routes>
   );

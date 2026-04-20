@@ -321,7 +321,13 @@ instance.interceptors.response.use(
 
         // ---- 403 Forbidden ----
         if (status === 403) {
-            forceForbidden();
+            // Only trigger the global access-denied redirect for page-level 403s.
+            // Callers that set `_skipForbidden: true` on the request config handle
+            // the error locally (e.g. optional user-picker API calls that should
+            // fail silently rather than kick the user out of the page they're on).
+            if (!originalRequest._skipForbidden) {
+                forceForbidden();
+            }
             return Promise.reject(
                 normalizeError(error, {
                     type: "FORBIDDEN",

@@ -1,10 +1,12 @@
+import React from 'react';
 import {
   FaClipboardList, FaHardHat, FaFirstAid, FaFire, FaListAlt, FaUsers, FaArrowRight,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import useAuth from '../../hooks/useAuth';
 
 
-// Map backend IDs to correct routes and icons
+// Map backend IDs to correct routes, icons, and required permissions
 const items = [
   {
     id: 1,
@@ -12,6 +14,7 @@ const items = [
     formPath: '/health-and-safety/checklist',
     icon: FaClipboardList,
     color: 'blue',
+    permission: 'health_and_safety_audit_checklists.index',
   },
   {
     id: 2,
@@ -19,6 +22,7 @@ const items = [
     formPath: '/health-and-safety/workplace-inspection-report',
     icon: FaHardHat,
     color: 'amber',
+    permission: 'workplace_inspection_reports.index',
   },
   {
     id: 3,
@@ -26,6 +30,7 @@ const items = [
     formPath: '/health-and-safety/training-and-competency',
     icon: FaUsers,
     color: 'green',
+    permission: 'training_and_competencies.index',
   },
   {
     id: 4,
@@ -33,6 +38,7 @@ const items = [
     formPath: '/health-and-safety/emergency-preparedness',
     icon: FaFire,
     color: 'red',
+    permission: 'emergency_preparednesses.index',
   },
   {
     id: 5,
@@ -40,6 +46,7 @@ const items = [
     formPath: '/health-and-safety/ppe-compliance',
     icon: FaFirstAid,
     color: 'purple',
+    permission: 'ppe_compliances.index',
   },
   {
     id: 6,
@@ -47,6 +54,7 @@ const items = [
     formPath: '/health-and-safety/contractor-safety',
     icon: FaUsers,
     color: 'teal',
+    permission: 'contractor_safeties.index',
   },
   {
     id: 7,
@@ -54,6 +62,7 @@ const items = [
     formPath: '/health-and-safety/management-review-meeting',
     icon: FaListAlt,
     color: 'amber',
+    permission: 'management_review_meetings.index',
   },
   {
     id: 8,
@@ -61,6 +70,7 @@ const items = [
     formPath: '/health-and-safety/capa-tracking',
     icon: FaClipboardList,
     color: 'blue',
+    permission: 'capa_trackings.index',
   },
 ];
 
@@ -77,6 +87,9 @@ const COLORS = {
 
 export default function HealthAndSafetyDashboard() {
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+
+  const visible = items.filter((item) => hasPermission(item.permission));
 
   return (
     <div className="space-y-8 pb-8">
@@ -86,7 +99,7 @@ export default function HealthAndSafetyDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {items.map((item, idx) => {
+        {visible.map((item, idx) => {
           const Icon = item.icon;
           const c = COLORS[item.color] || COLORS.blue;
           return (
