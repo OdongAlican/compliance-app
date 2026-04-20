@@ -65,7 +65,7 @@ export default function SwimmingPoolInterface() {
 
   const canCreate = hasPermission("swimming_pool_inspections.create");
   const canUpdate = hasPermission("swimming_pool_inspections.update");
-  const canDelete = hasPermission("swimming_pool_inspections.delete");
+  const canDelete = hasPermission("swimming_pool_inspections.destroy");
 
   const [users, setUsers] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);

@@ -131,6 +131,14 @@ const incidentNotificationSlice = createSlice({
       state.error = null;
       state.actionError = null;
     },
+    /** Sync witness_statements array on a single item after drawer add/delete. */
+    patchIncidentNotificationWitnessCount(state, action) {
+      const { id, witness_statements } = action.payload;
+      const idx = state.items.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        state.items[idx] = { ...state.items[idx], witness_statements };
+      }
+    },
   },
   extraReducers: (builder) => {
     // list
@@ -158,7 +166,7 @@ const incidentNotificationSlice = createSlice({
       .addCase(createIncidentNotification.fulfilled, (state, action) => {
         state.actionLoading = false;
         state.items.unshift(action.payload);
-        if (state.meta) state.meta.total_count = (state.meta.total_count ?? 0) + 1;
+        if (state.meta) state.meta.total = (state.meta.total ?? 0) + 1;
       })
       .addCase(createIncidentNotification.rejected, (state, action) => {
         state.actionLoading = false;
@@ -191,7 +199,7 @@ const incidentNotificationSlice = createSlice({
         state.actionLoading = false;
         state.items = state.items.filter((r) => r.id !== action.payload);
         if (state.meta)
-          state.meta.total_count = Math.max(0, (state.meta.total_count ?? 1) - 1);
+          state.meta.total = Math.max(0, (state.meta.total ?? 1) - 1);
       })
       .addCase(deleteIncidentNotification.rejected, (state, action) => {
         state.actionLoading = false;
@@ -234,6 +242,7 @@ export const {
   setIncidentNotificationFilters,
   resetIncidentNotificationFilters,
   clearIncidentNotificationErrors,
+  patchIncidentNotificationWitnessCount,
 } = incidentNotificationSlice.actions;
 
 // ── Selectors ──────────────────────────────────────────────────────────────

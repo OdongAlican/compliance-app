@@ -59,6 +59,10 @@ const authSlice = createSlice({
     clearAuthError(state) {
       state.error = null;
     },
+    // Patch user fields in-place after a successful profile update
+    patchUser(state, action) {
+      if (state.user) state.user = { ...state.user, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
     // ── loginThunk ──
@@ -69,7 +73,9 @@ const authSlice = createSlice({
       })
       .addCase(loginThunk.fulfilled, (state, action) => {
         state.loading         = false;
-        state.user            = action.payload;
+        // Defensive unwrap: if API shape is { token, user } extract the nested
+        // user; otherwise accept the payload as-is (already a user object).
+        state.user            = action.payload?.user ?? action.payload;
         state.isAuthenticated = true;
       })
       .addCase(loginThunk.rejected, (state, action) => {
@@ -106,7 +112,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuthError } = authSlice.actions;
+export const { clearAuthError, patchUser } = authSlice.actions;
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
 export const selectUser            = (state) => state.auth.user;

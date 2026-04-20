@@ -1,15 +1,16 @@
 import React from 'react';
 import { FaClipboardCheck, FaShieldAlt, FaFireExtinguisher, FaUserCheck, FaTools, FaFlask, FaSwimmingPool, FaCar, FaArrowRight } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import useAuth from '../../hooks/useAuth';
 
 const inspections = [
-  { title: 'Canteen Inspection',                      formPath: '/form/canteen',          icon: FaUserCheck,       color: 'blue' },
-  { title: 'Fuel Storage Tank Inspection',            formPath: '/form/fuel',             icon: FaFireExtinguisher, color: 'amber' },
-  { title: 'Hand & Power Tool Inspection',            formPath: '/form/tool',             icon: FaTools,            color: 'green' },
-  { title: 'PPE Inspection Form',                     formPath: '/form/ppe',              icon: FaShieldAlt,        color: 'purple' },
-  { title: 'Science Laboratory Inspection',           formPath: '/form/science-laboratory', icon: FaFlask,          color: 'teal' },
-  { title: 'Swimming Pool Inspection',                formPath: '/form/swimming-pool',    icon: FaSwimmingPool,     color: 'blue' },
-  { title: 'Vehicle Inspection Form',                 formPath: '/form/vehicle',          icon: FaCar,              color: 'red' },
+  { title: 'Canteen Inspection',                      formPath: '/form/canteen',            icon: FaUserCheck,        color: 'blue',   permission: 'canteen_inspections.index' },
+  { title: 'Fuel Storage Tank Inspection',            formPath: '/form/fuel',               icon: FaFireExtinguisher, color: 'amber',  permission: 'fuel_tank_inspections.index' },
+  { title: 'Hand & Power Tool Inspection',            formPath: '/form/tool',               icon: FaTools,            color: 'green',  permission: 'hand_power_tools_inspections.index' },
+  { title: 'PPE Inspection Form',                     formPath: '/form/ppe',                icon: FaShieldAlt,        color: 'purple', permission: 'ppe_inspections.index' },
+  { title: 'Science Laboratory Inspection',           formPath: '/form/science-laboratory', icon: FaFlask,            color: 'teal',   permission: 'science_lab_inspections.index' },
+  { title: 'Swimming Pool Inspection',                formPath: '/form/swimming-pool',      icon: FaSwimmingPool,     color: 'blue',   permission: 'swimming_pool_inspections.index' },
+  { title: 'Vehicle Inspection Form',                 formPath: '/form/vehicle',            icon: FaCar,              color: 'red',    permission: 'vehicle_inspections.index' },
 ];
 
 const COLORS = {
@@ -23,6 +24,9 @@ const COLORS = {
 
 export default function InspectionDashboard() {
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+
+  const visible = inspections.filter((item) => hasPermission(item.permission));
 
   return (
     <div className="space-y-8 pb-8">
@@ -34,7 +38,7 @@ export default function InspectionDashboard() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {inspections.map((item, idx) => {
+        {visible.map((item, idx) => {
           const Icon = item.icon || FaClipboardCheck;
           const c = COLORS[item.color] || COLORS.blue;
           return (

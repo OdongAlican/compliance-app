@@ -166,4 +166,42 @@ export const FuelIssueService = {
       .then((r) => r.data),
 };
 
+/* ── Fuel Issue Attachments ─────────────────────────────────────────── */
+export const FuelAttachmentService = {
+  list: (performId, issueId) =>
+    api.get(`/perform_fuel_tank_inspections/${performId}/issues/${issueId}/attachments`),
+
+  upload: (performId, issueId, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post(
+      `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/attachments`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+  },
+
+  remove: (performId, issueId, attachmentId) =>
+    api.delete(`/perform_fuel_tank_inspections/${performId}/issues/${issueId}/attachments/${attachmentId}`),
+};
+
+/* ── Fuel Issue Repair Attachments ──────────────────────────────────── */
+export const FuelRepairAttachmentService = {
+  list: (performId, issueId) =>
+    api.get(`/perform_fuel_tank_inspections/${performId}/issues/${issueId}/repair_attachments`),
+
+  upload: (performId, issueId, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post(
+      `/perform_fuel_tank_inspections/${performId}/issues/${issueId}/repair_attachments`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+  },
+
+  remove: (performId, issueId, attachmentId) =>
+    api.delete(`/perform_fuel_tank_inspections/${performId}/issues/${issueId}/repair_attachments/${attachmentId}`),
+};
+
 export default FuelSetupService;

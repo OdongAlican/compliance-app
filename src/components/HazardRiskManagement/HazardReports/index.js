@@ -35,6 +35,7 @@ import {
   deleteHazardReport,
   setHazardReportFilters,
   clearHazardReportErrors,
+  patchHazardReportItem,
   selectHazardReports,
   selectHazardReportsMeta,
   selectHazardReportsLoading,
@@ -135,7 +136,7 @@ function ActionMenu({ onView, onEdit, onDelete, canEdit, canDelete }) {
 
 const TABLE_COLS = [
   '#', 'Location', 'Hazard Type', 'Date',
-  'Safety Officers', 'Supervisors', 'Injured', '',
+  'Safety Officers', 'Supervisors', 'Reporter', 'Injured', '',
 ];
 
 function TableSkeleton({ cols }) {
@@ -280,13 +281,14 @@ function DeleteConfirmModal({ open, report, onConfirm, onCancel, loading }) {
 
 // ── Hazard Report Create/Edit Modal ────────────────────────────────────────
 
-const STEPS = ['Basic Info', 'Safety Officers', 'Supervisors', 'Review'];
+const STEPS = ['Basic Info', 'Reporter', 'Safety Officers', 'Supervisors', 'Review'];
 
 const EMPTY_FORM = {
   location: '',
   hazard_type: '',
   report_date: '',
   other: '',
+  reporter: null,
 };
 
 const EMPTY_PEOPLE = { safety_officers: [], supervisors: [] };
@@ -323,6 +325,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
         hazard_type: report.hazard_type ?? '',
         report_date: report.report_date ?? '',
         other:       report.other ?? '',
+        reporter:    report.reporter ?? null,
       });
       setPeople({
         safety_officers: report.safety_officers ?? [],
@@ -340,11 +343,12 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
       if (!form.location.trim())    errs.location    = 'Location is required';
       if (!form.hazard_type.trim()) errs.hazard_type = 'Hazard type is required';
     }
-    if (s === 1) {
+    // s === 1 (Reporter) — optional, no validation
+    if (s === 2) {
       if (!people.safety_officers.length)
         errs.safety_officers = 'At least one safety officer is required';
     }
-    if (s === 2) {
+    if (s === 3) {
       if (!people.supervisors.length)
         errs.supervisors = 'At least one supervisor is required';
     }
@@ -364,12 +368,16 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
       errs.supervisors = 'At least one supervisor is required';
     if (Object.keys(errs).length) {
       setErrors(errs);
-      setStep(errs.safety_officers ? 1 : 2);
+      setStep(errs.safety_officers ? 2 : 3);
       return;
     }
 
     const payload = {
-      ...form,
+      location:           form.location,
+      hazard_type:        form.hazard_type,
+      report_date:        form.report_date || undefined,
+      other:              form.other || undefined,
+      reporter_id:        form.reporter?.id ?? null,
       safety_officer_ids: people.safety_officers.map((u) => u.id),
       supervisor_ids:     people.supervisors.map((u) => u.id),
     };
@@ -497,8 +505,82 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 1: Safety Officers ── */}
+        {/* ── Step 1: Reporter ── */}
         {step === 1 && (
+          <div className="flex flex-col gap-5">
+            <div
+              className="flex items-start gap-3 p-4 rounded-xl"
+              style={{
+                background: 'color-mix(in srgb,var(--accent) 8%,transparent)',
+                border: '1px solid color-mix(in srgb,var(--accent) 25%,transparent)',
+              }}
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                style={{ background: 'var(--accent)', color: '#fff' }}
+              >
+                2
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                  Assign Reporter
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Search by name — select the user who is reporting this hazard. This field is optional.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                Reporter <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <UserMultiSelect
+                value={form.reporter ? [form.reporter] : []}
+                onChange={(arr) => setForm({ ...form, reporter: arr[arr.length - 1] ?? null })}
+                showChips={false}
+              />
+            </div>
+
+            {form.reporter && (
+              <div
+                className="flex items-center gap-3 p-4 rounded-xl"
+                style={{
+                  background: 'color-mix(in srgb,#3fb950 8%,transparent)',
+                  border: '1px solid color-mix(in srgb,#3fb950 30%,transparent)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: '#3fb950', color: '#fff' }}
+                >
+                  {(form.reporter.firstname ?? form.reporter.email ?? '#')[0]?.toUpperCase()}
+                  {(form.reporter.lastname ?? '')[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                    {displayName(form.reporter)}
+                  </p>
+                  <p className="text-xs" style={{ color: '#3fb950' }}>
+                    ✓ Assigned &middot; Reporter
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, reporter: null })}
+                  className="p-1 rounded hover:opacity-70 flex-shrink-0"
+                  style={{ color: 'var(--text-muted)' }}
+                  title="Remove"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 2: Safety Officers ── */}
+        {step === 2 && (
           <div className="flex flex-col gap-5">
             {/* Canteen-style info banner */}
             <div
@@ -512,7 +594,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
                 style={{ background: 'var(--accent)', color: '#fff' }}
               >
-                2
+                3
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -587,8 +669,8 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 2: Supervisors ── */}
-        {step === 2 && (
+        {/* ── Step 3: Supervisors ── */}
+        {step === 3 && (
           <div className="flex flex-col gap-5">
             {/* Canteen-style info banner */}
             <div
@@ -602,7 +684,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
                 style={{ background: 'var(--accent)', color: '#fff' }}
               >
-                3
+                4
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -677,8 +759,8 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
           </div>
         )}
 
-        {/* ── Step 3: Review ── */}
-        {step === 3 && (
+        {/* ── Step 4: Review ── */}
+        {step === 4 && (
           <div className="space-y-4">
             {/* All-steps-complete banner */}
             <div
@@ -707,6 +789,7 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
                 </div>
                 <ReviewRow label="Hazard Type" value={form.hazard_type} />
                 <ReviewRow label="Report Date" value={form.report_date || 'Auto-set by server'} />
+                <ReviewRow label="Reporter" value={form.reporter ? displayName(form.reporter) : 'Not assigned'} />
                 <div className="col-span-2">
                   <ReviewRow label="Additional Notes" value={form.other} />
                 </div>
@@ -836,16 +919,106 @@ function HazardReportModal({ open, report, onClose, onSave, saving, saveError })
   );
 }
 
+// ── Delete Injured Person Confirm Modal ───────────────────────────────────
+
+function DeleteInjuredPersonModal({ open, person, onConfirm, onCancel, loading }) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.65)' }}
+    >
+      <div className="ui-card w-full max-w-sm p-6 space-y-4">
+
+        {/* Warning banner */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: 'rgba(220,38,38,0.08)',
+            border: '1px solid rgba(220,38,38,0.25)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: '#dc2626', color: '#fff' }}
+          >
+            <ExclamationTriangleIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              Remove injured person record?
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        {/* Person details */}
+        {person && (
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+          >
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wider mb-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Record to remove
+            </p>
+            <p className="text-sm font-bold" style={{ color: '#dc2626' }}>
+              {person.name}
+            </p>
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1"
+              style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}
+            >
+              {person.injury_type}
+            </span>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div
+          className="flex justify-end gap-3 pt-1"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-75"
+            style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#dc2626' }}
+          >
+            {loading ? 'Removing…' : 'Remove Record'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Injured People Manager (used inside the detail drawer) ─────────────────
 
 const EMPTY_INJURY = { name: '', injury_type: '', injury_description: '', action_taken: '' };
 
-function InjuredPeopleManager({ reportId }) {
+function InjuredPeopleManager({ reportId, onInjuredChanged }) {
   const [people,    setPeople]    = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [formState, setFormState] = useState(null); // null=hidden, object=add/edit
   const [saving,    setSaving]    = useState(false);
   const [fieldErrs, setFieldErrs] = useState({});
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting,     setDeleting]     = useState(false);
 
   useEffect(() => {
     if (!reportId) return;
@@ -876,12 +1049,16 @@ function InjuredPeopleManager({ reportId }) {
       if (formState.id) {
         const raw = await InjuredPersonService.update(reportId, formState.id, formState);
         const updated = raw.data ?? raw;
-        setPeople((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        const next = people.map((p) => (p.id === updated.id ? updated : p));
+        setPeople(next);
+        onInjuredChanged?.(next);
         toast.success('Record updated.');
       } else {
         const raw = await InjuredPersonService.create(reportId, formState);
         const created = raw.data ?? raw;
-        setPeople((prev) => [created, ...prev]);
+        const next = [created, ...people];
+        setPeople(next);
+        onInjuredChanged?.(next);
         toast.success('Person added.');
       }
       setFormState(null);
@@ -893,13 +1070,18 @@ function InjuredPeopleManager({ reportId }) {
   }
 
   async function removeInjury(id) {
-    if (!window.confirm('Remove this injured person record?')) return;
+    setDeleting(true);
     try {
       await InjuredPersonService.remove(reportId, id);
-      setPeople((prev) => prev.filter((p) => p.id !== id));
+      const next = people.filter((p) => p.id !== id);
+      setPeople(next);
+      onInjuredChanged?.(next);
       toast.success('Removed.');
+      setDeleteTarget(null);
     } catch {
       toast.error('Delete failed.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -1060,7 +1242,7 @@ function InjuredPeopleManager({ reportId }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeInjury(p.id)}
+                    onClick={() => setDeleteTarget(p)}
                     className="p-1.5 rounded-lg hover:opacity-75"
                     style={{ color: 'var(--danger)' }}
                     title="Remove"
@@ -1092,18 +1274,32 @@ function InjuredPeopleManager({ reportId }) {
           </div>
         </div>
       ))}
+
+      <DeleteInjuredPersonModal
+        open={!!deleteTarget}
+        person={deleteTarget}
+        onConfirm={() => removeInjury(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+        loading={deleting}
+      />
     </div>
   );
 }
 
 // ── Detail Drawer ──────────────────────────────────────────────────────────
 
-function DetailDrawer({ report, onClose, onEdit, canEdit }) {
+function DetailDrawer({ report, onClose, onEdit, canEdit, onInjuredChanged }) {
+  const [localInjuredPeople, setLocalInjuredPeople] = useState(report?.injured_people ?? []);
+
+  useEffect(() => {
+    setLocalInjuredPeople(report?.injured_people ?? []);
+  }, [report]);
+
   if (!report) return null;
 
   const officerCount    = report.safety_officers?.length  ?? 0;
   const supervisorCount = report.supervisors?.length      ?? 0;
-  const injuredCount    = report.injured_people?.length   ?? 0;
+  const injuredCount    = localInjuredPeople.length;
 
   return (
     <>
@@ -1223,6 +1419,26 @@ function DetailDrawer({ report, onClose, onEdit, canEdit }) {
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{report.other}</p>
                 </div>
               )}
+              <div
+                className="col-span-2 p-3 rounded-xl"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Reporter</p>
+                {report.reporter ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+                      style={{ background: 'color-mix(in srgb,var(--accent) 15%,transparent)', color: 'var(--accent)' }}
+                    >
+                      {(report.reporter.firstname ?? report.reporter.email ?? '#')[0]?.toUpperCase()}
+                      {(report.reporter.lastname ?? '')[0]?.toUpperCase()}
+                    </div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{displayName(report.reporter)}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>— Not assigned</p>
+                )}
+              </div>
             </div>
           </section>
 
@@ -1292,7 +1508,13 @@ function DetailDrawer({ report, onClose, onEdit, canEdit }) {
 
           {/* Injured people management */}
           <section>
-            <InjuredPeopleManager reportId={report.id} />
+            <InjuredPeopleManager
+              reportId={report.id}
+              onInjuredChanged={(people) => {
+                setLocalInjuredPeople(people);
+                onInjuredChanged?.(report.id, people);
+              }}
+            />
           </section>
         </div>
       </div>
@@ -1392,6 +1614,7 @@ export default function HazardReportsPage() {
     if (deleteHazardReport.fulfilled.match(result)) {
       toast.success('Report deleted.');
       setDeleteTarget(null);
+      dispatch(fetchHazardReports(filters));
     }
   }
 
@@ -1531,6 +1754,11 @@ export default function HazardReportsPage() {
                     >
                       <NameList arr={r.supervisors} />
                     </td>
+                    <td className="ui-td" style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.reporter
+                        ? <span>{displayName(r.reporter)}</span>
+                        : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                    </td>
                     <td className="ui-td">
                       {r.injured_people?.length ? (
                         <span
@@ -1579,6 +1807,9 @@ export default function HazardReportsPage() {
         onClose={() => setDetailReport(null)}
         onEdit={(r) => { setDetailReport(null); setModal({ open: true, report: r }); }}
         canEdit={canWrite}
+        onInjuredChanged={(reportId, people) => {
+          dispatch(patchHazardReportItem({ id: reportId, changes: { injured_people: people } }));
+        }}
       />
       <DeleteConfirmModal
         open={!!deleteTarget}

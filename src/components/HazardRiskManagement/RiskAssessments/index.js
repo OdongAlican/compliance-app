@@ -11,7 +11,7 @@
  *  - Debounced search/filter inputs
  *  - Permission-gated actions (risk_assessments.update)
  */
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
   PlusIcon,
@@ -42,6 +42,7 @@ import {
 } from '../../../store/slices/riskAssessmentSlice';
 import useAuth from '../../../hooks/useAuth';
 import UserMultiSelect from '../shared/UserMultiSelect';
+import { RiskAssessmentService } from '../../../services/hazardAndRisk.service';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -810,12 +811,31 @@ function RiskAssessmentModal({ open, assessment, onClose, onSave, saving, saveEr
 
 // ── Detail Drawer ──────────────────────────────────────────────────────────
 
-function DetailDrawer({ assessment, onClose, onEdit, canEdit }) {
+function DetailDrawer({ assessment: initialAssessment, onClose, onEdit, canEdit }) {
+  const [assessment, setAssessment] = useState(initialAssessment);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Keep state in sync when the prop changes (component is always mounted)
+  useEffect(() => {
+    setAssessment(initialAssessment);
+  }, [initialAssessment]);
+
+  const fetchFull = useCallback(() => {
+    if (!initialAssessment) return;
+    setDetailLoading(true);
+    RiskAssessmentService.get(initialAssessment.id)
+      .then((res) => setAssessment(res.data ?? res))
+      .catch(() => { setAssessment(initialAssessment); toast.error('Could not load full details.'); })
+      .finally(() => setDetailLoading(false));
+  }, [initialAssessment]);
+
+  useEffect(() => { fetchFull(); }, [fetchFull]);
+
+  if (!initialAssessment) return null;
   if (!assessment) return null;
 
-  const officerCount    = assessment.safety_officers?.length  ?? 0;
-  const supervisorCount = assessment.supervisors?.length      ?? 0;
-  const entryCount      = assessment.risk_assessment_entries?.length ?? 0;
+  const officerCount    = assessment.safety_officers?.length ?? 0;
+  const supervisorCount = assessment.supervisors?.length     ?? 0;
 
   return (
     <>
@@ -885,13 +905,7 @@ function DetailDrawer({ assessment, onClose, onEdit, canEdit }) {
               <span className="text-sm font-bold" style={{ color: '#d97706' }}>{supervisorCount}</span>
               <span className="text-[11px] font-medium" style={{ color: '#d97706', opacity: 0.8 }}>Supervisors</span>
             </div>
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.15)' }}
-            >
-              <span className="text-sm font-bold" style={{ color: '#3b82f6' }}>{entryCount}</span>
-              <span className="text-[11px] font-medium" style={{ color: '#3b82f6', opacity: 0.8 }}>Entries</span>
-            </div>
+
           </div>
         </div>
 
@@ -1000,15 +1014,20 @@ function DetailDrawer({ assessment, onClose, onEdit, canEdit }) {
             )}
           </section>
 
-          {/* Entries count */}
+          {/* Entries note */}
           <section>
             <h4 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
               Assessment Entries
             </h4>
-            <div className="p-3 rounded-xl" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                {entryCount} entr{entryCount !== 1 ? 'ies' : 'y'} defined.
-              </span>
+            <div
+              className="p-4 rounded-xl flex items-start gap-3"
+              style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}
+            >
+              <ShieldExclamationIcon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: '#3b82f6', opacity: 0.7 }} />
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                Entries (hazard descriptions and control measures) are defined when creating a
+                <span className="font-semibold" style={{ color: 'var(--text)' }}> Performed Risk Assessment</span> that references this assessment.
+              </p>
             </div>
           </section>
         </div>

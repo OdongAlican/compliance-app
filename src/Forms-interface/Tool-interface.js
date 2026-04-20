@@ -47,7 +47,7 @@ export default function ToolInterface() {
 
   const canCreate = hasPermission("hand_power_tools_inspections.create");
   const canUpdate = hasPermission("hand_power_tools_inspections.update");
-  const canDelete = hasPermission("hand_power_tools_inspections.delete");
+  const canDelete = hasPermission("hand_power_tools_inspections.destroy");
 
   const [setupModal,    setSetupModal]    = useState({ open: false, setup: null });
   const [reassignModal, setReassignModal] = useState({ open: false, mode: null, setupId: null });

@@ -1,17 +1,5 @@
 /* ── Hand & Power Tools Inspection — ExecutionDetailModal ─────────────── */
-/*
- * Opens when a user clicks a perform record in DetailDrawer.
- * Two tabs:
- *  1. Checklists — view & update item results
- *  2. Issues     — full issue lifecycle (corrective action, priority,
- *                  contractor, repair, read-only attachments)
- *
- * NOTE: Tool has no separate attachment API routes.
- *  - Issue attachments are embedded in the issue object as
- *    `hand_power_tools_inspection_issue_attachments` (read-only here).
- *  - New files can only be uploaded via issue create or repairCompletion.
- */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
     XMarkIcon,
@@ -32,6 +20,8 @@ import {
     ToolPerformService,
     ToolChecklistItemService,
     ToolIssueService,
+    ToolAttachmentService,
+    ToolRepairAttachmentService,
 } from "../../services/tool.service";
 import { Spinner, Field } from "./shared";
 import UserAutocomplete from "./UserAutocomplete";
@@ -84,12 +74,106 @@ function SectionCard({ children, className = "" }) {
     );
 }
 
+/* ── AttachmentList ───────────────────────────────────────────────────── */
+function AttachmentList({ performId, issueId, kind = "issue" }) {
+    const svc = kind === "repair" ? ToolRepairAttachmentService : ToolAttachmentService;
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [deleting, setDeleting] = useState(null);
+    const fileRef = useRef(null);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await svc.list(performId, issueId);
+            setItems(Array.isArray(res) ? res : res.data ?? []);
+        } catch { /* silent */ } finally { setLoading(false); }
+    }, [performId, issueId, svc]);
+
+    useEffect(() => { load(); }, [load]);
+
+    async function handleUpload(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+            await svc.upload(performId, issueId, file);
+            toast.success("File uploaded.");
+            load();
+        } catch { toast.error("Upload failed."); }
+        finally { setUploading(false); e.target.value = ""; }
+    }
+
+    async function handleDelete(id) {
+        setDeleting(id);
+        try {
+            await svc.remove(performId, issueId, id);
+            setItems((p) => p.filter((a) => a.id !== id));
+            toast.success("Attachment removed.");
+        } catch { toast.error("Delete failed."); }
+        finally { setDeleting(null); }
+    }
+
+    return (
+        <div>
+            {loading ? (
+                <div className="flex justify-center py-3"><Spinner size={4} /></div>
+            ) : items.length === 0 ? (
+                <p className="text-xs py-2" style={{ color: "var(--text-muted)" }}>No attachments yet.</p>
+            ) : (
+                <div className="flex flex-col gap-1.5 mb-2">
+                    {items.map((a) => (
+                        <div
+                            key={a.id}
+                            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg"
+                            style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                        >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <PaperClipIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+                                <a
+                                    href={a.file_url ?? a.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs truncate hover:underline"
+                                    style={{ color: "var(--accent)" }}
+                                >
+                                    {a.file_name ?? a.file_path ?? `Attachment #${a.id}`}
+                                </a>
+                            </div>
+                            <button
+                                onClick={() => handleDelete(a.id)}
+                                disabled={deleting === a.id}
+                                className="flex-shrink-0"
+                                style={{ color: "var(--danger)", opacity: deleting === a.id ? 0.5 : 1 }}
+                            >
+                                {deleting === a.id ? <Spinner size={3} /> : <TrashIcon className="h-3.5 w-3.5" />}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            <input type="file" ref={fileRef} className="hidden" onChange={handleUpload} />
+            <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
+                style={{ border: "1px dashed var(--border)", color: "var(--text-muted)", background: "transparent" }}
+            >
+                {uploading ? <Spinner size={3} /> : <PaperClipIcon className="h-3.5 w-3.5" />}
+                Attach file
+            </button>
+        </div>
+    );
+}
+
 /* ── IssueCard ────────────────────────────────────────────────────────── */
 function IssueCard({ issue, performId, onDeleted, onUpdated }) {
     const [expanded, setExpanded] = useState(false);
     const [activeSection, setActiveSection] = useState(null);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [attachTab, setAttachTab] = useState("issue");
 
     const [caText, setCaText] = useState(issue.corrective_action ?? "");
     const [priority, setPriority] = useState(issue.priority_level ?? "low");
@@ -190,9 +274,6 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
         ? `${issue.contractor.firstname} ${issue.contractor.lastname}`
         : null;
 
-    /* Embedded read-only attachments from API response */
-    const attachments = issue.hand_power_tools_inspection_issue_attachments ?? [];
-
     return (
         <div
             className="rounded-xl overflow-hidden"
@@ -288,9 +369,7 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                             { key: "contractor", label: "Assign Contractor", icon: UserIcon },
                             { key: "repair", label: "Repair Completion", icon: WrenchScrewdriverIcon },
                             { key: "status", label: "Set Repair Status", icon: CheckBadgeIcon },
-                            ...(attachments.length > 0
-                                ? [{ key: "attach", label: `Attachments (${attachments.length})`, icon: PaperClipIcon }]
-                                : []),
+                            { key: "attach", label: "Attachments", icon: PaperClipIcon },
                         ].map(({ key, label, icon: Icon }) => (
                             <button
                                 key={key}
@@ -538,29 +617,36 @@ function IssueCard({ issue, performId, onDeleted, onUpdated }) {
                         </SectionCard>
                     )}
 
-                    {/* Read-only attachments (embedded in issue object) */}
-                    {activeSection === "attach" && attachments.length > 0 && (
+                    {/* Attachments */}
+                    {activeSection === "attach" && (
                         <SectionCard>
-                            <p className="text-xs font-bold mb-3" style={{ color: "var(--text)" }}>
-                                Issue Attachments
-                            </p>
-                            <div className="flex flex-col gap-1.5">
-                                {attachments.map((a, idx) => (
-                                    <a
-                                        key={a.id ?? idx}
-                                        href={a.file_url ?? a.url ?? "#"}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:opacity-80"
-                                        style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                            <div className="flex gap-2 mb-3">
+                                {[
+                                    { key: "issue", label: "Issue Attachments" },
+                                    { key: "repair", label: "Repair Attachments" },
+                                ].map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setAttachTab(key)}
+                                        className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                                        style={{
+                                            border: `1px solid ${attachTab === key ? "var(--accent)" : "var(--border)"}`,
+                                            color: attachTab === key ? "var(--accent)" : "var(--text-muted)",
+                                            background: attachTab === key
+                                                ? "color-mix(in srgb,var(--accent) 8%,transparent)"
+                                                : "transparent",
+                                        }}
                                     >
-                                        <PaperClipIcon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
-                                        <span className="text-xs truncate flex-1" style={{ color: "var(--accent)" }}>
-                                            {a.file_name ?? a.filename ?? `Attachment #${a.id ?? idx + 1}`}
-                                        </span>
-                                    </a>
+                                        {label}
+                                    </button>
                                 ))}
                             </div>
+                            <AttachmentList
+                                key={attachTab}
+                                performId={performId}
+                                issueId={issue.id}
+                                kind={attachTab}
+                            />
                         </SectionCard>
                     )}
 

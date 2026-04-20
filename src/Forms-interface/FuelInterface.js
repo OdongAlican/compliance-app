@@ -51,7 +51,7 @@ export default function FuelInterface() {
 
   const canCreate = hasPermission("fuel_tank_inspections.create");
   const canUpdate = hasPermission("fuel_tank_inspections.update");
-  const canDelete = hasPermission("fuel_tank_inspections.delete");
+  const canDelete = hasPermission("fuel_tank_inspections.destroy");
 
   const [setupModal, setSetupModal] = useState({ open: false, setup: null });
   const [reassignModal, setReassignModal] = useState({ open: false, mode: null, setupId: null });

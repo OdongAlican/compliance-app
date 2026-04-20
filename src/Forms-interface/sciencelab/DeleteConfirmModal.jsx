@@ -1,6 +1,7 @@
 /* ── Science Lab Inspection — DeleteConfirmModal ─────────────────────── */
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { Spinner, ModalShell } from "./shared";
+import moment from "moment";
 
 export default function DeleteConfirmModal({ isOpen, onClose, setup, loading, onConfirm }) {
   return (
@@ -47,7 +48,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, setup, loading, on
             </p>
             {setup.date && (
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {setup.date}{setup.time ? " · " + setup.time : ""}
+                {moment(setup.date).format("MMMM D, YYYY")}{setup.time ? " · " + moment(setup.time, "HH:mm").format("h:mm A") : ""}
               </p>
             )}
           </div>

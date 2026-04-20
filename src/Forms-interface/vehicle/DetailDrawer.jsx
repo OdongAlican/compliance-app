@@ -308,7 +308,7 @@ export default function DetailDrawer({ isOpen, onClose, setup }) {
                         )}
                         {signed && p.signed_off_at && (
                           <p className="text-[10px] mt-1" style={{ color: "#3fb950" }}>
-                            Signed off on {moment(p.signed_off_at).format("MMMM Do, YYYY")}
+                            Signed off on {moment(p.signed_off_at).format("MMMM Do, YYYY")} at {moment(p.signed_off_at).format("h:mm A")}
                           </p>
                         )}
                       </div>

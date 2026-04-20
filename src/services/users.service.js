@@ -13,7 +13,7 @@ const UsersService = {
    * Permission: users.view
    * @param {{ page?, per_page?, filter?: { firstname?, lastname?, email?, staff_id?, role?, role_id?, gender?, phone? } }} params
    */
-  list: (params = {}) => api.get('/users', { params }),
+  list: (params = {}) => api.get('/users', { params, _skipForbidden: true }),
 
   /** GET /users/:id — Permission: users.view */
   getById: (id) => api.get(`/users/${id}`),
@@ -68,6 +68,13 @@ export const deactivateUser = (id) => api.patch(`/users/${id}/deactivate/`);
 
 /** PATCH /users/:id/reset-password/ — admin-initiated reset */
 export const adminResetPassword = (id) => api.patch(`/users/${id}/reset-password/`);
+
+/**
+ * PATCH /users/:id/change-password — self-service password change
+ * Body: { current_password, password, password_confirmation }
+ */
+export const changePassword = (id, payload) =>
+  api.patch(`/users/${id}/change-password`, payload);
 
 // ── Roles ─────────────────────────────────────────────────────────────────────
 

@@ -1115,8 +1115,8 @@ export default function GenericInspectionInterface({ config }) {
 
   const canCreate    = hasPermission(`${config.permPrefix}.create`);
   const canUpdate    = hasPermission(`${config.permPrefix}.update`);
-  const canDelete    = hasPermission(`${config.permPrefix}.delete`);
-  const canViewPerform = hasPermission(`${config.performPermPrefix}.view`);
+  const canDelete    = hasPermission(`${config.permPrefix}.destroy`);
+  const canViewPerform = hasPermission(`${config.performPermPrefix}.index`);
   const canUpdatePerform = hasPermission(`${config.performPermPrefix}.update`);
 
   const [users, setUsers]             = useState([]);

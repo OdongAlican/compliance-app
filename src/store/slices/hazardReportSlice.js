@@ -95,6 +95,14 @@ const hazardReportSlice = createSlice({
       state.error = null;
       state.actionError = null;
     },
+    // Patch a single item in-place without a full re-fetch
+    // (used when injured_people are changed from the detail drawer)
+    patchHazardReportItem(state, action) {
+      const idx = state.items.findIndex((r) => r.id === action.payload.id);
+      if (idx !== -1) {
+        state.items[idx] = { ...state.items[idx], ...action.payload.changes };
+      }
+    },
   },
   extraReducers: (builder) => {
     // list
@@ -122,7 +130,7 @@ const hazardReportSlice = createSlice({
       .addCase(createHazardReport.fulfilled, (state, action) => {
         state.actionLoading = false;
         state.items.unshift(action.payload);
-        if (state.meta) state.meta.total_count = (state.meta.total_count ?? 0) + 1;
+        if (state.meta) state.meta.total = (state.meta.total ?? 0) + 1;
       })
       .addCase(createHazardReport.rejected, (state, action) => {
         state.actionLoading = false;
@@ -154,7 +162,7 @@ const hazardReportSlice = createSlice({
       .addCase(deleteHazardReport.fulfilled, (state, action) => {
         state.actionLoading = false;
         state.items = state.items.filter((r) => r.id !== action.payload);
-        if (state.meta) state.meta.total_count = Math.max(0, (state.meta.total_count ?? 1) - 1);
+        if (state.meta) state.meta.total = Math.max(0, (state.meta.total ?? 1) - 1);
       })
       .addCase(deleteHazardReport.rejected, (state, action) => {
         state.actionLoading = false;
@@ -167,6 +175,7 @@ export const {
   setHazardReportFilters,
   resetHazardReportFilters,
   clearHazardReportErrors,
+  patchHazardReportItem,
 } = hazardReportSlice.actions;
 
 // ── Selectors ──────────────────────────────────────────────────────────────
