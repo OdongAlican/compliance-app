@@ -813,6 +813,7 @@ function RiskAssessmentModal({ open, assessment, onClose, onSave, saving, saveEr
 
 function DetailDrawer({ assessment: initialAssessment, onClose, onEdit, canEdit }) {
   const [assessment, setAssessment] = useState(initialAssessment);
+  // eslint-disable-next-line no-unused-vars
   const [detailLoading, setDetailLoading] = useState(false);
 
   // Keep state in sync when the prop changes (component is always mounted)
