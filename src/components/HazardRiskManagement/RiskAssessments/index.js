@@ -831,6 +831,7 @@ function DetailDrawer({ assessment: initialAssessment, onClose, onEdit, canEdit 
   }, [initialAssessment]);
 
   useEffect(() => { fetchFull(); }, [fetchFull]);
+  console.log('Full assessment details:', detailLoading);
 
   if (!initialAssessment) return null;
   if (!assessment) return null;
